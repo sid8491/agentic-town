@@ -129,10 +129,13 @@ async def gather_context(state: AgentState) -> AgentState:
     # Format memory snippets for the prompt
     memory_text = memory_snippets if memory_snippets and "Nothing found" not in memory_snippets else "Nothing specific."
 
+    # Trim soul to first 300 chars to keep prompt concise
+    soul_summary = soul[:300].rsplit("\n", 1)[0] if len(soul) > 300 else soul
+
     # Build the LLM prompt
     llm_prompt = (
         "=== WHO YOU ARE ===\n"
-        f"{soul}\n\n"
+        f"{soul_summary}\n\n"
         "=== YOUR GOALS ===\n"
         f"{goals}\n\n"
         "=== RIGHT NOW ===\n"
@@ -181,6 +184,7 @@ async def llm_decide(state: AgentState) -> AgentState:
             "simulation. Stay in character. Call exactly one tool."
         ),
         max_tokens=200,
+        thinking=False,
     )
 
     tool_name: Optional[str] = None
@@ -235,7 +239,11 @@ async def execute_tool_node(state: AgentState) -> AgentState:
     tool_name = state["tool_name"] or "look_around"
     tool_args = state["tool_args"] or {}
 
-    tool_result = await execute_tool(agent_name, tool_name, tool_args)
+    try:
+        tool_result = await execute_tool(agent_name, tool_name, tool_args)
+    except TypeError as exc:
+        tool_result = f"Tool call failed (missing args): {exc}"
+        logger.warning("[%s] tool %s bad args %s: %s", agent_name, tool_name, tool_args, exc)
 
     # Record event in world history (truncated for readability)
     await tools.world.add_event(
@@ -278,7 +286,7 @@ async def reflect(state: AgentState) -> AgentState:
     response = await call_llm(
         reflection_prompt,
         system=f"You are {agent_name}, writing in your private diary.",
-        max_tokens=150,
+        max_tokens=500,
     )
 
     # Use text response; fall back to a minimal entry if LLM fails silently

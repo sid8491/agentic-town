@@ -33,6 +33,7 @@ import os
 from dataclasses import dataclass, field
 
 import litellm
+import ollama as ollama_lib
 from dotenv import load_dotenv
 
 # Load .env from project root (two levels up from this file: engine/ → project/)
@@ -194,6 +195,7 @@ async def call_llm(
     tools: list[dict] | None = None,
     system: str | None = None,
     max_tokens: int = 300,
+    thinking: bool = True,
 ) -> LLMResponse:
     """
     Send *prompt* to the active LLM provider and return a structured response.
@@ -222,7 +224,6 @@ async def call_llm(
         handle retries / fallbacks as appropriate.
     """
     provider = llm_config.get_primary()
-    model = llm_config.get_model()
 
     # Build messages list
     messages: list[dict] = []
@@ -230,48 +231,87 @@ async def call_llm(
         messages.append({"role": "system", "content": system})
     messages.append({"role": "user", "content": prompt})
 
-    # Keyword arguments for litellm
-    kwargs: dict = {
-        "model": model,
-        "messages": messages,
-        "max_tokens": max_tokens,
-    }
-
-    if provider == "ollama":
-        kwargs["api_base"] = llm_config.get_ollama_base_url()
-
-    if tools:
-        kwargs["tools"] = tools
-
-    try:
-        response = await litellm.acompletion(**kwargs)
-    except Exception as exc:
-        logger.error("[LLM] %s call failed: %s", provider, exc)
-        raise
-
-    # Parse token counts (default to 0 if missing)
-    usage = getattr(response, "usage", None)
-    input_tokens: int = getattr(usage, "prompt_tokens", 0) or 0
-    output_tokens: int = getattr(usage, "completion_tokens", 0) or 0
-
-    # Parse text vs tool call
-    message = response.choices[0].message
-    tool_calls = getattr(message, "tool_calls", None)
-
     text: str | None = None
     tool_name: str | None = None
     tool_args: dict | None = None
+    input_tokens: int = 0
+    output_tokens: int = 0
+    raw_dict: dict = {}
 
-    if tool_calls:
-        first_call = tool_calls[0]
-        tool_name = first_call.function.name
-        raw_args = first_call.function.arguments
-        # arguments is a JSON string per OpenAI spec
-        tool_args = json.loads(raw_args) if isinstance(raw_args, str) else raw_args
+    if provider == "ollama":
+        # Use native ollama library — litellm's OpenAI bridge returns empty
+        # content for newer Ollama models (gemma4, qwen3, gpt-oss etc.)
+        model_name = llm_config.get_model().removeprefix("ollama/")
+        client = ollama_lib.AsyncClient(host=llm_config.get_ollama_base_url())
+
+        kwargs: dict = {
+            "model": model_name,
+            "messages": messages,
+            "options": {"num_predict": max_tokens},
+            "think": thinking,
+        }
+        if tools:
+            # Ollama native tool format matches OpenAI schema
+            kwargs["tools"] = tools
+
+        try:
+            response = await client.chat(**kwargs)
+        except Exception as exc:
+            logger.error("[LLM] ollama call failed: %s", exc)
+            raise
+
+        msg = response.message
+        raw_dict = response.model_dump() if hasattr(response, "model_dump") else {}
+
+        # Token counts from eval_count fields
+        input_tokens = getattr(response, "prompt_eval_count", 0) or 0
+        output_tokens = getattr(response, "eval_count", 0) or 0
+
+        if msg.tool_calls:
+            first = msg.tool_calls[0]
+            tool_name = first.function.name
+            raw_args = first.function.arguments
+            tool_args = raw_args if isinstance(raw_args, dict) else json.loads(raw_args)
+        else:
+            text = msg.content or None
+            # Thinking models (gemma4, qwen3) store output in msg.thinking when
+            # content is empty — use it as the text response.
+            if not text:
+                text = getattr(msg, "thinking", None) or None
+
     else:
-        text = getattr(message, "content", None)
+        # Gemini via litellm
+        model = llm_config.get_model()
+        kwargs = {"model": model, "messages": messages, "max_tokens": max_tokens}
+        if tools:
+            kwargs["tools"] = tools
 
-    # Log one line per call
+        try:
+            response = await litellm.acompletion(**kwargs)
+        except Exception as exc:
+            logger.error("[LLM] gemini call failed: %s", exc)
+            raise
+
+        usage = getattr(response, "usage", None)
+        input_tokens = getattr(usage, "prompt_tokens", 0) or 0
+        output_tokens = getattr(usage, "completion_tokens", 0) or 0
+
+        message = response.choices[0].message
+        tool_calls = getattr(message, "tool_calls", None)
+
+        try:
+            raw_dict = response.model_dump() if hasattr(response, "model_dump") else {}
+        except Exception:
+            raw_dict = {}
+
+        if tool_calls:
+            first_call = tool_calls[0]
+            tool_name = first_call.function.name
+            raw_args = first_call.function.arguments
+            tool_args = json.loads(raw_args) if isinstance(raw_args, str) else raw_args
+        else:
+            text = getattr(message, "content", None) or None
+
     logger.info(
         "[LLM] %s | %din %dout | tool=%s",
         provider,
@@ -279,14 +319,6 @@ async def call_llm(
         output_tokens,
         tool_name or "text",
     )
-
-    # Serialise the raw response for debugging (litellm objects support __dict__)
-    try:
-        raw_dict: dict = (
-            response.model_dump() if hasattr(response, "model_dump") else dict(response)
-        )
-    except Exception:
-        raw_dict = {}
 
     return LLMResponse(
         text=text,
