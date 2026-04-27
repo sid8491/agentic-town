@@ -218,11 +218,23 @@ class WorldState:
             self._state["agents"][name]["inbox"].append(message)
 
     async def clear_inbox(self, name: str) -> list:
-        """Return all messages in *name*'s inbox, then clear it."""
+        """Return fresh messages in *name*'s inbox, then clear it.
+
+        Messages older than 2 game hours (120 sim_minutes) are silently
+        discarded so stale gossip never pollutes an agent's context.
+        """
+        _MAX_AGE_MINUTES = 120
         async with self._lock:
-            messages = list(self._state["agents"][name]["inbox"])
+            current_abs = self._state["day"] * 1440 + self._state["sim_time"]
+            fresh = []
+            for msg in self._state["agents"][name]["inbox"]:
+                msg_day = msg.get("day", self._state["day"])
+                msg_sim = msg.get("sim_time", self._state["sim_time"])
+                msg_abs = msg_day * 1440 + msg_sim
+                if current_abs - msg_abs <= _MAX_AGE_MINUTES:
+                    fresh.append(msg)
             self._state["agents"][name]["inbox"] = []
-            return messages
+            return fresh
 
     async def add_event(self, event: str) -> None:
         """

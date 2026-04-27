@@ -246,14 +246,15 @@ async def talk_to(agent_name: str, target: str, message: str) -> str:
     if target not in all_agents:
         return f"No one named {target} here."
     time_info = world.get_time()
-    time_str = time_info["time_str"]
     await world.add_to_inbox(
         target,
         {
             "from": agent_name,
             "type": "message",
             "text": message,
-            "time": time_str,
+            "time": time_info["time_str"],
+            "sim_time": time_info["sim_time"],
+            "day": time_info["day"],
         },
     )
     return f"Message sent to {target}."
@@ -265,14 +266,15 @@ async def ask_about(agent_name: str, target: str, topic: str) -> str:
     if target not in all_agents:
         return f"No one named {target} here."
     time_info = world.get_time()
-    time_str = time_info["time_str"]
     await world.add_to_inbox(
         target,
         {
             "from": agent_name,
             "type": "question",
             "text": f"Question from {agent_name}: {topic}",
-            "time": time_str,
+            "time": time_info["time_str"],
+            "sim_time": time_info["sim_time"],
+            "day": time_info["day"],
         },
     )
     return f"Question sent to {target} about '{topic}'."
