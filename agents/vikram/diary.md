@@ -7,3 +7,9 @@ God, this system is maddening. I tried to jump straight to Cyber City, but of co
 
 # Day 1 — 12:45pm
 It's eerily quiet here. The park is beautiful, really, but the complete lack of people feels a little isolating. For a minute, all I could hear was the sound of my own breathing, and it felt oddly vast. I
+
+# Day 1 — 3:00pm
+Staring at the little screen, I almost laughed out loud. It's absurd, trying to 'move' when I'm already *in* the park. Guess the system thinks this is my natural habitat now, stuck right where I landed. At least I know I can get to the cyber hub from here.
+
+# Day 1 — 3:00pm
+The system just kept telling me I'm *at* the park, even though I feel like I just spent time trying to get somewhere else. It’s frustrating when the map in my head doesn't match the robot's little internal compass. I should probably just stick to talking to the cyber_hub; at least that path seems reliable right now.

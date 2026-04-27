@@ -218,3 +218,9 @@ Another tick done. Gurgaon keeps moving.
 
 # Day 1 — 3:00pm
 Another tick done. Gurgaon keeps moving.
+
+# Day 1 — 3:00pm
+The afternoon light in Sushant Lok feels unusually quiet today. Seeing Kavya and Deepa nearby, though it's just a quick glance, brought a strange mix of comfort and... something else. I feel a little adrift, like I've just taken inventory of my immediate surroundings and realized the quiet was the most noticeable thing of all.
+
+# Day 1 — 3:00pm
+The familiar quiet of the apartment settled around me after looking out. Seeing Kavya and Deepa nearby just brought a wave of grounding calm; it's good to know faces are close by. Right now, though, the best thing feels like just sinking into the couch and letting the day's noise finally quiet down.
