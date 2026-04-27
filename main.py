@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import logging
+import math
 import threading
 
 import arcade
@@ -67,6 +68,41 @@ _CONN_COLOR    = (80,  85, 115, 150)
 _BORDER_COLOR  = (230, 230, 230, 140)
 _LABEL_COLOR   = (210, 215, 220, 255)
 
+# ---------------------------------------------------------------------------
+# Agent visual constants (Story 4.2)
+# ---------------------------------------------------------------------------
+
+AGENT_RADIUS: int = 13          # pixel radius of each agent circle
+LERP_SPEED: float = 2.0         # lerp factor per second (arrives in ~0.5 s)
+
+# Unique colours per agent — bright enough to read against dark zones
+_AGENT_COLORS: dict[str, tuple[int, int, int]] = {
+    "arjun":  (255,  88,  65),
+    "priya":  (255, 138, 200),
+    "rahul":  ( 65, 210, 240),
+    "kavya":  (115, 228,  80),
+    "suresh": (255, 200,  48),
+    "neha":   (255,  72, 165),
+    "vikram": (125, 142, 228),
+    "deepa":  (255, 150,  95),
+    "rohan":  ( 62, 205, 182),
+    "anita":  (178,  88, 228),
+}
+
+# Two-letter initials shown inside each agent circle
+_AGENT_INITIALS: dict[str, str] = {
+    "arjun":  "AR",
+    "priya":  "PR",
+    "rahul":  "RA",
+    "kavya":  "KA",
+    "suresh": "SU",
+    "neha":   "NE",
+    "vikram": "VI",
+    "deepa":  "DE",
+    "rohan":  "RO",
+    "anita":  "AN",
+}
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -86,6 +122,27 @@ def _display_label(display_name: str) -> str:
         return display_name
     mid = len(words) // 2
     return " ".join(words[:mid]) + "\n" + " ".join(words[mid:])
+
+
+def _compute_spread(n: int) -> list[tuple[float, float]]:
+    """
+    Return pixel offsets for n agents co-located at the same zone.
+
+    Places agents evenly on a ring whose radius guarantees no two circles
+    overlap (center separation >= 2 * AGENT_RADIUS + 2 px).
+    Single agent stays at centre; 2+ agents orbit around it.
+    """
+    if n == 1:
+        return [(0.0, 0.0)]
+    min_sep = AGENT_RADIUS * 2 + 2
+    ring_r = max(20.0, min_sep / (2 * math.sin(math.pi / n)))
+    return [
+        (
+            ring_r * math.cos(math.tau * i / n - math.pi / 2),
+            ring_r * math.sin(math.tau * i / n - math.pi / 2),
+        )
+        for i in range(n)
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -134,6 +191,44 @@ class GurgaonWindow(arcade.Window):
                 )
             )
 
+        # Agent positions — initialised from current world state (no animation lag)
+        self._agent_cur: dict[str, list[float]] = {}
+        tgts = self._compute_agent_targets()
+        for name in _AGENT_COLORS:
+            tx, ty = tgts.get(name, (WINDOW_W / 2, WINDOW_H / 2))
+            self._agent_cur[name] = [tx, ty]
+
+    # ------------------------------------------------------------------
+    # Update (lerp agent positions)
+    # ------------------------------------------------------------------
+
+    def on_update(self, dt: float) -> None:
+        factor = min(1.0, dt * LERP_SPEED)
+        targets = self._compute_agent_targets()
+        for name, cur in self._agent_cur.items():
+            tx, ty = targets.get(name, (cur[0], cur[1]))
+            cur[0] += (tx - cur[0]) * factor
+            cur[1] += (ty - cur[1]) * factor
+
+    def _compute_agent_targets(self) -> dict[str, tuple[float, float]]:
+        """Read world state and assign spread-out target pixel positions."""
+        by_loc: dict[str, list[str]] = {}
+        for name in _AGENT_COLORS:
+            try:
+                loc_id = self.world.get_agent_location(name)
+            except Exception:
+                loc_id = "apartment"
+            by_loc.setdefault(loc_id, []).append(name)
+
+        targets: dict[str, tuple[float, float]] = {}
+        for loc_id, agents in by_loc.items():
+            base_px, base_py = self._loc_pixels.get(loc_id, (WINDOW_W / 2, WINDOW_H / 2))
+            offsets = _compute_spread(len(agents))
+            for i, name in enumerate(sorted(agents)):
+                ox, oy = offsets[i]
+                targets[name] = (base_px + ox, base_py + oy)
+        return targets
+
     # ------------------------------------------------------------------
     # Draw pipeline
     # ------------------------------------------------------------------
@@ -145,6 +240,7 @@ class GurgaonWindow(arcade.Window):
         self._draw_zones()
         for label in self._loc_labels:
             label.draw()
+        self._draw_agents()
         self._draw_hud()
 
     def _draw_grid(self) -> None:
@@ -174,6 +270,30 @@ class GurgaonWindow(arcade.Window):
             rgb = _ZONE_COLORS.get(loc.get("type", "home"), (110, 110, 110))
             arcade.draw_circle_filled(px, py, ZONE_RADIUS, (*rgb, 215))
             arcade.draw_circle_outline(px, py, ZONE_RADIUS, _BORDER_COLOR, 2)
+
+    def _draw_agents(self) -> None:
+        """Draw each agent as a coloured circle with two-letter initials."""
+        for name, cur in self._agent_cur.items():
+            px, py = cur[0], cur[1]
+            rgb = _AGENT_COLORS.get(name, (180, 180, 180))
+            initials = _AGENT_INITIALS.get(name, name[:2].upper())
+
+            # Drop shadow for legibility
+            arcade.draw_circle_filled(px + 2, py - 2, AGENT_RADIUS, (0, 0, 0, 100))
+            # Filled circle
+            arcade.draw_circle_filled(px, py, AGENT_RADIUS, (*rgb, 235))
+            # White border
+            arcade.draw_circle_outline(px, py, AGENT_RADIUS, (255, 255, 255, 180), 1)
+            # Initials
+            arcade.draw_text(
+                initials,
+                px, py,
+                color=(20, 20, 20),
+                font_size=7,
+                bold=True,
+                anchor_x="center",
+                anchor_y="center",
+            )
 
     def _draw_hud(self) -> None:
         """Minimal HUD strip at the bottom (fully fleshed out in Story 4.4)."""

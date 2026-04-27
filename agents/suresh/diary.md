@@ -7,3 +7,6 @@ Ugh, what was wrong with me? I just kept trying to call `eat()` with nothing, an
 
 # Day 1 — 3:00pm
 Another slow afternoon drift through Sector 29 Market. Seeing Anita nearby always throws my internal clock off; it’s a mix of relief and low-grade panic. I just needed to look at the chaos for a bit to feel grounded, to remind myself this isn't just a screen and a list of services.
+
+# Day 1 — 3:30pm
+The air here

@@ -27,3 +27,8 @@ The market is overwhelming, a beautiful, chaotic mess of smells and sounds. I sp
 
 # Day 1 — 3:00pm
 The market is absolutely buzzing today; the energy from all these stalls and people is almost overwhelming. Seeing Suresh just standing there near the textiles made me pause for a second, and I feel a weird mix of relief and nerves about running into someone I know. I think I just need to grab a little something to eat before I figure out what to do next.
+
+# Day 1 — 3:30pm
+Dear Diary,
+
+The market in Sector 29 is absolutely buzzing today; the smells from the street food are incredible, a mix of spices and something sweet. I spotted Suresh near the corner, which was a nice, unexpected little highlight. It feels almost chaotic out here, but in a good, exciting way that makes me feel... alive.

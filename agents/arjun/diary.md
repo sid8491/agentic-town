@@ -224,3 +224,6 @@ The afternoon light in Sushant Lok feels unusually quiet today. Seeing Kavya and
 
 # Day 1 — 3:00pm
 The familiar quiet of the apartment settled around me after looking out. Seeing Kavya and Deepa nearby just brought a wave of grounding calm; it's good to know faces are close by. Right now, though, the best thing feels like just sinking into the couch and letting the day's noise finally quiet down.
+
+# Day 1 — 3:30pm
+The afternoon air in the apartments feels heavy, thick with the scent of dust and the quiet hum of our usual life. Seeing Kavya and Deepa nearby is comforting, but right now, all I really want is the blessed silence of my room. I think I just need to shut my eyes for a while and let the noise fade out.

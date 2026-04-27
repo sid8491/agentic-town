@@ -31,3 +31,6 @@ Ugh, this Cyber Hub feels so echoey right now; like everyone else has already mo
 
 # Day 1 — 3:00pm
 The Cyber Hub is so bright and buzzing, but right now, the corner I'm in feels strangely quiet. It’s kind of loud out there with all the potential for noise—the music, the chatter—but seeing no one nearby is almost anticlimactic. I think I need to grab a coffee and just watch the little drama unfold from a safe distance.
+
+# Day 1 — 3:30pm
+It's so quiet here in the Cyber Hub, almost unnervingly so. I just spun around, expecting at least a few people milling about, but it’s just me and the echo of my own footsteps. I guess I needed a moment to just breathe in the atmosphere before diving into any of the 'socializing' buzz.

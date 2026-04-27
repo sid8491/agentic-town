@@ -7,3 +7,6 @@ Ugh, still standing in the echo chamber of the metro station. It’s painfully q
 
 # Day 1 — 3:00pm
 Ugh, just standing here in the metro hub, and nothing. It's so eerily quiet, even for a transit spot in the afternoon. I kept scanning the crowds, half expecting someone to bump into me or at least *do* something. Feeling a little adrift, honestly; just waiting for something to happen.
+
+# Day 1 — 3:30pm
+The metro station is so quiet right now, just the echo of my own footsteps. It feels strangely empty, like a stage set before anyone arrives. I really need a coffee; this waiting is making me restless.
