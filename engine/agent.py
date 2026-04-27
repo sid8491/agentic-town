@@ -287,6 +287,7 @@ async def reflect(state: AgentState) -> AgentState:
         reflection_prompt,
         system=f"You are {agent_name}, writing in your private diary.",
         max_tokens=500,
+        thinking=False,
     )
 
     # Use text response; fall back to a minimal entry if LLM fails silently

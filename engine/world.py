@@ -8,7 +8,10 @@ All async mutations acquire self._lock before writing.
 
 import asyncio
 import json
+import logging
 import os
+
+logger = logging.getLogger(__name__)
 
 
 class WorldState:
@@ -49,15 +52,23 @@ class WorldState:
         # Build fast location lookup
         self._loc_index = {loc["id"]: loc for loc in self._map["locations"]}
 
-    def save(self) -> None:
-        """Write the current in-memory state back to disk (pretty-printed)."""
+    def _write_state(self) -> None:
+        """Write the current in-memory state back to disk (pretty-printed).
+
+        Internal helper shared by both save() and save_async().
+        Callers are responsible for holding the lock when needed.
+        """
         with open(self._state_path, "w", encoding="utf-8") as f:
             json.dump(self._state, f, indent=2)
 
+    def save(self) -> None:
+        """Write the current in-memory state back to disk (sync, no lock)."""
+        self._write_state()
+
     async def save_async(self) -> None:
-        """asyncio-safe save: acquires lock then delegates to save()."""
+        """Asyncio-safe save — acquires the lock before writing."""
         async with self._lock:
-            self.save()
+            self._write_state()
 
     # ------------------------------------------------------------------
     # Time helpers
@@ -264,3 +275,110 @@ class WorldState:
         """Set the primary LLM provider (e.g. 'ollama', 'gemini')."""
         async with self._lock:
             self._state["llm_primary"] = provider
+
+
+# ---------------------------------------------------------------------------
+# SimulationLoop
+# ---------------------------------------------------------------------------
+
+
+class SimulationLoop:
+    """
+    Runs the autonomous tick loop for the full Gurgaon Town Life simulation.
+
+    Each tick:
+      1. Check if paused — if so, sleep and retry
+      2. Advance sim time by 15 game minutes
+      3. Decay all agents' needs
+      4. Run all 10 agents concurrently (asyncio.gather)
+      5. Save world state
+      6. Sleep for tick_interval real seconds
+
+    Tick interval = 3.0 / speed_multiplier
+    """
+
+    AGENTS = ["arjun", "priya", "rahul", "kavya", "suresh",
+              "neha", "vikram", "deepa", "rohan", "anita"]
+    TICK_MINUTES = 15      # game minutes advanced per tick
+    BASE_INTERVAL = 3.0    # real seconds per tick at 1x speed
+
+    def __init__(self, world: WorldState) -> None:
+        self.world = world
+        self._running = False
+        self._task: asyncio.Task | None = None
+        self._runners: dict = {}   # populated lazily on first run
+
+    def _get_runner(self, agent_name: str):
+        """Lazily import and create AgentRunner to avoid circular imports."""
+        if agent_name not in self._runners:
+            from engine.agent import AgentRunner
+            self._runners[agent_name] = AgentRunner(agent_name)
+        return self._runners[agent_name]
+
+    async def _run_agent_safe(self, agent_name: str) -> None:
+        """Run one agent tick, catching and logging any exception."""
+        try:
+            runner = self._get_runner(agent_name)
+            await runner.tick()
+        except Exception as exc:
+            logger.error("[loop] agent %s tick failed: %s", agent_name, exc)
+
+    async def _tick(self) -> None:
+        """Execute one full simulation tick."""
+        time_info = self.world.get_time()
+        logger.info(
+            "[loop] tick — Day %d %s | speed=%.1fx",
+            time_info["day"],
+            time_info["time_str"],
+            self.world._state.get("speed", 1.0),
+        )
+
+        # 1. Advance game time
+        self.world.advance_time(self.TICK_MINUTES)
+
+        # 2. Decay all agent needs
+        from engine.needs import decay_all_agents
+        await decay_all_agents(self.TICK_MINUTES)
+
+        # 3. Run all agents concurrently
+        await asyncio.gather(*[
+            self._run_agent_safe(name) for name in self.AGENTS
+        ])
+
+        # 4. Save world state
+        await self.world.save_async()
+
+    async def _loop(self) -> None:
+        """Main loop — runs until self._running is False."""
+        self._running = True
+        logger.info("[loop] simulation started")
+        while self._running:
+            paused = self.world._state.get("paused", False)
+            if paused:
+                await asyncio.sleep(0.5)
+                continue
+
+            await self._tick()
+
+            speed = self.world._state.get("speed", 1.0)
+            interval = self.BASE_INTERVAL / max(speed, 0.1)
+            await asyncio.sleep(interval)
+
+        logger.info("[loop] simulation stopped")
+
+    def start(self) -> asyncio.Task:
+        """Start the loop as a background asyncio task. Returns the task."""
+        if self._task and not self._task.done():
+            return self._task
+        self._task = asyncio.create_task(self._loop())
+        return self._task
+
+    def stop(self) -> None:
+        """Signal the loop to stop after the current tick completes."""
+        self._running = False
+        if self._task:
+            self._task.cancel()
+
+    @property
+    def running(self) -> bool:
+        return self._running and bool(self._task) and not self._task.done()

@@ -191,3 +191,9 @@ The morning light streaming into the apartment feels familiar, grounding. Seeing
 
 # Day 1 — 9:15am
 Nerves are always a mess, even when it's just a simple hello. I hope Kavya didn't find it too sudden or strange. Now I just have to wait and see if she responds, whether we exchange names or if this just ends here. Fingers crossed I haven't been weird.
+
+# Day 1 — 12:45pm
+The house feels quiet despite the presence of Kavya and Deepa. It’s strange—being in my own space, yet not feeling entirely alone. Just looking around confirmed the familiar chaos of things; everything is exactly where it should be. I think I need a minute to just process the fact that I'm home.
+
+# Day 1 — 1:00pm
+The afternoon light filtering through the living room window feels heavy today. Seeing Kavya and Deepa nearby brought a strange sense of calm, a comfortable quiet in the usual buzz of this apartment. I just needed a moment to simply *be*, to process the day’s noise and soak in the familiar rhythm of home.
