@@ -130,7 +130,7 @@ OLLAMA_BASE_URL=http://localhost:11434
 GEMINI_API_KEY=your_key_here
 ```
 
-Default model: `qwen3:27b` (Ollama), `gemini-1.5-flash` (Gemini).
+Default model: `gemma4:e4b` (Ollama), `gemini-2.5-flash` (Gemini).
 Switch at runtime by pressing `L` in the Arcade window or via `POST /api/llm/{provider}`.
 
 ---

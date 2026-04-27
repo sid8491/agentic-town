@@ -1,4 +1,4 @@
-# Gurgaon Town Life — Tech Stories
+6# Gurgaon Town Life — Tech Stories
 
 Stories are grouped by Epic/Phase. Each story has a clear definition of done.
 Start Phase 1 first — later phases depend on earlier ones.

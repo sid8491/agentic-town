@@ -86,7 +86,7 @@ The 10 agents: `arjun`, `priya`, `rahul`, `kavya`, `suresh`, `neha`, `vikram`, `
 
 ## Key Design Constraints
 
-- **Never call the Claude/Anthropic API** — LLM calls go through `engine/llm.py` using Ollama (`qwen3:27b`) or Gemini (`gemini-1.5-flash`) via `litellm`.
+- **Never call the Claude/Anthropic API** — LLM calls go through `engine/llm.py` using Ollama (`gemma4:e4b`) or Gemini (`gemini-2.5-flash`) via `litellm`.
 - **`soul.md` is never modified at runtime** — it defines personality and is injected read-only into agent context.
 - **Tools never call the LLM** — tool functions are pure Python that mutate state or files.
 - **WorldState writes always go through the asyncio Lock** — never write `state.json` directly from multiple coroutines.
