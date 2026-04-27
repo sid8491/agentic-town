@@ -1,0 +1,92 @@
+{
+  "locations": [
+    {
+      "id": "apartment",
+      "name": "apartment",
+      "display_name": "Sushant Lok Apartments",
+      "type": "home",
+      "description": "A mid-rise DDA-style apartment block in Sushant Lok, Gurgaon. Cramped corridors, a noisy lift, and the ever-present smell of someone's dal on the stove.",
+      "connected_to": ["metro", "sector29"],
+      "services": ["sleep", "rest", "privacy"],
+      "tile_x": 4,
+      "tile_y": 15
+    },
+    {
+      "id": "metro",
+      "name": "metro",
+      "display_name": "HUDA City Centre Metro",
+      "type": "transit",
+      "description": "The southern terminus of the Yellow Line, heaving with IT workers at rush hour. Chai stalls and autowallahs jostle outside the gates.",
+      "connected_to": ["apartment", "cyber_city", "cyber_hub"],
+      "services": ["transit", "chance_encounter"],
+      "tile_x": 14,
+      "tile_y": 15
+    },
+    {
+      "id": "cyber_city",
+      "name": "cyber_city",
+      "display_name": "Cyber City Business District",
+      "type": "work",
+      "description": "Glass towers and co-working floors where Gurgaon's tech industry hums around the clock. Cafeteria smells mix with the drone of air conditioning.",
+      "connected_to": ["metro"],
+      "services": ["work", "earn_money"],
+      "tile_x": 24,
+      "tile_y": 15
+    },
+    {
+      "id": "sector29",
+      "name": "sector29",
+      "display_name": "Sector 29 Market",
+      "type": "social",
+      "description": "An open-air market strip lined with shops, street carts, and the occasional pop-up stall. Equal parts chaotic and charming in the Gurgaon way.",
+      "connected_to": ["apartment", "dhaba", "supermarket", "cyber_hub"],
+      "services": ["buy_essentials", "street_food", "socialize"],
+      "tile_x": 4,
+      "tile_y": 8
+    },
+    {
+      "id": "dhaba",
+      "name": "dhaba",
+      "display_name": "Pappu Dhaba",
+      "type": "food",
+      "description": "A roadside dhaba famous for its butter roti and thick dal tadka. Wooden charpoys out front are occupied from sunrise to well past midnight.",
+      "connected_to": ["sector29"],
+      "services": ["eat_cheap", "gossip", "socialize"],
+      "tile_x": 4,
+      "tile_y": 3
+    },
+    {
+      "id": "supermarket",
+      "name": "supermarket",
+      "display_name": "Big Bazaar Supermarket",
+      "type": "shopping",
+      "description": "A neighbourhood supermarket carrying everything from atta to smartphones. The self-checkout queue is permanently broken.",
+      "connected_to": ["sector29"],
+      "services": ["buy_groceries", "buy_essentials"],
+      "tile_x": 10,
+      "tile_y": 3
+    },
+    {
+      "id": "cyber_hub",
+      "name": "cyber_hub",
+      "display_name": "Cyber Hub Social Quarter",
+      "type": "social",
+      "description": "The glitzy food-and-nightlife hub at the heart of Cyber City. Craft beer, biryani bowls, and loud music spill out of its open-plan lanes every evening.",
+      "connected_to": ["metro", "sector29", "park"],
+      "services": ["eat", "drink", "socialize", "gossip"],
+      "tile_x": 20,
+      "tile_y": 8
+    },
+    {
+      "id": "park",
+      "name": "park",
+      "display_name": "Leisure Valley Park",
+      "type": "leisure",
+      "description": "A long green strip cutting through the concrete sprawl of Gurgaon. Morning joggers share the path with aunties doing yoga and kids on bicycles.",
+      "connected_to": ["cyber_hub"],
+      "services": ["relax", "jog", "reduce_stress", "socialize"],
+      "tile_x": 24,
+      "tile_y": 3
+    }
+  ]
+}
