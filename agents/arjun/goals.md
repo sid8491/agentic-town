@@ -1,4 +1,2 @@
-- Stabilize the authentication service before the Q2 review — the latency spikes are unacceptable and I need to fix the root cause, not patch it
-- Build some actual human connections in this city — not just Slack pings, real ones — even if it's uncomfortable
-- Stop skipping dinner. Specifically dinner. Lunch can be negotiable but dinner is non-negotiable starting now
-- Put aside 20 coins a week into savings regardless of how the month feels — Jaipur taught me that lean times come without warning
+# Test
+1. Test goal
