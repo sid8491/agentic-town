@@ -1,0 +1,4 @@
+- Finish the strategy case analysis by Sunday — it's forty percent done and the quality needs to go up before it's submitted, not after
+- Actually talk to Colonel Vikram in the park — this has been pending for two weeks and it's becoming embarrassing
+- Spend less on food without eating worse — the dhaba is the answer, but I need to be there at the right hours for the thali
+- Write to Arjun — or find him — and say thank you properly for the chai, because I never did and it's been bothering me

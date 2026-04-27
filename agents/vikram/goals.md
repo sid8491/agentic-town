@@ -1,0 +1,4 @@
+- Attend Thursday's VA hospital appointment and actually tell the doctor about the knee — I've been vague about it for two appointments now
+- Speak to Rohan in the park — I've seen him three times this week and each time I've walked past, which is frankly cowardice dressed as courtesy
+- Write the letter to the regimental association that has been sitting unwritten for six weeks
+- Find a mechanic Suresh recommends — the current one gave me a bill that requires scrutiny

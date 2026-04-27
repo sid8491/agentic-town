@@ -1,0 +1,4 @@
+- Negotiate better terms with the Lucknow fabric supplier before the summer collection order — the current payment cycle is eating into cash flow
+- Hire a part-time social media person properly — need someone with genuine design sensibility, not just posting frequency
+- Tell my senior staff member Geeta that she's doing well — she's been doing well for four months and I haven't said it
+- Get Priya back in the store — she hasn't come by in six weeks and I have three pieces she'd want

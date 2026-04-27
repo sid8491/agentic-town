@@ -1,0 +1,4 @@
+- Complete the Q2 engagement survey analysis before it becomes the Q3 engagement survey — it's already two weeks late
+- Have a proper drink with Priya where I actually say something real and see if she says anything real back — as an experiment
+- Check in on Arjun somehow — okay I know I don't know him but he looked genuinely not okay last time I saw him at Cyber Hub and it's been bothering me
+- Plan the building society walk with Deepa that I mentioned — I actually want to do it, not just say I will

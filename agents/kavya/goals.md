@@ -1,0 +1,4 @@
+- Finish the Singapore client branding rebrand by Thursday — they've already extended once and I've run out of goodwill to spend
+- Find a silence window in the day for deep work — the 2pm hour has been too noisy lately and it's affecting output
+- Actually send the invoice to the Toronto client that's been sitting in drafts for eleven days
+- Introduce myself properly to Arjun — we've been corridor-waving for a year, which is borderline absurd
