@@ -15,7 +15,8 @@ Controls
   SPACE      Pause / resume
   ← / →      Slow down / speed up (0.25x → 0.5x → 1x → 2x → 4x)
   L          Toggle LLM (Ollama ↔ Gemini)
-  ESC        Close window
+  F11        Toggle fullscreen
+  ESC        Exit fullscreen / close inspector / close window
 """
 
 from __future__ import annotations
@@ -282,16 +283,26 @@ def _draw_hud_btn(x1: int, x2: int, cy: int, label: str, disabled: bool = False)
 class GurgaonWindow(arcade.Window):
     """Arcade window — renders the town map and relays control keys."""
 
-    def __init__(self, world: WorldState) -> None:
+    def __init__(self, world: WorldState, fullscreen: bool = False) -> None:
         super().__init__(
             WINDOW_W, WINDOW_H,
             "Gurgaon Town Life",
-            resizable=False,
+            fullscreen=fullscreen,
+            resizable=True,
             draw_rate=1 / 30,
             update_rate=1 / 30,
         )
         arcade.set_background_color(_MAP_BG)
         self.world = world
+
+        # Camera that maps the fixed logical canvas (WINDOW_W × WINDOW_H) to a
+        # letterboxed viewport on screen. Updated in on_resize so fullscreen and
+        # window-resize both work correctly.
+        self._camera = arcade.Camera2D(
+            position=(0.0, 0.0),
+            projection=arcade.LRBT(0, WINDOW_W, 0, WINDOW_H),
+            viewport=self._letterbox_viewport(),
+        )
 
         # Pre-compute pixel centres for each location
         self._loc_pixels: dict[str, tuple[int, int]] = {}
@@ -388,25 +399,48 @@ class GurgaonWindow(arcade.Window):
     # Draw pipeline
     # ------------------------------------------------------------------
 
+    def _letterbox_viewport(self) -> arcade.LRBT:
+        """Letterboxed viewport rect for the logical 960×690 canvas."""
+        scale = min(self.width / WINDOW_W, self.height / WINDOW_H)
+        vp_w = int(WINDOW_W * scale)
+        vp_h = int(WINDOW_H * scale)
+        vp_x = (self.width - vp_w) // 2
+        vp_y = (self.height - vp_h) // 2
+        return arcade.LRBT(vp_x, vp_x + vp_w, vp_y, vp_y + vp_h)
+
+    def _to_logical(self, x: float, y: float) -> tuple[float, float]:
+        """Convert mouse window coords to logical canvas coords."""
+        scale = min(self.width / WINDOW_W, self.height / WINDOW_H)
+        vp_x = (self.width - int(WINDOW_W * scale)) // 2
+        vp_y = (self.height - int(WINDOW_H * scale)) // 2
+        return (x - vp_x) / scale, (y - vp_y) / scale
+
+    def on_resize(self, width: int, height: int) -> None:
+        """Keep the letterbox viewport in sync when the window size changes."""
+        super().on_resize(width, height)
+        if hasattr(self, "_camera"):
+            self._camera.viewport = self._letterbox_viewport()
+
     def on_draw(self) -> None:
+        # Clear the full framebuffer first (covers letterbox bars with map colour).
         self.clear()
-        self._draw_grid()
-        self._draw_connections()
-        self._draw_zones()
-        for label in self._loc_labels:
-            label.draw()
-        self._draw_relationship_lines()
-        self._draw_agents()
-        self._draw_event_log()
-        self._draw_hud()
-        self._draw_inspect_panel()
-        # Daily summary modal overlay (Story 7.2) — drawn last so it's on top
-        global _summary_modal
-        if _summary_modal is not None:
-            if time.time() < _summary_modal["expires"]:
-                self._draw_summary_modal(_summary_modal)
-            else:
-                _summary_modal = None
+        with self._camera.activate():
+            self._draw_grid()
+            self._draw_connections()
+            self._draw_zones()
+            for label in self._loc_labels:
+                label.draw()
+            self._draw_relationship_lines()
+            self._draw_agents()
+            self._draw_event_log()
+            self._draw_hud()
+            self._draw_inspect_panel()
+            global _summary_modal
+            if _summary_modal is not None:
+                if time.time() < _summary_modal["expires"]:
+                    self._draw_summary_modal(_summary_modal)
+                else:
+                    _summary_modal = None
 
     def _draw_grid(self) -> None:
         """Faint tile grid — gives the map a graph-paper feel."""
@@ -788,17 +822,18 @@ class GurgaonWindow(arcade.Window):
             logger.warning("[window] LLM switch failed: %s", exc)
 
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int) -> None:
+        lx, ly = self._to_logical(x, y)
         if button == 1:  # left click
             # LLM button in HUD strip
-            lx1, lx2 = self._llm_btn
+            btn_x1, btn_x2 = self._llm_btn
             cy = HUD_HEIGHT // 2
-            if lx1 <= x <= lx2 and (cy - 14) <= y <= (cy + 14):
+            if btn_x1 <= lx <= btn_x2 and (cy - 14) <= ly <= (cy + 14):
                 self._toggle_llm()
                 return
 
             # Agent sprite click (map area only)
-            if y > HUD_HEIGHT:
-                hit = _agent_hit(self._agent_cur, x, y)
+            if ly > HUD_HEIGHT:
+                hit = _agent_hit(self._agent_cur, lx, ly)
                 if hit:
                     self._inspect_agent = hit
                     return
@@ -827,8 +862,13 @@ class GurgaonWindow(arcade.Window):
             self.world._state["speed"] = new
             logger.info("[window] speed -> %.2gx", new)
 
+        elif key == arcade.key.F11:
+            self.set_fullscreen(not self.fullscreen)
+
         elif key == arcade.key.ESCAPE:
-            if self._inspect_agent is not None:
+            if self.fullscreen:
+                self.set_fullscreen(False)
+            elif self._inspect_agent is not None:
                 self._inspect_agent = None
             else:
                 self.close()
@@ -1016,6 +1056,8 @@ def main() -> None:
                         help="Reset world state and agent runtime files (preserves soul.md)")
     parser.add_argument("--time", metavar="HH:MM", type=_parse_start_time,
                         help="Start (or override) simulation time, e.g. --time 14:30")
+    parser.add_argument("--fullscreen", action="store_true",
+                        help="Start in fullscreen mode (F11 toggles at runtime)")
     args = parser.parse_args()
 
     if args.reset:
@@ -1040,9 +1082,9 @@ def main() -> None:
 
     logger.info("[main] Web viewer: http://localhost:8000")
     logger.info("[main] LLM: %s (%s)", llm_config.get_primary(), llm_config.get_model())
-    logger.info("[main] Controls: SPACE=pause  L=LLM  ←/→=speed  ESC=quit")
+    logger.info("[main] Controls: SPACE=pause  L=LLM  ←/→=speed  F11=fullscreen  ESC=quit")
 
-    window = GurgaonWindow(world)
+    window = GurgaonWindow(world, fullscreen=args.fullscreen)
     try:
         arcade.run()
     except KeyboardInterrupt:

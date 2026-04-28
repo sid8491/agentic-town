@@ -10,3 +10,12 @@ Whew, finally in the metro. The rush of people here is a weird energy—so many 
 
 # Day 1 — 7:00am
 Finally, I'm settled in the apartment. The silence here is a little unnerving, but in a good way—like I can actually *hear* myself think for once. I just feel a deep exhale of relief, like shedding a heavy coat I didn't even realize I was wearing. Tomorrow, I think, I can actually start putting things in order.
+
+# Day 1 — 9:00am
+Finally in Cyber City. The buzz of the place is almost too much—all glass and expensive coffee smells mixed with a low hum of energy. It feels both overwhelming and exhilarating, like I've landed right in the heart of where everything important happens. Time to actually find a decent place to eat that isn't overpriced.
+
+# Day 1 — 9:15am
+Ugh, my brain feels fried, but the little '25 coins' notification is actually nice. It's always a little boost, you know? I swear, that project was going to drain me dry today, but seeing that "Worked" confirmation feels like a small win against the general chaos of life. Time for something totally mindless, maybe just scrolling through dog pictures.
+
+# Day 1 — 9:30am
+Ugh, finally done with that monster project. Seeing "Worked" pop up always feels like a tiny victory dance in my head, and getting 25 coins feels almost laughably good right now. Man, I needed this little boost; I can actually breathe for a minute.
