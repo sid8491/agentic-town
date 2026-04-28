@@ -856,6 +856,11 @@ def main() -> None:
     world = WorldState()
     world.load_or_init()
 
+    # Wire the running WorldState into the FastAPI module so its /api/state
+    # /api/map and /api/agent/{name}/diary endpoints can serve live data.
+    import server as _server
+    _server.set_world(world)
+
     threading.Thread(target=_run_server_thread, daemon=True).start()
     threading.Thread(target=_run_sim_thread, args=(world,), daemon=True).start()
 

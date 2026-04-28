@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Gurgaon Town Life — Web Viewer</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #1a1a1a;
+    color: #ddd;
+    font-family: system-ui, sans-serif;
+    min-height: 100vh;
+  }
+  #error-banner {
+    display: none;
+    background: #ff6b6b;
+    color: #fff;
+    padding: 6px 12px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 13px;
+  }
+  #error-banner.visible { display: block; }
+  #fatal {
+    display: none;
+    background: #ff6b6b;
+    color: #fff;
+    padding: 20px;
+    text-align: center;
+    font-size: 16px;
+  }
+  #fatal.visible { display: block; }
+  #app {
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    gap: 12px;
+  }
+  #main-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  #canvas-wrap {
+    position: relative;
+  }
+  canvas {
+    background: #2a2a2a;
+    display: block;
+    border: 1px solid #333;
+    cursor: pointer;
+  }
+  #event-log {
+    width: 320px;
+    background: #222;
+    border: 1px solid #333;
+    padding: 10px;
+    height: 640px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 11px;
+  }
+  #event-log h3 {
+    margin: 0 0 8px 0;
+    color: #fff;
+    font-size: 13px;
+    font-family: system-ui, sans-serif;
+    border-bottom: 1px solid #4a9eff;
+    padding-bottom: 4px;
+  }
+  .event-line {
+    padding: 2px 0;
+    color: #ddd;
+    word-wrap: break-word;
+  }
+  #hud {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    background: #222;
+    border: 1px solid #333;
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+  #hud .item { color: #ddd; }
+  #hud .label { color: #888; margin-right: 4px; font-size: 12px; }
+  #hud .status-running { color: #51cf66; font-weight: bold; }
+  #hud .status-paused  { color: #ff6b6b; font-weight: bold; }
+  #llm-btn {
+    background: #4a9eff;
+    color: #fff;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: system-ui, sans-serif;
+  }
+  #llm-btn:hover { background: #3a8eef; }
+  #llm-btn:disabled { opacity: 0.6; cursor: wait; }
+
+  /* Inspector overlay */
+  #inspector {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 420px;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    padding: 24px;
+    overflow-y: auto;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    z-index: 100;
+    border-left: 2px solid #4a9eff;
+  }
+  #inspector.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  #inspector h2 {
+    margin: 0 0 4px 0;
+    font-size: 26px;
+    color: #fff;
+    text-transform: capitalize;
+  }
+  #inspector .loc {
+    color: #4a9eff;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+  #inspector .needs { margin-bottom: 16px; }
+  #inspector .need-row {
+    display: flex;
+    align-items: center;
+    margin: 6px 0;
+    font-size: 13px;
+  }
+  #inspector .need-label {
+    width: 70px;
+    color: #aaa;
+  }
+  #inspector .bar {
+    flex: 1;
+    height: 12px;
+    background: #333;
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 0 8px;
+  }
+  #inspector .bar-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+  }
+  #inspector .need-val {
+    width: 40px;
+    text-align: right;
+    color: #ddd;
+    font-family: monospace;
+  }
+  #inspector .coins {
+    margin-bottom: 16px;
+    font-size: 14px;
+    color: #ffd966;
+  }
+  #inspector hr {
+    border: none;
+    border-top: 1px solid #4a9eff;
+    margin: 14px 0;
+  }
+  #inspector h4 {
+    margin: 12px 0 4px 0;
+    color: #4a9eff;
+    font-size: 14px;
+  }
+  #inspector p {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    color: #ddd;
+    white-space: pre-wrap;
+    line-height: 1.4;
+  }
+  #inspector-close {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 28px;
+    cursor: pointer;
+    line-height: 1;
+  }
+  #inspector-close:hover { color: #4a9eff; }
+  #diary-loading {
+    color: #888;
+    font-style: italic;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+
+<div id="error-banner">Reconnecting...</div>
+<div id="fatal"></div>
+
+<div id="app">
+  <div id="main-row">
+    <div id="canvas-wrap">
+      <canvas id="canvas" width="960" height="640"></canvas>
+    </div>
+    <div id="event-log">
+      <h3>EVENT LOG</h3>
+      <div id="event-list"></div>
+    </div>
+  </div>
+
+  <div id="hud">
+    <div class="item"><span class="label">Day</span><span id="hud-day">-</span></div>
+    <div class="item"><span class="label">Time</span><span id="hud-time">-</span></div>
+    <div class="item"><span class="label">Speed</span><span id="hud-speed">-</span></div>
+    <div class="item"><span class="label">Status</span><span id="hud-status">-</span></div>
+    <div class="item"><span class="label">LLM</span>
+      <button id="llm-btn">-</button>
+    </div>
+  </div>
+</div>
+
+<div id="inspector">
+  <button id="inspector-close" title="Close">&times;</button>
+  <h2 id="ins-name">-</h2>
+  <div class="loc" id="ins-loc">-</div>
+
+  <div class="needs">
+    <div class="need-row">
+      <span class="need-label">Hunger</span>
+      <div class="bar"><div class="bar-fill" id="ins-hunger-bar" style="width:0%; background:#ff6b6b;"></div></div>
+      <span class="need-val" id="ins-hunger-val">0</span>
+    </div>
+    <div class="need-row">
+      <span class="need-label">Energy</span>
+      <div class="bar"><div class="bar-fill" id="ins-energy-bar" style="width:0%; background:#4a9eff;"></div></div>
+      <span class="need-val" id="ins-energy-val">0</span>
+    </div>
+    <div class="need-row">
+      <span class="need-label">Mood</span>
+      <div class="bar"><div class="bar-fill" id="ins-mood-bar" style="width:0%; background:#51cf66;"></div></div>
+      <span class="need-val" id="ins-mood-val">0</span>
+    </div>
+  </div>
+
+  <div class="coins" id="ins-coins">Coins: 0</div>
+
+  <hr>
+  <h4 style="color:#fff; border-bottom:1px solid #4a9eff; padding-bottom:4px;">Recent Diary</h4>
+  <div id="ins-diary">
+    <div id="diary-loading">Loading diary...</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // -----------------------------------------------------------------------
+  // State
+  // -----------------------------------------------------------------------
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+
+  let mapData = null;          // { locations: [...] }
+  let locById = {};            // id -> location
+  let stateData = null;        // latest /api/state response
+  const agents = {};           // name -> { displayX, displayY, targetX, targetY, ... }
+
+  // Tile geometry — must match engine/main.py constants.
+  const TILE_SIZE = 32;
+  const BOX_W = 110;
+  const BOX_H = 70;
+
+  // Color per location type (map.json doesn't ship colors).
+  const TYPE_COLOR = {
+    home:     '#6b8e6b',
+    transit:  '#6b7a8e',
+    work:     '#8e7a6b',
+    social:   '#8e6b8e',
+    food:     '#cc8844',
+    shopping: '#a89e6b',
+    leisure:  '#51a86b'
+  };
+
+  function tilePixel(loc) {
+    return {
+      x: loc.tile_x * TILE_SIZE + TILE_SIZE / 2,
+      y: loc.tile_y * TILE_SIZE + TILE_SIZE / 2
+    };
+  }
+  function locBox(loc) {
+    const c = tilePixel(loc);
+    return { x: c.x - BOX_W / 2, y: c.y - BOX_H / 2, w: BOX_W, h: BOX_H };
+  }
+
+  // Palette of 10 distinct colours, one per agent in alphabetical order.
+  const AGENT_NAMES = ['anita', 'arjun', 'deepa', 'kavya', 'neha',
+                       'priya', 'rahul', 'rohan', 'suresh', 'vikram'];
+  const PALETTE = [
+    '#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6',
+    '#1abc9c', '#e67e22', '#34495e', '#d35400', '#16a085'
+  ];
+  const agentColor = {};
+  AGENT_NAMES.forEach((n, i) => { agentColor[n] = PALETTE[i % PALETTE.length]; });
+
+  let inspectorAgent = null;   // name of agent currently inspected, or null
+
+  // -----------------------------------------------------------------------
+  // Error banner
+  // -----------------------------------------------------------------------
+  const banner = document.getElementById('error-banner');
+  function showBanner() { banner.classList.add('visible'); }
+  function hideBanner() { banner.classList.remove('visible'); }
+
+  function showFatal(msg) {
+    const el = document.getElementById('fatal');
+    el.textContent = msg;
+    el.classList.add('visible');
+  }
+
+  // -----------------------------------------------------------------------
+  // API helpers
+  // -----------------------------------------------------------------------
+  async function fetchJSON(url, opts) {
+    const resp = await fetch(url, opts);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    return resp.json();
+  }
+
+  async function loadMap(retries) {
+    retries = retries === undefined ? 5 : retries;
+    try {
+      mapData = await fetchJSON('/api/map');
+      locById = {};
+      (mapData.locations || []).forEach(l => { locById[l.id] = l; });
+    } catch (e) {
+      if (retries > 0) {
+        setTimeout(() => loadMap(retries - 1), 1000);
+      } else {
+        showFatal('Failed to load /api/map after 5 retries. Is the server running?');
+      }
+    }
+  }
+
+  async function pollState() {
+    try {
+      const data = await fetchJSON('/api/state');
+      stateData = data;
+      hideBanner();
+      onStateUpdate();
+    } catch (e) {
+      showBanner();
+    }
+  }
+
+  async function getLLM() {
+    try {
+      const data = await fetchJSON('/api/llm');
+      setLLMButton(data.provider);
+    } catch (e) { /* ignore */ }
+  }
+
+  async function toggleLLM() {
+    if (!stateData) return;
+    const cur = (stateData.llm_primary || 'ollama').toLowerCase();
+    const next = cur === 'ollama' ? 'gemini' : 'ollama';
+    const btn = document.getElementById('llm-btn');
+    btn.disabled = true;
+    try {
+      await fetchJSON('/api/llm/' + next, { method: 'POST' });
+      await pollState();
+    } catch (e) {
+      // swallow; banner will show on next poll if state fails
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // State update handling
+  // -----------------------------------------------------------------------
+  function locCenter(locId) {
+    const l = locById[locId];
+    if (!l) return { x: canvas.width / 2, y: canvas.height / 2 };
+    return tilePixel(l);
+  }
+
+  // Compute offset for the i-th agent at a location with n total agents,
+  // so they don't all sit on top of each other.
+  function agentOffset(index) {
+    // 2-column grid offset by ±15
+    const col = index % 2;
+    const row = Math.floor(index / 2);
+    const dx = (col === 0 ? -15 : 15);
+    const dy = -15 + row * 30;
+    return { dx: dx, dy: dy };
+  }
+
+  function onStateUpdate() {
+    if (!stateData || !stateData.agents) return;
+
+    // Group agents by location to compute stable offsets
+    const groupCounts = {};
+    const sortedNames = Object.keys(stateData.agents).sort();
+
+    for (const name of sortedNames) {
+      const a = stateData.agents[name];
+      const locId = a.location;
+      const idx = groupCounts[locId] || 0;
+      groupCounts[locId] = idx + 1;
+
+      const center = locCenter(locId);
+      const off = agentOffset(idx);
+      const tx = center.x + off.dx;
+      const ty = center.y + off.dy;
+
+      if (!agents[name]) {
+        agents[name] = {
+          displayX: tx, displayY: ty,
+          targetX: tx, targetY: ty,
+          location: locId
+        };
+      } else {
+        agents[name].targetX = tx;
+        agents[name].targetY = ty;
+        agents[name].location = locId;
+      }
+    }
+
+    // HUD
+    document.getElementById('hud-day').textContent = stateData.day != null ? stateData.day : '-';
+    document.getElementById('hud-time').textContent = stateData.time_str || '-';
+    const speed = stateData.speed != null ? stateData.speed : 1;
+    document.getElementById('hud-speed').textContent = speed + 'x';
+    const statusEl = document.getElementById('hud-status');
+    if (stateData.paused) {
+      statusEl.textContent = 'PAUSED';
+      statusEl.className = 'status-paused';
+    } else {
+      statusEl.textContent = 'RUNNING';
+      statusEl.className = 'status-running';
+    }
+    setLLMButton(stateData.llm_primary);
+
+    // Event log (newest at top)
+    const evList = document.getElementById('event-list');
+    evList.innerHTML = '';
+    const events = (stateData.events || []).slice(-20).reverse();
+    for (const ev of events) {
+      const line = document.createElement('div');
+      line.className = 'event-line';
+      const time = ev.time || '';
+      const text = ev.text || '';
+      let combined = '[' + time + '] ' + text;
+      if (combined.length > 60) combined = combined.substring(0, 59) + '…';
+      line.textContent = combined;
+      evList.appendChild(line);
+    }
+
+    // Refresh inspector if open (for live needs/coins/location)
+    if (inspectorAgent) refreshInspectorLive();
+  }
+
+  function setLLMButton(provider) {
+    const btn = document.getElementById('llm-btn');
+    if (!provider) { btn.textContent = '-'; return; }
+    const p = provider.toLowerCase();
+    btn.textContent = p === 'gemini' ? 'Gemini' : 'Ollama';
+  }
+
+  // -----------------------------------------------------------------------
+  // Drawing
+  // -----------------------------------------------------------------------
+  function moodRingColor(mood) {
+    if (mood >= 70) return '#51cf66';
+    if (mood >= 40) return '#ffd43b';
+    return '#ff6b6b';
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 1. Connection lines (gray, 1px), avoid drawing twice
+    if (mapData) {
+      ctx.strokeStyle = '#444';
+      ctx.lineWidth = 1;
+      const drawn = new Set();
+      for (const loc of mapData.locations) {
+        const c1 = locCenter(loc.id);
+        for (const other of (loc.connected_to || [])) {
+          const key = loc.id < other ? loc.id + '|' + other : other + '|' + loc.id;
+          if (drawn.has(key)) continue;
+          drawn.add(key);
+          if (!locById[other]) continue;
+          const c2 = locCenter(other);
+          ctx.beginPath();
+          ctx.moveTo(c1.x, c1.y);
+          ctx.lineTo(c2.x, c2.y);
+          ctx.stroke();
+        }
+      }
+
+      // 2. Locations
+      ctx.lineWidth = 2;
+      for (const loc of mapData.locations) {
+        const b = locBox(loc);
+        ctx.fillStyle = TYPE_COLOR[loc.type] || '#666';
+        ctx.fillRect(b.x, b.y, b.w, b.h);
+        ctx.strokeStyle = '#000';
+        ctx.strokeRect(b.x, b.y, b.w, b.h);
+        ctx.fillStyle = '#fff';
+        ctx.font = '11px system-ui, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(loc.display_name || loc.id, b.x + 4, b.y + 4);
+      }
+    }
+
+    // 3. Agents — lerp positions
+    if (stateData && stateData.agents) {
+      for (const name of Object.keys(agents)) {
+        const a = agents[name];
+        a.displayX += (a.targetX - a.displayX) * 0.1;
+        a.displayY += (a.targetY - a.displayY) * 0.1;
+      }
+
+      const sortedNames = Object.keys(stateData.agents).sort();
+      for (const name of sortedNames) {
+        const ag = stateData.agents[name];
+        const a = agents[name];
+        if (!a) continue;
+
+        const x = a.displayX, y = a.displayY;
+        const r = 14;
+
+        // Ring (mood color)
+        ctx.beginPath();
+        ctx.arc(x, y, r + 2, 0, Math.PI * 2);
+        ctx.fillStyle = moodRingColor(ag.mood != null ? ag.mood : 50);
+        ctx.fill();
+
+        // Inner fill
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = agentColor[name] || '#888';
+        ctx.fill();
+
+        // Initial
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 14px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText((name[0] || '?').toUpperCase(), x, y);
+
+        // Name tag (above)
+        ctx.font = '10px system-ui, sans-serif';
+        ctx.fillStyle = '#ddd';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(name, x, y - r - 4);
+
+        // Thought bubble
+        const action = (ag.last_action || '').trim();
+        if (action && action !== 'waking up') {
+          let txt = action;
+          if (txt.length > 18) txt = txt.substring(0, 18) + '…';
+          ctx.font = '10px system-ui, sans-serif';
+          const padX = 4, padY = 2;
+          const metrics = ctx.measureText(txt);
+          const tw = metrics.width + padX * 2;
+          const th = 14;
+          const bx = x - tw / 2;
+          const by = y + r + 4;
+          ctx.fillStyle = 'rgba(255,255,255,0.9)';
+          ctx.fillRect(bx, by, tw, th);
+          ctx.strokeStyle = '#333';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(bx, by, tw, th);
+          ctx.fillStyle = '#222';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          ctx.fillText(txt, x, by + padY);
+        }
+      }
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  // -----------------------------------------------------------------------
+  // Click → inspect
+  // -----------------------------------------------------------------------
+  canvas.addEventListener('click', (e) => {
+    if (!stateData || !stateData.agents) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const cx = (e.clientX - rect.left) * scaleX;
+    const cy = (e.clientY - rect.top) * scaleY;
+
+    let hit = null;
+    for (const name of Object.keys(agents)) {
+      const a = agents[name];
+      const dx = cx - a.displayX;
+      const dy = cy - a.displayY;
+      if (dx * dx + dy * dy <= (14 + 4) * (14 + 4)) {
+        hit = name;
+        break;
+      }
+    }
+    if (hit) openInspector(hit);
+  });
+
+  async function openInspector(name) {
+    inspectorAgent = name;
+    const panel = document.getElementById('inspector');
+    panel.classList.add('visible');
+    document.getElementById('ins-name').textContent = name;
+
+    refreshInspectorLive();
+
+    // Diary
+    const diaryEl = document.getElementById('ins-diary');
+    diaryEl.innerHTML = '<div id="diary-loading">Loading diary...</div>';
+    try {
+      const data = await fetchJSON('/api/agent/' + encodeURIComponent(name) + '/diary');
+      const entries = (data.entries || []).slice(0, 5);
+      if (entries.length === 0) {
+        diaryEl.innerHTML = '<p style="color:#888;font-style:italic;">No diary entries yet.</p>';
+      } else {
+        diaryEl.innerHTML = '';
+        for (const ent of entries) {
+          const h = document.createElement('h4');
+          h.textContent = ent.day_header || '';
+          diaryEl.appendChild(h);
+          const p = document.createElement('p');
+          p.textContent = ent.body || '';
+          diaryEl.appendChild(p);
+        }
+      }
+    } catch (e) {
+      diaryEl.innerHTML = '<p style="color:#ff6b6b;">Failed to load diary.</p>';
+    }
+  }
+
+  function refreshInspectorLive() {
+    if (!inspectorAgent || !stateData || !stateData.agents) return;
+    const ag = stateData.agents[inspectorAgent];
+    if (!ag) return;
+    const loc = locById[ag.location];
+    document.getElementById('ins-loc').textContent =
+      'At: ' + (loc ? loc.display_name : ag.location || 'unknown');
+
+    const setBar = (id, val) => {
+      const v = Math.max(0, Math.min(100, val || 0));
+      document.getElementById(id + '-bar').style.width = v + '%';
+      document.getElementById(id + '-val').textContent = Math.round(v);
+    };
+    setBar('ins-hunger', ag.hunger);
+    setBar('ins-energy', ag.energy);
+    setBar('ins-mood', ag.mood);
+
+    document.getElementById('ins-coins').textContent = 'Coins: ' + (ag.coins != null ? ag.coins : 0);
+  }
+
+  function closeInspector() {
+    inspectorAgent = null;
+    document.getElementById('inspector').classList.remove('visible');
+  }
+
+  document.getElementById('inspector-close').addEventListener('click', closeInspector);
+
+  document.addEventListener('click', (e) => {
+    const panel = document.getElementById('inspector');
+    if (!panel.classList.contains('visible')) return;
+    if (panel.contains(e.target)) return;
+    if (e.target === canvas) return; // canvas handler decides
+    closeInspector();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeInspector();
+  });
+
+  // -----------------------------------------------------------------------
+  // LLM button
+  // -----------------------------------------------------------------------
+  document.getElementById('llm-btn').addEventListener('click', toggleLLM);
+
+  // -----------------------------------------------------------------------
+  // Boot
+  // -----------------------------------------------------------------------
+  loadMap();
+  pollState();
+  getLLM();
+  setInterval(pollState, 2000);
+  requestAnimationFrame(draw);
+
+})();
+</script>
+</body>
+</html>

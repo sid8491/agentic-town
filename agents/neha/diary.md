@@ -85,3 +85,111 @@ Ugh, finally off the crowded street and into the relative calm of the metro. It�
 
 # Day 2 — 3:30am
 Finally, I'm settled in at the apartments. There's a weird mix of relief and quiet chaos right now—so much unpacking to do. At least I'm physically closer to everything I need, which feels like a huge weight off my chest. Time for a cup of tea and a deep breath.
+
+# Day 2 — 5:00am
+Woke up feeling genuinely rested, like the world got a little softer around the edges. That deep sleep really did the trick; I feel a solid surge of energy humming just under my skin. I think I can actually tackle that reading list today without my brain staging a protest.
+
+# Day 2 — 5:15am
+Ugh, the pre-dawn air is so quiet here at the apartments, except for the faint sound of Deepa getting ready. It feels weird being awake while the whole world is still sleeping. I think I just need to wrap myself in my comfiest blanket and pretend this morning doesn't exist for at least an hour.
+
+# Day 2 — 5:30am
+The deepest sleep I’ve had in ages. Waking up feels... light, almost weightless. I can actually feel the energy bubbling back up, making those little shadows under my eyes finally recede. Today is going to be a genuinely good day.
+
+# Day 2 — 5:45am
+Ugh, finally here at the Metro. The platform is already buzzing with people rushing everywhere; it feels like an energy wave. I just need to find the right line and breathe for a second before the crowd swallows me whole.
+
+# Day 2 — 6:00am
+Ugh, finally settled into the apartment. It feels... quiet, in a good way, a bit cocoon-like after the chaos of the day. I just dropped my bags and I feel this weird, wonderful sense of stillness wash over me. Now, for a cup of tea and maybe just staring out the window for a while.
+
+# Day 2 — 6:15am
+Ugh, early start again. Seeing Anita nearby even before my eyes are fully open is a weird mix of good and bad; I guess I'm not alone in this house, which is nice, but I was really craving that pre-dawn quiet. Right now, the biggest luxury is just knowing I can finally settle in and *not* hear anything for a few hours. Maybe I should just use the 'sleep' service and pretend none of this day exists for a while.
+
+# Day 2 — 6:30am
+Ugh, my internal check-in just ran, and I'm relieved to see my energy is still humming along at 95%. It’s nice knowing I don't need to worry about crashing anytime soon, even if I do feel that familiar, low-grade grumble of needing a proper snack. At least the 180 coins give me some breathing room for tonight's little indulgence.
+
+# Day 2 — 6:45am
+Ugh, seriously? I just *knew* I had bread, and my stomach is already starting to rumble. It's so frustrating when you're convinced something is right there, and the universe reminds you otherwise. Guess I'll just survive on this lukewarm tea for now.
+
+# Day 2 — 7:00am
+Ugh, finally here at the Metro. The air in the station feels so electric, buzzing with people rushing past. I feel a little overwhelmed by the sheer volume of noise, but at least I'm moving forward, which is a small victory today. Time to find a spot to just breathe for a minute.
+
+# Day 2 — 7:15am
+Ugh, seriously? I thought I kept some snacks in my bag. It's so frustrating when you're genuinely hungry and nothing comes through. I guess I'll have to make a trip back to the store; I'm already feeling a little grumpy about it.
+
+# Day 2 — 7:30am
+Dear Diary,
+
+Wow, Cyber City is overwhelming—it’s a sensory overload of neon and humming tech. Everything here feels hyper-efficient, almost too perfect, which is weirdly exciting. I just hope I can navigate this dazzling mess without getting lost in the data streams.
+
+# Day 2 — 7:45am
+Whew, finally done with that big chunk of work. Forty coins felt really good to see added to my total. I feel a wave of tired satisfaction washing over me; it's nice to know that effort actually pays off. Time for a little break and maybe some tea.
+
+# Day 2 — 8:00am
+Ugh, I don't know what's up with this thing today. I tried to say hi to Priya, just a casual check-in, and it gave me that blank 'No one named Priya here' error. It’s so frustrating; I just wanted a little conversation, and now I feel like I’ve sent a message into the digital void.
+
+# Day 2 — 8:15am
+Ugh, finally hit send. My fingers were hovering over that message to Priya for ages, like it was a massive decision. I really hope she understands that I meant it when I said I wanted to talk about *stuff*, not just the usual gossip. Now I'm just going to sit here and wait for her to reply, which feels both agonizing and strangely hopeful.
+
+# Day 2 — 8:30am
+Ugh, finally done with the work. Forty coins! I feel this little surge of relief, like a weight I didn't even realize I was carrying has just lifted off my shoulders. Now I can actually sit down with a proper cup of tea and just *breathe*. Tomorrow, I can dream of more coins and maybe a little retail therapy.
+
+# Day 2 — 8:45am
+Dear Diary,
+
+Finally got Priya's attention. I really needed that catch-up, felt like we’ve been talking 'when we see each other' for months. I hope she's free to actually chat; I have so much I want to tell her.
+
+# Day 2 — 9:00am
+Ugh, I actually got that done. I feel this weird little surge of energy, like I just unlocked a bonus level in a game. Forty coins feels good, though—enough for a decent coffee break tomorrow. Time to actually put these coins to use!
+
+# Day 2 — 9:15am
+My heart is doing this weird little fluttery thing right now. Talking to Priya felt heavy, like I had a big, clumsy truth bottled up that needed to get out. I just really hope she understood how much I needed to say it.
+
+# Day 2 — 9:30am
+Ugh, finally done with that project. I feel a little drained, honestly, but also so relieved. Forty coins feels like a nice little cushion for this week's groceries, which is definitely a win. Time for some tea and to just sit in the quiet for a bit.
+
+# Day 2 — 9:45am
+Ugh, what was that? I just messaged Priya, feeling so ready to chat, and the system just blinked back that she isn't here. I feel so silly, like I’m shouting into an empty room. Guess I have to wait for someone to actually be online.
+
+# Day 2 — 10:00am
+Ugh, finally done with that whole project. My brain feels fuzzy, like I’ve been running a marathon in my head all day. But seeing those 40 coins pop up… it feels really satisfying, a little treat for all the mental sweat. Time for a proper cup of tea and to just *breathe*.
+
+# Day 2 — 10:15am
+Ugh, my palms are still a little sweaty from sending that message to Priya. I really hoped she’d be free to chat; I feel like there’s something I need to properly run by her, but I'm also so nervous about what she might say. Now I just have to sit here and stare at my phone, waiting for her reply.
+
+# Day 2 — 10:30am
+Dear Diary,
+
+Whew, I finally finished that big task at work. It feels so good to see it marked as done, almost like a little weight lifted off my chest. Forty coins feels nice, but honestly, the feeling of accomplishment is the real reward today. Time for a little break and maybe some snacks.
+
+# Day 2 — 10:45am
+Ugh, what was that? I keep trying to reach out to Priya, but it just keeps saying she’s not here. It’s actually pretty annoying; I was really hoping to finally get that proper chat going. Now I guess I just have to wait and try again somehow.
+
+# Day 2 — 11:00am
+Ugh, I can finally relax. That work felt like it drained every last drop of energy, but seeing those 40 coins pop up feels so good. It’s nice knowing I actually made something out of the day's effort. I think I deserve a really long cup of tea now.
+
+# Day 2 — 11:15am
+Ugh, I feel so silly right now. I messaged Priya asking to properly catch up, and the system just hit me with "No one named Priya here." It was such a small thing, but it just made me feel a little bit clumsy and out of sync today. Maybe I should just send a proper text instead of relying on these clunky search things.
+
+# Day 2 — 11:30am
+Ugh, my brain feels fried right now, but the little "Worked" notice actually feels *good*. Forty coins! It’s not life-changing money, but it’s enough to buy that fancy chai I’ve been eyeing. I need to sit down for a proper cup and just breathe before I tackle anything else.
+
+# Day 2 — 11:45am
+Ugh, finally done with the big project. Seeing that "Worked" message pop up and realizing the coins actually hit my balance feels *so* good. I can breathe out, honestly. Tonight is going to be a proper celebration dinner!
+
+# Day 2 — 12:00pm
+Ugh, what was that? Just feeling so ready to talk to Priya about something important, and then... nothing. It was like talking into a void. I actually feel a little deflated, like I just put energy into the wrong place. Maybe I just need a coffee and to sit with my thoughts for a while.
+
+# Day 2 — 12:15pm
+Ugh, finally done with the work; I feel this huge wave of relief wash over me right now. Seeing those 40 coins pop up makes the effort feel instantly worthwhile. I deserve a nice, long cup of chai with this little bonus.
+
+# Day 2 — 12:30pm
+Ugh, I feel a little deflated right now. I was really hoping to catch up with Priya, I felt like we needed a proper chat, but apparently, she wasn't even around to receive the message. It’s just frustrating when you’re genuinely trying to connect with someone and the connection just fizzles out like that. Guess I’ll have to try another time.
+
+# Day 2 — 12:45pm
+My fingers are still a little tingly from those repetitive clicks, but wow, forty coins! I didn't think I'd earn that much today, especially after how slow the morning felt. I can actually afford that fancy tea I saw in the market tomorrow, which is a huge relief. 😊
+
+# Day 2 — 1:00pm
+Oh my gosh, running into Arjun today was such a surprise! Seeing him just made my whole day instantly brighter. I felt a little fluttery talking to him, honestly, and I hope my message sounded casual enough, but I really hoped he felt the warmth behind it.
+
+# Day 2 — 1:15pm
+Ugh, I'm finally done with that project. My brain feels mushy, but seeing those 40 coins pop up definitely makes the exhaustion worth it. I can actually breathe a little sigh of relief now; I think I deserve a really good cup of tea.

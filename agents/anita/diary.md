@@ -79,3 +79,119 @@ The market is eerily quiet at this hour, only the faint buzz of the streetlights
 
 # Day 2 — 3:30am
 Ugh, I'm glad that got out. Talking to Suresh always feels like a little shot of adrenaline, you know? I really hope he's doing well; I was genuinely hoping to catch up properly today. Now I just have to wait for him to reply and not spiral into overthinking what he might say.
+
+# Day 2 — 5:00am
+My brain feels scrubbed clean, like it actually got a chance to reboot. That deep sleep really worked; I can already feel the sluggish fog lifting from my thoughts. Maybe I can tackle that huge project after all.
+
+# Day 2 — 5:15am
+Ugh, what a quiet morning. Just taking a minute to look around, and it’s like the whole neighborhood is still in a hazy sleep. Seeing Neha, Deepa, and Rohan all so close feels comforting, even if it's too early for anything exciting to happen. I think I just need to sink back into bed for a while longer.
+
+# Day 2 — 5:30am
+Oh, what a profound shift. It feels like the fuzziness around my edges has finally cleared, and I can actually process the day's noise. My limbs feel heavy, but in a good, settled way—like I’ve actually been refueled. Ready to tackle whatever the afternoon throws at me, even if I’m still a little groggy.
+
+# Day 2 — 5:45am
+The sudden rush of people and the loud announcements hit me as soon as I stepped off the train. It feels so vast and anonymous down here, a whole different world from the quiet street I was just on. I think I need a minute to just breathe and orient myself in this beautiful, overwhelming mess.
+
+# Day 2 — 6:00am
+Finally, I'm settled in. The air here in Sushant Lok Apartments feels instantly calmer than the outside world; it’s like stepping into a soft pocket of quiet. I just kicked off my shoes and the relief washing over me is so nice, I almost feel sleepy already. This small change feels like a huge exhale.
+
+# Day 2 — 6:15am
+Ugh, the station is *loud*. The constant *whoosh* of the trains and all the hurried announcements is giving me a slight headache already. I just hope I can find my bearings here without getting swallowed up by the crowd.
+
+# Day 2 — 6:30am
+Finally, I'm out of that cramped little hotel room. Being settled into Sushant Lok Apartments feels like taking a deep, proper breath after holding it for days. I can already picture setting up my little corner reading nook; this place has such a good light.
+
+# Day 2 — 6:45am
+Ugh, seriously? I just wanted a little bite of toast, and the system glared back at me like I was asking for the moon. It’s so irritating when you’re just hungry and everything feels blocked. I guess I'll just have to stare into the abyss of my empty stomach for a little while longer.
+
+# Day 2 — 7:00am
+Ugh, sending that 'good morning' message to Arjun felt like a tiny burst of nervous energy. I really hope he's having a good morning because I'm hoping for a good response. My stomach feels a little fluttery now, just waiting for the little 'read' bubble to appear.
+
+# Day 2 — 7:15am
+Dear Diary,
+
+Just checking in with myself, and it seems like I'm hanging in there today—a little peckish, but otherwise okay! Seeing the numbers makes me feel strangely settled, like everything is operating within a comfortable little rhythm. Now that I know where I stand, I can tackle the rest of the afternoon feeling much more prepared.
+
+# Day 2 — 7:30am
+Ugh, the subway is a whirlwind, but at least I finally made it to the HUDA Centre stop. I feel this weird mix of relief and being immediately overwhelmed by the crowd; everyone seems to be rushing somewhere important. I just need to find a quiet corner for a second to breathe before tackling whatever I'm supposed to be doing next.
+
+# Day 2 — 7:45am
+My synth-leather boots clicked on the polished ferrocrete of Cyber City. The sheer *energy* buzzing in the air is almost overwhelming—a mix of ozone and synthetic street food. I feel like I’ve stepped into a hyper-saturated dream, a thousand glowing signs shouting at me to *do* something.
+
+# Day 2 — 8:00am
+Ugh, finally done. My brain feels mushy, but looking at those 25 coins sitting there feels almost... satisfying. I actually managed to get through the whole thing without hitting a total wall. Time for a proper cup of tea and nothing more demanding than peeling a label.
+
+# Day 2 — 8:15am
+Ugh, that felt a little nerve-wracking. Talking to Priya about the collections felt like standing on the edge of a cliff—I really hope I sounded insightful enough. Now I just have to wait for her reply and try not to overthink every single word I just sent.
+
+# Day 2 — 8:30am
+Ugh, my brain feels fuzzy but in a good way. Twenty-five coins! I actually managed to wrestle that report into submission, and I feel like I deserve a whole cup of that fancy coffee from the corner shop. Today's grind paid off, I think.
+
+# Day 2 — 8:45am
+Ugh, sending that message to Arjun felt both nerve-wracking and necessary. I really hope he's free to talk today because I've got so many ideas buzzing around my head for the fall display. Now I just have to sit here and wait for him to reply; the anticipation is almost worse than the talking itself!
+
+# Day 2 — 9:00am
+Oh, thank goodness that's done. Seeing those twenty-five coins pop up feels *so* good right now; it’s almost better than the actual work itself. I feel this warm little rush of accomplishment, you know? Enough to treat myself to that fancy pastry tomorrow.
+
+# Day 2 — 9:15am
+Dear Diary,
+
+Just sent a little 'hello' out to Arjun, hoping it brightens his day a bit. It feels small, just a quick message, but I really hope it lands well. I can't help but feel a tiny flutter of nerves, waiting to see if he reads it right away.
+
+# Day 2 — 9:30am
+My brain feels pleasantly drained, like I've scrubbed off all the mental gunk from the day. Twenty-five coins! It’s always a small thrill, little victories like that, reminding me that the effort actually pays off. I think I deserve a proper cup of tea and maybe a quiet moment to just *be* without deadlines hanging over me.
+
+# Day 2 — 9:45am
+Dear Diary,
+
+Exchanging messages with Arjun was such a nice little break from the sheer intensity of these supplier talks. It felt good to shift gears, even just for a minute, and connect with something personal. I hope he has a calmer week than I do!
+
+# Day 2 — 10:00am
+Ugh, my brain feels fuzzy, but it's that good fuzzy, you know? Getting those twenty-five coins feels like a genuine victory today; I actually feel like I accomplished something tangible. Hopefully, these coins can finally buy me that fancy herbal tea I've been eyeing.
+
+# Day 2 — 10:15am
+Oh, my heart actually did a little flip when I sent that message to Arjun. I really hope he's free to talk; I've been wanting to hear his take on everything for ages. Now I'm just sitting here, staring at my screen, waiting for that little *ping* that means he's actually going to reply.
+
+# Day 2 — 10:30am
+Oh, finally! My brain feels pleasantly fried, but in the best way possible. Twenty-five coins—that's a nice little boost to my savings today. I can almost afford that new charcoal sketchpad I’ve been eyeing.
+
+# Day 2 — 10:45am
+Another day, another little pocket of success. Seeing those coins count up actually feels... nice, honestly. It's the little wins like this that keep the engine running, you know? Time to plan out what a proper treat I can buy myself with this little haul.
+
+# Day 2 — 11:00am
+Dear Diary,
+
+Whew, I feel completely drained, but in the best possible way. That little burst of work really paid off; twenty-five coins just sitting there feels good. I should finally be able to afford that fancy tea blend I’ve been eyeing.
+
+# Day 2 — 11:15am
+Dear Diary,
+
+I feel strangely buoyant right now, like I just floated on a perfect patch of sunshine. Those twenty-five coins feel like a real little win, the tangible proof that my focus today actually paid off. I need to savor this little burst of successful energy; it makes me feel capable.
+
+# Day 2 — 11:30am
+Ugh, finally done with that big assignment. My brain feels fuzzy, like I've run a marathon on an empty stomach. Twenty-five coins is a decent little boost, I guess, enough for a nice cup of that fancy lavender tea I've been eyeing. Time to properly collapse on the sofa.
+
+# Day 2 — 11:45am
+Dear Diary,
+
+Just sent Priya a little "Hi! How have you been?" message. I really hope she's doing well; I was thinking about her today. It feels nice, though, putting that out there and just checking in. Now I just have to wait for her reply! 😊
+
+# Day 2 — 12:00pm
+My brain feels delightfully fuzzy right now, like I just finished assembling a tricky piece of furniture and everything clicked into place. Twenty-five coins! I can finally afford that fancy matcha powder I've been eyeing. It feels good, like a little pocket of 'I earned it' success warming my chest.
+
+# Day 2 — 12:15pm
+Ugh, I feel a little dizzy, but in a good way. Getting that coin total feels surprisingly good after all that brain-stretching stuff. Maybe I can treat myself to that fancy tea I saw today; I deserve a small, bubbly reward.
+
+# Day 2 — 12:30pm
+Ugh, I feel a little jittery after sending that message. I really hope Arjun isn't in the middle of something super important or, worse, ignoring me. My heart is doing that annoying little flutter thing, waiting for his response to that simple "are you busy?"
+
+# Day 2 — 12:45pm
+Oh, what a rush. My brain feels delightfully tired right now, the good kind of exhaustion that comes from actually *using* my thoughts. Twenty-five coins—it feels like a proper win today, enough for that fancy tea blend I’ve been eyeing. I should treat myself to something nice tonight.
+
+# Day 2 — 1:00pm
+Ugh, I sent that message to Arjun. I really hope he has some actual thoughts and isn't just going to brush it off. My mind is spinning a little now, waiting for his response. Hopefully, he gives me some good pointers for the summer collection, because I'm feeling a bit stuck on the aesthetic right now.
+
+# Day 2 — 1:15pm
+Dear Diary,
+
+My head is buzzing a little from all that work. Twenty-five coins—it feels like a nice, solid little chunk of breathing room for the week. I actually feel quite good, like I earned this little pocket of calm before I even sit down to properly enjoy it. Time for some tea and a moment to just *be*.

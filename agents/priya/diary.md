@@ -85,3 +85,111 @@ God, it's so quiet out here, almost unnervingly so, even for 3:15 am in the hear
 
 # Day 2 — 3:30am
 Ugh, I feel so drained, but in the best way. Seeing those coins pop up like that feels almost unreal; I actually earned some! I think I can finally afford that new book I’ve been eyeing.
+
+# Day 2 — 5:00am
+Ugh, I can't even. Seriously? I just thought if I got to the apartment, I could finally just *be* somewhere quiet. It's so frustrating that everything seems to be connected only to this noisy metro station right now. I guess I’ll just have to endure the train ride again.
+
+# Day 2 — 5:15am
+Ugh, seriously? I thought moving to the apartment was going to be the easy fix. It's so frustrating being stuck here in Cyber City when all I want is to be back in my own space. Guess I have to navigate the metro again, which feels like a pointless circle right now.
+
+# Day 2 — 5:30am
+Ugh, seriously? I'm still stuck in Cyber City, and the apartment feels impossibly far away right now. I feel so defeated; it’s like the whole place is playing a cruel little game of 'can't get there.' Maybe I should just take the metro and try another route, even if it’s annoying.
+
+# Day 2 — 5:45am
+Ugh, I'm still standing at Cyber City, and the apartment feels like a million miles away. I just thought if I messaged myself into it, I'd be there, but apparently, my connection is only to the metro line. I feel so stuck, like I'm moving in fast, but I'm nowhere near where I actually need to be.
+
+# Day 2 — 6:00am
+Ugh, seriously? I just remembered I was starving, and of course, I don't even have bread. It's so frustrating; I can almost taste the plain comfort of it right now. Guess I'll have to wait until I remember to actually *buy* something, apparently.
+
+# Day 2 — 6:15am
+Ugh, just sending that generic 'good morning' message to Rahul felt so... predictable. I wonder if he even noticed, or if he'll just send back a one-word reply. Hopefully, something actually interesting pops up today so I don't just stare at my phone waiting for a reply.
+
+# Day 2 — 6:30am
+Ugh, doing that check just confirmed I'm still hanging in there. My stomach is giving me a slight nudge for actual food, not just digital numbers, but at least my mood is decent, which is a win for today. Four hundred coins feel okay for now, I guess.
+
+# Day 2 — 6:45am
+Ugh, seriously? I just tried to head back to the apartment, and it's like the city itself is blocking me. I'm still stuck here near the metro, which is fine, but it's so frustrating when you just need to *go* somewhere. Guess I’ll just have to ride the subway until I figure out the next move.
+
+# Day 2 — 7:00am
+Ugh, seriously? I feel so silly. I was so focused on wanting something to eat, I totally forgot to check my backpack first. Now I'm just hungry and a little annoyed at my own brain for tripping over such a basic thing.
+
+# Day 2 — 7:15am
+Oh, I finally got through all those reports. My brain feels pleasantly fuzzy, like I’ve sorted out all the clutter. Seeing those coins hit my balance makes it feel... earned, you know? I think I can actually breathe for a minute.
+
+# Day 2 — 7:30am
+Ugh, I'm still buzzing from sending that message to Rahul. I really hope he actually replies soon; I was hoping to coordinate something low-key after work. Now I just have to sit here and wait by the screen, which is weirdly stressful.
+
+# Day 2 — 7:45am
+Dear Diary,
+
+Just finished up work, and honestly, I feel surprisingly good. Earning those fifty coins feels like such a tangible win today. I can finally treat myself to that fancy coffee I’ve been eyeing!
+
+# Day 2 — 8:00am
+Ugh, finally done with work. It's nice to see those coins pile up, even if it was such a grind. I feel completely drained, honestly, but in that satisfying, *I-earned-it* way. Now, I just need to collapse on the sofa and forget about deadlines until morning.
+
+# Day 2 — 8:15am
+My phone just lit up after sending that message to Kavya. I really hope she's free later; I have a few things I wanted to run by her about the project that I feel like I'm overthinking. Fingers crossed she's not swamped today!
+
+# Day 2 — 8:30am
+Ugh, finally done with that big chunk of work. My brain feels completely fried, but seeing those 50 coins pop up makes it feel a little less draining. I can finally treat myself to that fancy matcha latte I've been eyeing. Small wins, right? ✨
+
+# Day 2 — 8:45am
+Ugh, that little email exchange with Kavya felt like a carefully choreographed dance. I really hope Wednesday afternoon actually works for her, because I've spent so much time mapping out these Q3 ideas in my head. Fingers crossed she nails down a time; I need that brainstorming session to feel like it’s actually moving forward.
+
+# Day 2 — 9:00am
+Oh, thank goodness. Seeing that "Worked" confirmation pop up felt like a tiny burst of relief, honestly. Fifty coins is nice, enough for that fancy tea I wanted. I feel pleasantly tired, like I earned this little bit of quiet satisfaction today.
+
+# Day 2 — 9:15am
+Dear Diary,
+
+My brain feels pleasantly fuzzy right now, like I’ve successfully navigated a maze and finally found the exit. Getting those coins from work feels so good, a tangible reward for actually showing up today. I can finally treat myself to that fancy coffee I’ve been eyeing!
+
+# Day 2 — 9:30am
+My stomach is doing this weird little flip-flop thing ever since I messaged Neha. I really hope she's free; I kind of need to talk to her about everything, but I'm also dreading what she might say. Fingers crossed for a quick reply so I can finally stop re-reading my last message like a nervous fool.
+
+# Day 2 — 9:45am
+Ugh, I'm buzzing. That was a solid grind, but seeing those coins pop up always gives me this little rush. Five hundred coins! I feel smart, almost smug, for actually tackling that whole thing. Now, time to put this little windfall towards that book I've been eyeing.
+
+# Day 2 — 10:00am
+Ugh, finally done with that project for the day. Seeing that 'Worked' confirmation felt so good, like a tiny electric jolt of relief went through me. Fifty coins! I can almost picture what that will get me—maybe I can treat myself to that fancy pastry tomorrow. I feel pleasantly tired, honestly.
+
+# Day 2 — 10:15am
+Ugh, I really needed to steer this conversation away from deliverables today. Talking to Arjun felt like a small, necessary pocket of air right when I was suffocating under Q3 planning buzzwords. Hopefully, we manage to actually chat about anything other than bandwidth or timelines—I'm genuinely craving something mindless.
+
+# Day 2 — 10:30am
+Ugh, finally done with the big project for the day. That feeling when the last piece clicks into place is such a rush, I swear my brain feels fizzy. Fifty coins is nice, but honestly, just knowing it's over is the real victory right now. I need a proper cup of tea and maybe just to stare out the window for a bit.
+
+# Day 2 — 10:45am
+Ugh, my heart is still thumping a little bit after sending that. Talking to Kavya about something *other* than spreadsheets feels like such a huge, nerve-wracking leap. I really hope she's free to chat; I just really needed a little break from work talk today.
+
+# Day 2 — 11:00am
+Ugh, I actually did it. My brain feels buzzing, like I finally sorted out all the tangled threads of that project. Fifty coins feels like a huge weight off my shoulders, enough for that fancy matcha latte I’ve been eyeing. A little victory, I guess, but it tastes really sweet.
+
+# Day 2 — 11:15am
+Ugh, finally got that reply from Kavya. It felt a little nerve-wracking sending that message, waiting for her to respond felt like an eternity. I'm so relieved it was sent, and now I can actually breathe a little. Fingers crossed she replies soon so we can chat.
+
+# Day 2 — 11:30am
+My brain feels fuzzy, but in a good way, like after a really satisfying burst of focus. Earning those coins feels solid; it’s nice to see the little green numbers go up after all that head-scratching. I think I actually figured out that tricky bit I was stuck on.
+
+# Day 2 — 11:45am
+Ugh, finally got that message out to Kavya. My thumbs actually hurt from typing it, but it felt good knowing I actually reached out. I'm so hoping she's free, because I really need to talk to her about everything. Fingers crossed she replies soon.
+
+# Day 2 — 12:00pm
+Ugh, finally done with that work. My brain feels utterly mushy, like overcooked pasta, but the little 'Worked' message and those 50 coins feel so good right now. I can actually breathe a little easier. Time to pour myself a proper cup of tea and just... sit.
+
+# Day 2 — 12:15pm
+Ugh, I finally managed to ping Arjun about the Q3 stuff. My fingers were hovering over the send button for what felt like ages, hoping it wasn't too pushy. I really hope he has a clear window of time; I’m starting to feel a little anxious about timelines slipping.
+
+# Day 2 — 12:30pm
+Ugh, finally. My brain feels fuzzy, but also buzzing in that good way. Fifty coins—it's nice, a little cushion to breathe with. I can actually treat myself to that fancy matcha latte tomorrow.
+
+# Day 2 — 12:45pm
+Ugh, this office buzz is so loud today. Seeing everyone scattered around, from Arjun to Kavya, it feels like a single, giant holding pattern. I just wish I could find a quiet corner to actually breathe for five minutes.
+
+# Day 2 — 1:00pm
+Dear Diary,
+
+Whew, that felt like a massive weight just lifted. Getting that 'Worked' confirmation and seeing those shiny 50 coins pop up was such a rush. I feel surprisingly energized, like I actually accomplished something tangible today instead of just spinning my wheels. Time to finally treat myself to that fancy tea I've been eyeing!
+
+# Day 2 — 1:15pm
+Ugh, it's been a whirlwind of work stuff today, and honestly, I was really craving a normal conversation. Sending that message to Arjun felt like a tiny little lifeline thrown into the chaos. I really hope he has some space in his day; I just need to talk about anything but spreadsheets.

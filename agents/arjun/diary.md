@@ -315,3 +315,105 @@ Finally, I'm here. The silence in Sushant Lok Apartments is a balm after the con
 
 # Day 2 — 3:30am
 The sudden quiet of the apartment, punctuated only by the distant hum of the city, feels both peaceful and utterly isolating. Seeing Rahul and Kavya just across the way makes the silence less oppressive, even if they are just sleeping. For now, just existing in this familiar space is enough to feel grounded.
+
+# Day 2 — 5:00am
+The darkness was a heavy, comforting blanket, and now that I'm back to this strange reality, I feel… lighter. Like the fog that had been clinging to my thoughts all morning has finally lifted. I can actually feel the dull ache behind my eyes easing up.
+
+# Day 2 — 5:15am
+Whew, finally off my feet. The metro always hits me with this sudden blast of humanity, a wave of people all moving with a shared, purposeful rush. I feel a little breathless, like I've just been sucked into the city's main artery, but it's a good kind of tired. Time to find a quiet corner before the day's chaos swallows me whole.
+
+# Day 2 — 5:30am
+The air in Sushant Lok is surprisingly quiet, a definite shift from the usual city roar. I feel an immediate sense of settling in, like dropping my baggage onto a soft patch of earth. Hopefully, this little haven will bring some necessary peace tonight.
+
+# Day 2 — 5:45am
+The deep sleep was exactly what I needed; it felt like my mind finally hit the reset button. Waking up feels genuinely lighter, like the cobwebs have lifted from my thoughts. I can actually feel that energy humming beneath my skin, a quiet but definite warmth.
+
+# Day 2 — 6:00am
+Another day, another check-in. Seeing my hunger at 38% feels like a gentle nudge, not a crisis, which is a small mercy. At least the good energy and decent mood mean I can tackle whatever comes next without feeling completely drained. Right now, 150 coins feels enough to tide me over for a little while.
+
+# Day 2 — 6:15am
+The slight jostle as I stepped off the escalator felt strangely grounding. The rush of humanity here is always intense, a palpable wave of energy that sweeps you up whether you’re ready or not. I can smell the mix of street food and exhaust fumes already—the real smell of the city, settling in.
+
+# Day 2 — 6:30am
+Finally, I’m settled in the apartment. The air here feels different, somehow quieter than the usual hustle out there. It feels like a little pocket of calm after all that moving. I can finally take a proper breath.
+
+# Day 2 — 6:45am
+Ugh, seriously? Just wanted a simple slice of bread and the system threw me a tantrum. It's so frustrating; I remember buying it yesterday, I swear. Guess I'll have to rethink my whole strategy before I can even properly eat.
+
+# Day 2 — 7:00am
+The sudden rush of humanity and the smell of diesel fumes hit me the moment I stepped off the escalator. It’s overwhelming, this controlled chaos of the metro station. I feel both utterly anonymous and completely plugged into the pulse of the city, which is strangely energizing.
+
+# Day 2 — 7:15am
+The usual morning buzz of the metro station, but seeing Neha, Vikram, and Rohan all grouped together feels like a sudden, warm current. It’s so chaotic yet strangely familiar, like the little ecosystem we always seem to fall into when we cross paths. I hope I can catch them later; I feel like I have a million things I wanted to share with all of them.
+
+# Day 2 — 7:30am
+Nervous energy buzzing a bit after sending that message to Neha. It felt kind of random just asking about plans, but I needed an excuse to actually talk to her today. Now, all I can do is wait for the little *ding* on my phone. Hopefully, it leads to something good.
+
+# Day 2 — 7:45am
+The silence in the new apartment is almost loud, a stark contrast to the usual bustle outside. It feels strangely quiet here, a little too still, but also… breathable. I think I might finally start feeling settled, even if it's just a temporary feeling.
+
+# Day 2 — 8:00am
+The platform at HUDA City Centre is a chaotic symphony of announcements and hurried footsteps; it always feels like a place in constant, restless motion. Stepping out of the train just now, I felt that familiar, momentary disorientation, like my bearings had been reset by the sheer rush of people. At least I’m here, finally closer to the core of things.
+
+# Day 2 — 8:15am
+The air here in Cyber City feels thick with ambition and the faint scent of ozone. It’s a dazzling, overwhelming place; every corner hums with the noise of commerce and invisible data streams. I feel a strange mix of excitement and being utterly insignificant amidst all this polished chrome and frantic energy.
+
+# Day 2 — 8:30am
+My hands are still buzzing a little from the day's work; it feels good to have put my head down and actually *produce* something tangible. Seeing those coins pile up, even just 45, makes the exhaustion feel almost earned, like I actually wrestled a little bit of success out of the day. A decent feeling, honestly, enough to tide me over until tomorrow.
+
+# Day 2 — 8:45am
+My fingers felt a little shaky as I hit send. Talking to Priya about getting together just feels so... hopeful, you know? I really hope she says yes, or at least suggests a raincheck. It’s a small thing, but my stomach is doing a weird little flip-flop right now.
+
+# Day 2 — 9:00am
+Another day, another successful session. Seeing those 45 coins credited feels solid, a real little cushion for the week. I poured everything I had into that, but it feels good to see the effort actually translate into something tangible. Time for a quiet drink and to plan for tomorrow.
+
+# Day 2 — 9:15am
+Another day, another little victory for the coin purse. Forty-five coins... enough for a decent meal tonight, I think. There’s a satisfying little hum in my chest that always follows a solid session; it's the good kind of tired.
+
+# Day 2 — 9:30am
+The little ping confirming the message to Anita felt surprisingly good. I always feel a little rusty when trying to rally everyone for conversation, but I hope my usual bubbly tone actually landed well. Now, I just have to wait and see if she replies, which feels like my current main mission.
+
+# Day 2 — 9:45am
+My brain feels pleasantly fried right now, like I've spun too many threads on a loom. Forty-five coins; that's a decent haul for a day's digging through the muck. I'm definitely hungry for whatever else the city has to offer, but for tonight, just the weight of this small pouch feels like enough to settle my nerves.
+
+# Day 2 — 10:00am
+Another day, another push. My head is buzzing from the concentration it took to keep everything synced up, but the little chime confirming the coins felt genuinely good. It's that mix of exhaustion and small victory; like I actually built something with my focus today. Now, I can finally breathe.
+
+# Day 2 — 10:15am
+My fingers are still buzzing a little from the rush of it. Forty-five coins… that's enough to get a decent meal tonight, which feels like a genuine victory after those draining tasks. A small win, maybe, but it's enough to take the edge off the constant hum of worry.
+
+# Day 2 — 10:30am
+Today’s work paid off; feeling the familiar satisfying weight of those extra coins in my pouch. It wasn't just the gold, though, it was that quiet feeling of *completion*—knowing I put in the hours and it was respected. I might treat myself to that spiced tea tonight; a small victory deserves a small treat.
+
+# Day 2 — 10:45am
+My fingers are still tingling from the rhythm of the work. Forty-five coins—it feels like a solid chunk today, enough to buy some decent spices for dinner. A little burst of satisfaction, really, to feel that little flutter in my chest knowing the effort paid off.
+
+# Day 2 — 11:00am
+The little ping when I sent that message to Rohan felt... anticlimactic, but good. I really needed a casual connection today, just a quick check-in to see what's going on in his world. Fingers crossed he responds with something interesting, instead of just a thumbs-up emoji.
+
+# Day 2 — 11:15am
+My head is buzzing a little, but in the best way. Seeing those 45 coins tally up feels genuinely good; it's a small weight lifted, really. I can breathe a bit easier now, enough to maybe grab some proper chai later.
+
+# Day 2 — 11:30am
+The familiar little chime letting me know the work was done always feels like a tiny jolt of adrenaline. Forty-five coins—it’s not a fortune, but it’s enough to breathe a little easier tonight. I feel a quiet kind of satisfaction, the good, dull ache in my shoulders that comes from actually *using* my hands.
+
+# Day 2 — 11:45am
+Today's grind paid off; those forty-five coins feel solid in my pouch. I didn't feel like I could push much this morning, but getting through that work block was surprisingly satisfying. Now I can finally afford that decent meal tonight.
+
+# Day 2 — 12:00pm
+Another day, another grind at the forge. My arms ache pleasantly, a satisfying kind of exhaustion that means I actually *did* something with my strength. Those forty-five coins feel solid in my pouch—enough to at least buy some decent meal for tonight.
+
+# Day 2 — 12:15pm
+My fingers are still tingling a bit from that session; the kind of satisfying ache that means you actually *used* your brain. Forty-five coins for a day's grind feels good in the tally, honestly. I feel a genuine lightness today, like the weight I was carrying this morning has lifted just enough to let me breathe properly.
+
+# Day 2 — 12:30pm
+The little surge of satisfaction from those 45 coins is almost intoxicating. It feels good, that solid little weight of accomplishment; I can actually afford that extra spiced tea tomorrow. My fingers are still buzzing a little from the focus required, but a deep weariness washes over me now, the good kind that settles in your bones.
+
+# Day 2 — 12:45pm
+My brain feels pleasantly buzzy, like I finally sorted out all those loose threads that were tangling me up today. Forty-five coins... it’s not a fortune, but it’s a nice, solid feeling of accomplishment in my pocket. I think I can afford that spiced tea I wanted later.
+
+# Day 2 — 1:00pm
+Another day, another grind, but seeing those 45 coins finally in the tally feels… solid. I actually managed to keep my head above the swamp of tedious details today. Maybe this meager haul will be enough for that decent meal I’ve been craving.
+
+# Day 2 — 1:15pm
+The numbers are solid today; those forty-five coins feel... earned. My brain is pleasantly tired, the kind of satisfying ache that comes from solving something knotty. I can finally breathe a little easier knowing this chunk of the day is done.
