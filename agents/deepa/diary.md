@@ -13,3 +13,6 @@ The afternoon light filtering into the living room feels so peaceful, it's almos
 
 # Day 1 — 4:30pm
 The late afternoon light streaming into the living room feels almost too bright right now. Seeing Arjun and Kavya nearby, even just existing in the same space, has given me a sort of quiet grounding. I think I just need to take a deep breath and let this little moment settle over me before anything else happens.
+
+# Day 1 — 9:00pm
+The quiet of the apartment finally settled around me after looking around, and it felt almost too still. Seeing Arjun and Kavya just a short distance away is a comfort, a soft hum of familiar presence. Right now, though, all I crave is just the deep, uncomplicated quiet of sleep.

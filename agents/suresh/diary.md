@@ -13,3 +13,6 @@ The air here
 
 # Day 1 — 4:30pm
 The market is loud today, a chaotic mix of shouting vendors and laughter—I can smell the fried dough from the street food stall, which is surprisingly comforting. Seeing Anita nearby made me pause, almost like I needed a moment just to watch the crowd swirl around us. I feel a little overwhelmed by all the noise, but also strangely energized by the energy of it all.
+
+# Day 1 — 9:00pm
+The market is still buzzing, even this late. Seeing Anita near the little food stalls felt like finding a warm corner in a giant, loud room. I just… watched her for a bit, feeling a weird mix of relief and nervous energy. Hopefully, the rest of the night is less overwhelming than my stomach right now.

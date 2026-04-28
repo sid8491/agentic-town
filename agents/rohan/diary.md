@@ -10,3 +10,6 @@ Just took a quick look around the Pappu Dhaba. It’s surprisingly quiet for wha
 
 # Day 1 — 4:30pm
 The air here at Pappu Dhaba smells intensely of cumin and frying oil, a comforting, overwhelming aroma. It's quiet right now; I could almost hear my own thoughts echoing off the nearby tables. I should probably grab some *samosas* just to ground myself before I tackle whatever else is planned for the evening.
+
+# Day 1 — 9:00pm
+Finally, some quiet after the chaos of the day. Just sitting here at Pappu Dhaba, the smell of spices is really hitting me. It feels strangely peaceful, like I can just breathe for a minute without worrying about anything else.

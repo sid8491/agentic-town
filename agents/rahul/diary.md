@@ -13,3 +13,6 @@ The metro station is so quiet right now, just the echo of my own footsteps. It f
 
 # Day 1 — 4:30pm
 Just standing here by the Metro station, the usual chaotic energy of the place feels muted right now. It's surprisingly quiet, almost too empty for a 4:30 PM spot. I feel this weird mix of relief and mild anticlimax; I was bracing myself for a crowd, but there's nothing but the usual concrete and the hum of the track.
+
+# Day 1 — 9:00pm
+Just stood here at the Metro station, kind of absorbing the low hum of the place. It was completely deserted, which was both weirdly peaceful and slightly unnerving. I guess it's just the lull after the rush, leaving you with too much time to think.

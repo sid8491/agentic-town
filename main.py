@@ -65,6 +65,12 @@ _ZONE_COLORS: dict[str, tuple[int, int, int]] = {
 
 _BUBBLE_FADE_SECS: float = 5.0    # seconds before thought bubble fully fades
 
+# Event log overlay (top-right corner of the map area)
+_LOG_W: int   = 250          # content width in px
+_LOG_LINE_H: int = 13        # px per log line
+_LOG_MAX: int = 10           # max entries displayed at once
+_LOG_X: int   = WINDOW_W - _LOG_W - 10   # left edge of log text
+
 _MAP_BG        = (18,  20,  28)
 _GRID_COLOR    = (38,  40,  52)
 _CONN_COLOR    = (80,  85, 115, 150)
@@ -157,6 +163,33 @@ def _name_tag_color(mood: float) -> tuple[int, int, int, int]:
     return (220, 220, 220, 255)      # neutral gray
 
 
+def _format_event_log_line(event: dict, max_len: int = 36) -> str:
+    """Format a world event dict into one short display string for the event log."""
+    time_full = event.get("time", "")
+    text = event.get("text", "")
+    time_short = time_full.split()[0] if time_full else ""
+    if "→" in text:                      # "agent → tool: ..."
+        parts = text.split("→", 1)
+        agent = parts[0].strip()
+        rest = parts[1].strip()
+        tool = rest.split(":")[0].strip() if ":" in rest else rest[:14]
+        line = f"{time_short} {agent}: {tool}"
+    else:
+        line = f"{time_short} {text}"
+    return line[:max_len]
+
+
+def _draw_hud_btn(x1: int, x2: int, cy: int, label: str, disabled: bool = False) -> None:
+    """Draw a labelled rectangular button in the HUD strip."""
+    bg     = (16, 18, 28) if disabled else (22, 26, 44)
+    border = (38, 42, 60) if disabled else (60, 65, 98)
+    fg     = (50, 55, 75) if disabled else (140, 148, 182)
+    arcade.draw_lrbt_rectangle_filled(x1, x2, cy - 13, cy + 13, bg)
+    arcade.draw_lrbt_rectangle_outline(x1, x2, cy - 13, cy + 13, border, 1)
+    arcade.draw_text(label, (x1 + x2) // 2, cy, color=fg,
+                     font_size=9, anchor_x="center", anchor_y="center")
+
+
 # ---------------------------------------------------------------------------
 # Arcade window
 # ---------------------------------------------------------------------------
@@ -214,6 +247,9 @@ class GurgaonWindow(arcade.Window):
         self._agent_last_action_seen: dict[str, str] = {}
         self._agent_action_stamp: dict[str, float] = {name: 0.0 for name in _AGENT_COLORS}
 
+        # LLM toggle button bounding box (x1, x2) — used for mouse-click detection
+        self._llm_btn: tuple[int, int] = (WINDOW_W - 190, WINDOW_W - 8)
+
     # ------------------------------------------------------------------
     # Update (lerp agent positions)
     # ------------------------------------------------------------------
@@ -267,6 +303,7 @@ class GurgaonWindow(arcade.Window):
         for label in self._loc_labels:
             label.draw()
         self._draw_agents()
+        self._draw_event_log()
         self._draw_hud()
 
     def _draw_grid(self) -> None:
@@ -353,40 +390,94 @@ class GurgaonWindow(arcade.Window):
                     )
 
     def _draw_hud(self) -> None:
-        """Minimal HUD strip at the bottom (fully fleshed out in Story 4.4)."""
-        # Background bar
+        """HUD strip — time, speed controls, LLM toggle button."""
         arcade.draw_lrbt_rectangle_filled(0, WINDOW_W, 0, HUD_HEIGHT, (10, 12, 18))
         arcade.draw_line(0, HUD_HEIGHT, WINDOW_W, HUD_HEIGHT, (50, 55, 80), 1)
+        cy = HUD_HEIGHT // 2
 
-        # Sim time + day
+        # Time (left)
         try:
             t = self.world.get_time()
             time_label = f"Day {t['day']}  {t['time_str']}"
         except Exception:
             time_label = "Day 1  6:00am"
+        arcade.draw_text(time_label, 10, cy,
+                         color=(180, 195, 220), font_size=11, bold=True,
+                         anchor_x="left", anchor_y="center")
 
+        # Speed controls (center-left)
         paused = self.world._state.get("paused", False)
-        speed = self.world._state.get("speed", 1.0)
+        speed  = self.world._state.get("speed", 1.0)
+        speeds = [0.25, 0.5, 1.0, 2.0, 4.0]
+        at_min = abs(speed - speeds[0]) < 0.01
+        at_max = abs(speed - speeds[-1]) < 0.01
+
+        _draw_hud_btn(208, 268, cy, "SLOW", disabled=at_min)
+
+        status_bg  = (50, 22, 22) if paused else (20, 24, 40)
+        status_clr = (255, 110, 80) if paused else (200, 215, 140)
+        arcade.draw_lrbt_rectangle_filled(274, 396, cy - 13, cy + 13, status_bg)
+        arcade.draw_lrbt_rectangle_outline(274, 396, cy - 13, cy + 13, (70, 75, 108), 1)
+        arcade.draw_text("PAUSED" if paused else f"{speed:.2g}x",
+                         335, cy, color=status_clr,
+                         font_size=10, bold=True, anchor_x="center", anchor_y="center")
+
+        _draw_hud_btn(402, 462, cy, "FAST", disabled=at_max)
+
+        # Tiny key hint
+        arcade.draw_text("SPC / L / ESC", 472, cy, color=(60, 65, 92),
+                         font_size=8, anchor_x="left", anchor_y="center")
+
+        # LLM toggle button (right, clickable)
         provider = llm_config.get_primary().upper()
+        lx1, lx2 = self._llm_btn
+        arcade.draw_lrbt_rectangle_filled(lx1, lx2, cy - 14, cy + 14, (18, 26, 52))
+        arcade.draw_lrbt_rectangle_outline(lx1, lx2, cy - 14, cy + 14, (55, 88, 168), 1)
+        arcade.draw_text(f"LLM: {provider}", (lx1 + lx2) // 2, cy,
+                         color=(95, 148, 240), font_size=10, bold=True,
+                         anchor_x="center", anchor_y="center")
 
-        hud_text = (
-            f"{time_label}    "
-            f"{'[PAUSED]' if paused else f'{speed:.2g}x'}    "
-            f"LLM: {provider}    "
-            "SPACE=pause  L=LLM  ←/→=speed  ESC=quit"
-        )
-        arcade.draw_text(
-            hud_text,
-            10, HUD_HEIGHT // 2,
-            color=(160, 165, 185),
-            font_size=10,
-            anchor_x="left",
-            anchor_y="center",
-        )
+    def _draw_event_log(self) -> None:
+        """Semi-transparent event log panel in the top-right corner of the map."""
+        events = self.world._state.get("events", [])
+        recent = events[-_LOG_MAX:]
+        if not recent:
+            return
+        n = len(recent)
+        panel_h = n * _LOG_LINE_H + 12
+        py_bot  = WINDOW_H - 4 - panel_h
+        px_left = _LOG_X - 8
+
+        arcade.draw_lrbt_rectangle_filled(
+            px_left, WINDOW_W - 2, py_bot, WINDOW_H - 2, (6, 8, 18, 210))
+        arcade.draw_lrbt_rectangle_outline(
+            px_left, WINDOW_W - 2, py_bot, WINDOW_H - 2, (32, 38, 62), 1)
+
+        for i, event in enumerate(recent):
+            line = _format_event_log_line(event)
+            y = py_bot + 6 + i * _LOG_LINE_H
+            arcade.draw_text(line, _LOG_X, y, color=(105, 118, 158),
+                             font_size=8, anchor_x="left", anchor_y="bottom")
 
     # ------------------------------------------------------------------
-    # Key input
+    # Input handlers
     # ------------------------------------------------------------------
+
+    def _toggle_llm(self) -> None:
+        current = llm_config.get_primary()
+        new = "gemini" if current == "ollama" else "ollama"
+        try:
+            llm_config.set_primary(new)
+            logger.info("[window] LLM switched to %s", new)
+        except ValueError as exc:
+            logger.warning("[window] LLM switch failed: %s", exc)
+
+    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int) -> None:
+        if button == 1:  # left click
+            lx1, lx2 = self._llm_btn
+            cy = HUD_HEIGHT // 2
+            if lx1 <= x <= lx2 and (cy - 14) <= y <= (cy + 14):
+                self._toggle_llm()
 
     def on_key_press(self, key: int, modifiers: int) -> None:
         if key == arcade.key.SPACE:
@@ -395,13 +486,7 @@ class GurgaonWindow(arcade.Window):
             logger.info("[window] %s", "paused" if not paused else "resumed")
 
         elif key == arcade.key.L:
-            current = llm_config.get_primary()
-            new = "gemini" if current == "ollama" else "ollama"
-            try:
-                llm_config.set_primary(new)
-                logger.info("[window] LLM switched to %s", new)
-            except ValueError as exc:
-                logger.warning("[window] LLM switch failed: %s", exc)
+            self._toggle_llm()
 
         elif key == arcade.key.LEFT:
             speeds = [0.25, 0.5, 1.0, 2.0, 4.0]

@@ -10,3 +10,6 @@ The afternoon light streaming into the living room feels almost too bright right
 
 # Day 1 — 4:30pm
 Just a quick look around the apartment—nothing dramatic, just the usual quiet of late afternoon settling in. Seeing Arjun and Deepa nearby feels grounding, like everything is right where it should be. I feel a little tired, honestly, but in a comfortable way, the kind that just asks for a long, quiet moment with a book.
+
+# Day 1 — 9:00pm
+The familiar quiet of the apartment washes over me now that I've seen who's around. Seeing Arjun and Deepa just settles something in my chest, a sort of comfortable weight. I think I need nothing more than the quiet of these four walls tonight to just *be*.

@@ -16,3 +16,6 @@ The system just kept telling me I'm *at* the park, even though I feel like I jus
 
 # Day 1 — 4:30pm
 Ugh, the system is so maddeningly literal. I *know* I'm already here, at the park, yet it acts like I've somehow strayed and can't even acknowledge my current location. It's frustrating when the interface refuses to simply *see* me where I am.
+
+# Day 1 — 9:00pm
+Ugh, what was that? I swear I just tried to tell the system where I wanted to go, and it just... glitched out. Seeing that error message felt like running into a brick wall; I just wanted something to *change*, but instead, I got a technical hiccup to deal with. I need to remember that I can't just *wish* myself somewhere—I need to actually give it the coordinates.

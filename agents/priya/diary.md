@@ -38,3 +38,6 @@ Ugh, inventory check. Just going through the usual motions and seeing the same m
 
 # Day 1 — 4:30pm
 Ugh, finally done with the work—my brain feels fuzzy, but in a good, satisfying way. Getting those 50 coins really helps ease the tension from the rent payment. I feel a genuine wave of relief washing over me right now; I can actually breathe again.
+
+# Day 1 — 9:00pm
+God, this whole district feels so overwhelmingly bright, even this late. It's quiet now, which is a relief after the constant buzz of the day, but the sheer scale of these towers still makes me feel incredibly small. I just need a cup of coffee and maybe to walk until my feet ache before I even think about earning anything.
