@@ -22,16 +22,24 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import json
 import logging
 import math
 import pathlib
 import threading
 import time
+from pathlib import Path
+from typing import Optional
 
 import arcade
 
 from engine.llm import llm_config
 from engine.world import WorldState, SimulationLoop
+
+ALL_AGENT_NAMES = [
+    "arjun", "priya", "rahul", "kavya", "suresh",
+    "neha", "vikram", "deepa", "rohan", "anita",
+]
 
 logging.basicConfig(
     level=logging.INFO,
@@ -702,6 +710,135 @@ def _run_server_thread() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Reset (Story 5.2)
+# ---------------------------------------------------------------------------
+
+
+def _parse_default_goals(soul_text: str) -> str:
+    """Extract the body of the `# Default Goals` H1 section from a soul.md.
+
+    Returns lines between `# Default Goals` and the next H1/H2 header (or EOF),
+    with trailing blank lines stripped. Returns an empty string if no such
+    section is present.
+    """
+    lines = soul_text.splitlines()
+    collected: list[str] = []
+    in_section = False
+    for line in lines:
+        if not in_section:
+            if line == "# Default Goals":
+                in_section = True
+            continue
+        # Stop on next H1 or H2 header
+        if line.startswith("# ") or line.startswith("## "):
+            break
+        collected.append(line)
+
+    # Strip trailing blank lines
+    while collected and collected[-1].strip() == "":
+        collected.pop()
+    # Strip leading blank lines too for clean output
+    while collected and collected[0].strip() == "":
+        collected.pop(0)
+
+    return "\n".join(collected)
+
+
+def _read_state_day(state_path: Path) -> int:
+    """Return the `day` field from state.json, or 0 if file missing/unreadable."""
+    if not state_path.exists():
+        return 0
+    try:
+        data = json.loads(state_path.read_text(encoding="utf-8"))
+        return int(data.get("day", 0))
+    except (json.JSONDecodeError, OSError, ValueError):
+        return 0
+
+
+def reset_world(
+    confirm: bool = True,
+    agents_dir: Optional[Path] = None,
+    state_path: Optional[Path] = None,
+) -> None:
+    """Wipe simulation state and per-agent runtime files; re-seed goals.md.
+
+    - Deletes `state.json` (if present).
+    - For each of the 10 agents: deletes `memory.md` and `diary.md` (if present),
+      and rewrites `goals.md` from the `# Default Goals` section of `soul.md`.
+    - Never touches `soul.md`.
+
+    Args:
+        confirm: When True (CLI default), prompt the user before proceeding.
+                 Tests pass `confirm=False` to skip the input() call.
+        agents_dir: Path to the agents/ tree (defaults to `Path("agents")`).
+        state_path: Path to world/state.json (defaults to `Path("world/state.json")`).
+    """
+    agents_dir = agents_dir if agents_dir is not None else Path("agents")
+    state_path = state_path if state_path is not None else Path("world") / "state.json"
+
+    days = _read_state_day(state_path)
+
+    if confirm:
+        print(
+            f"Reset will clear {days} days of history "
+            "(memories, diaries, goals, world state). Continue? [y/N] ",
+            end="",
+            flush=True,
+        )
+        try:
+            answer = input().strip().lower()
+        except EOFError:
+            answer = ""
+        if answer not in {"y", "yes"}:
+            print("Aborted.")
+            return
+
+    # Delete state.json
+    if state_path.exists():
+        try:
+            state_path.unlink()
+        except OSError as exc:
+            print(f"[reset] Could not delete {state_path}: {exc}")
+
+    # Reset each agent
+    for name in ALL_AGENT_NAMES:
+        agent_dir = agents_dir / name
+        if not agent_dir.exists():
+            print(f"[reset] Agent dir missing: {agent_dir} — skipping")
+            continue
+
+        for fname in ("memory.md", "diary.md"):
+            target = agent_dir / fname
+            if target.exists():
+                try:
+                    target.unlink()
+                except OSError as exc:
+                    print(f"[reset] Could not delete {target}: {exc}")
+
+        soul_path = agent_dir / "soul.md"
+        goals_path = agent_dir / "goals.md"
+        if soul_path.exists():
+            soul_text = soul_path.read_text(encoding="utf-8")
+            body = _parse_default_goals(soul_text)
+            if not body:
+                print(
+                    f"[reset] Warning: {soul_path} has no `# Default Goals` "
+                    "section — writing empty goals.md"
+                )
+                goals_path.write_text("# Goals\n\n", encoding="utf-8")
+            else:
+                goals_path.write_text(f"# Goals\n\n{body}\n", encoding="utf-8")
+        else:
+            print(f"[reset] Warning: {soul_path} missing — writing empty goals.md")
+            goals_path.write_text("# Goals\n\n", encoding="utf-8")
+
+    print(
+        f"Reset complete. {len(ALL_AGENT_NAMES)} agents reset. "
+        "Run `python main.py` to start fresh."
+    )
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 
@@ -709,13 +846,11 @@ def _run_server_thread() -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Gurgaon Town Life simulation")
     parser.add_argument("--reset", action="store_true",
-                        help="Reset agent state — Epic 5")
-    parser.add_argument("--reset-all", dest="reset_all", action="store_true",
-                        help="Full factory reset — Epic 5")
+                        help="Reset world state and agent runtime files (preserves soul.md)")
     args = parser.parse_args()
 
-    if args.reset or args.reset_all:
-        print("[main] Reset not yet implemented — coming in Epic 5")
+    if args.reset:
+        reset_world()
         return
 
     world = WorldState()

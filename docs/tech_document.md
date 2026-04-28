@@ -97,6 +97,31 @@ cyber_hub ↔ sector29
 - Full game day (24 hours) = 1440 game min ÷ 5 = 288 real seconds ≈ 5 minutes
 - Tick interval: ~3 real seconds (agent decisions run async in parallel)
 
+### Per-Agent Schedules
+
+Each agent has an **archetype** that drives time-aware behaviour without LLM cost:
+
+| Archetype | Agents | Sleep window | Work hours |
+|-----------|--------|--------------|------------|
+| office_worker | arjun, priya, neha | 11pm – 6am | 9am – 6pm |
+| vendor | suresh | 10pm – 5am | 8am – 8pm |
+| retired | vikram | 9pm – 5am | — |
+| homemaker | deepa | 10pm – 6am | — |
+| entrepreneur | anita | 12am – 6am | 10am – 10pm |
+| student | kavya | 1am – 7am | — |
+| night_owl | rahul, rohan | 3am – 9am | 6pm – 3am |
+
+Each tick, `gather_context` builds a `schedule_guidance` string (sleep / morning routine /
+work / wind-down / empty) based on `sim_time` and the agent's archetype, and injects it
+as a `=== SCHEDULE ===` section in the LLM prompt. The agent will deviate from the
+guidance only if needs are critical (hunger > 85 or energy < 10).
+
+### Night Auto-Speed
+
+After every tick, `SimulationLoop._tick` counts agents whose `last_action` contains
+"sleep". If ≥7 agents are sleeping the simulation speed auto-bumps to 4x; once <5
+remain asleep it drops back to 1x. Effective dead-quiet window is roughly 3am – 5am.
+
 ---
 
 ## 5. The Agents
@@ -318,8 +343,10 @@ Uses `litellm` for unified API — same call signature regardless of provider.
 ```bash
 python main.py --reset        # wipes state.json + memory + diary + goals
                               # soul.md is preserved (personality stays)
-python main.py --reset-all    # wipes everything including soul.md
 ```
+
+`soul.md` is developer-authored and never mutated at runtime, so `--reset` already
+yields a true factory-fresh sim. To replace souls themselves, use `git checkout agents/`.
 
 ---
 

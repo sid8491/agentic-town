@@ -54,9 +54,8 @@ python server.py
 
 # Reset world to Day 1 (keeps agent personalities)
 python main.py --reset
-
-# Full factory reset (wipes everything)
-python main.py --reset-all
+# soul.md is never changed at runtime, so --reset already gives a true factory-fresh
+# sim. To replace souls themselves, use `git checkout agents/`.
 ```
 
 Web viewer: open `http://localhost:8000` in any browser. Works from other devices on the same network.
@@ -80,6 +79,13 @@ Web viewer: open `http://localhost:8000` in any browser. Works from other device
 - 1 real second = 5 game minutes
 - 1 tick (every 3 real seconds) = 15 game minutes
 - Full game day = ~5 real minutes
+- **Schedules:** every agent has an archetype (office worker, vendor, retired, student,
+  night owl, homemaker, entrepreneur). Each tick the agent is given a short
+  time-of-day directive — sleep, morning routine, work, or wind-down — and overrides
+  it only when hunger or energy is critical.
+- **Night auto-speed:** when ≥7 agents are sleeping the simulation auto-bumps to 4x
+  so the deep-night window (~3am – 5am) compresses to about a real-time minute. It
+  snaps back to 1x as agents wake.
 
 ---
 

@@ -28,9 +28,8 @@ python main.py
 
 # Reset world state but keep agent personalities
 python main.py --reset
-
-# Factory reset (wipes everything including soul files)
-python main.py --reset-all
+# (soul.md is never modified at runtime, so --reset is the only factory-fresh
+#  command needed. To replace souls themselves, use `git checkout agents/`.)
 
 # Test a single agent decision loop (no Arcade)
 python -m engine.agent arjun
@@ -81,6 +80,13 @@ The 10 agents: `arjun`, `priya`, `rahul`, `kavya`, `suresh`, `neha`, `vikram`, `
 - 1 tick = 3 real seconds = 15 game minutes
 - Full 24-hour game day ≈ 5 real minutes (96 ticks)
 - Tick loop: advance time → decay needs → run all 10 agents in parallel → save state → sleep
+- **Per-agent schedules**: `engine/agent.py` injects a `=== SCHEDULE ===` section into the
+  LLM prompt based on the agent's archetype (office_worker, vendor, retired, homemaker,
+  entrepreneur, student, night_owl) and `sim_time` — sleep window, work hours, morning
+  routine, evening wind-down. No extra LLM calls.
+- **Night auto-speed**: `SimulationLoop._tick` bumps `world.speed` to 4x when ≥7 agents
+  have `last_action` containing "sleep", and drops back to 1x when <5 are sleeping.
+  Effective fast-forward window: ~3am – 5am.
 
 ---
 

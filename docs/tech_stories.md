@@ -268,9 +268,30 @@ Start Phase 1 first — later phases depend on earlier ones.
 - `python main.py --reset` clears: `world/state.json`, all `memory.md`, all `diary.md`, all `goals.md`
 - Restores `goals.md` from defaults in each `soul.md` (parse `# Default Goals` section)
 - Prints confirmation before wiping: "Reset will clear X days of history. Continue? [y/N]"
-- `python main.py --reset-all` also wipes `soul.md` (full factory reset)
+- `soul.md` is never touched. It's developer-authored and never mutated at runtime,
+  so `--reset` already gives a true factory-fresh sim. To replace souls themselves,
+  use `git checkout agents/`.
 
 **Done when:** After `--reset`, simulation starts at Day 1 with fresh memories but same personalities.
+
+---
+
+### Story 5.3 — Time-Aware Schedules + Night Auto-Speed
+**As an observer**, I want agents to follow believable daily routines and quiet nights to fast-forward so the sim is interesting at any hour.
+
+**Tasks:**
+- Per-agent `archetype` mapping (office_worker, vendor, retired, student, night_owl, homemaker, entrepreneur)
+- Sleep window + work hours per archetype, used to compose a `schedule_guidance` string
+- Inject the guidance into the agent prompt (separate `=== SCHEDULE ===` section before the decision ladder)
+- During sleep window: instruct sleep unless hunger > 85 or energy < 10
+- During work hours (office_worker, vendor, entrepreneur): instruct work
+- Within 90 min after wake-up: morning routine
+- Within 2 hrs before sleep: evening wind-down
+- `SimulationLoop._tick` checks `last_action` of all 10 agents; if ≥7 contain "sleep",
+  auto-bump speed to 4x. If <5 are sleeping and speed is currently ≥4x, drop back to 1x.
+
+**Done when:** At 3am all 10 agents sleep and the clock visibly fast-forwards; at 9am most are
+out and about and the clock returns to 1x.
 
 ---
 
@@ -357,9 +378,9 @@ Start Phase 1 first — later phases depend on earlier ones.
 | Epic 2: LLM + Tools | 4 | Must have |
 | Epic 3: Agent Engine | 3 | Must have |
 | Epic 4: Arcade Rendering | 5 | Must have |
-| Epic 5: Persistence | 2 | Must have |
+| Epic 5: Persistence | 3 | Must have |
 | Epic 6: Web Viewer | 2 | Should have |
 | Epic 7: Polish | 3 | Nice to have |
-| **Total** | **23** | |
+| **Total** | **24** | |
 
 Build order: 1 → 2 → 3 → 4 → 5 → 6 → 7. Never skip ahead.
