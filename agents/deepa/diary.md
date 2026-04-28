@@ -10,3 +10,6 @@ Just took a slow sweep of the apartment; everything looks exactly where I left i
 
 # Day 1 — 3:30pm
 The afternoon light filtering into the living room feels so peaceful, it's almost too quiet. Seeing Arjun and Kavya just a short distance away is comforting, like I'm surrounded by familiar anchors. For now, though, I think a long stretch on the couch and a solid bit of quiet time is exactly what my soul needs.
+
+# Day 1 — 4:30pm
+The late afternoon light streaming into the living room feels almost too bright right now. Seeing Arjun and Kavya nearby, even just existing in the same space, has given me a sort of quiet grounding. I think I just need to take a deep breath and let this little moment settle over me before anything else happens.

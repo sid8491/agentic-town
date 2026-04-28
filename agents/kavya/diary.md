@@ -7,3 +7,6 @@ The afternoon light filtering through the living room window feels almost too br
 
 # Day 1 — 3:00pm
 The afternoon light streaming into the living room feels almost too bright right now. Seeing Arjun and Deepa around just makes the quiet feel... shared, I guess. It’s nice to just be in my own space, even if there’s company nearby. I really could use a moment just to breathe without having to look at anything.
+
+# Day 1 — 4:30pm
+Just a quick look around the apartment—nothing dramatic, just the usual quiet of late afternoon settling in. Seeing Arjun and Deepa nearby feels grounding, like everything is right where it should be. I feel a little tired, honestly, but in a comfortable way, the kind that just asks for a long, quiet moment with a book.

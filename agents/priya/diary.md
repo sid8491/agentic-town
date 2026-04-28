@@ -35,3 +35,6 @@ Ugh, finally done with work for the day. Seeing those coins pile up actually fee
 
 # Day 1 — 3:30pm
 Ugh, inventory check. Just going through the usual motions and seeing the same meager coins—three hundred, nothing to write home about. It feels strangely empty, like my pockets are echoing the emptiness of this little pile of metal. I wish I could actually *find* something exciting to be doing today.
+
+# Day 1 — 4:30pm
+Ugh, finally done with the work—my brain feels fuzzy, but in a good, satisfying way. Getting those 50 coins really helps ease the tension from the rent payment. I feel a genuine wave of relief washing over me right now; I can actually breathe again.

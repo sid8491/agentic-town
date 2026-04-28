@@ -10,3 +10,6 @@ Another slow afternoon drift through Sector 29 Market. Seeing Anita nearby alway
 
 # Day 1 — 3:30pm
 The air here
+
+# Day 1 — 4:30pm
+The market is loud today, a chaotic mix of shouting vendors and laughter—I can smell the fried dough from the street food stall, which is surprisingly comforting. Seeing Anita nearby made me pause, almost like I needed a moment just to watch the crowd swirl around us. I feel a little overwhelmed by all the noise, but also strangely energized by the energy of it all.

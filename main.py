@@ -25,6 +25,7 @@ import asyncio
 import logging
 import math
 import threading
+import time
 
 import arcade
 
@@ -61,6 +62,8 @@ _ZONE_COLORS: dict[str, tuple[int, int, int]] = {
     "shopping": (155,  75, 175),
     "leisure":  (55,  185, 145),
 }
+
+_BUBBLE_FADE_SECS: float = 5.0    # seconds before thought bubble fully fades
 
 _MAP_BG        = (18,  20,  28)
 _GRID_COLOR    = (38,  40,  52)
@@ -145,6 +148,15 @@ def _compute_spread(n: int) -> list[tuple[float, float]]:
     ]
 
 
+def _name_tag_color(mood: float) -> tuple[int, int, int, int]:
+    """Return RGBA name-tag color based on agent mood."""
+    if mood < 30:
+        return (255, 80, 80, 255)    # red — distressed
+    if mood > 70:
+        return (100, 220, 100, 255)  # green — happy
+    return (220, 220, 220, 255)      # neutral gray
+
+
 # ---------------------------------------------------------------------------
 # Arcade window
 # ---------------------------------------------------------------------------
@@ -198,6 +210,10 @@ class GurgaonWindow(arcade.Window):
             tx, ty = tgts.get(name, (WINDOW_W / 2, WINDOW_H / 2))
             self._agent_cur[name] = [tx, ty]
 
+        # Thought-bubble tracking (action string → real-clock stamp of last change)
+        self._agent_last_action_seen: dict[str, str] = {}
+        self._agent_action_stamp: dict[str, float] = {name: 0.0 for name in _AGENT_COLORS}
+
     # ------------------------------------------------------------------
     # Update (lerp agent positions)
     # ------------------------------------------------------------------
@@ -205,10 +221,20 @@ class GurgaonWindow(arcade.Window):
     def on_update(self, dt: float) -> None:
         factor = min(1.0, dt * LERP_SPEED)
         targets = self._compute_agent_targets()
+        now = time.time()
         for name, cur in self._agent_cur.items():
             tx, ty = targets.get(name, (cur[0], cur[1]))
             cur[0] += (tx - cur[0]) * factor
             cur[1] += (ty - cur[1]) * factor
+
+            # Detect new action → reset fade timer
+            try:
+                new_action = self.world.get_agent_last_action(name)
+            except Exception:
+                new_action = ""
+            if new_action != self._agent_last_action_seen.get(name):
+                self._agent_last_action_seen[name] = new_action
+                self._agent_action_stamp[name] = now
 
     def _compute_agent_targets(self) -> dict[str, tuple[float, float]]:
         """Read world state and assign spread-out target pixel positions."""
@@ -272,7 +298,8 @@ class GurgaonWindow(arcade.Window):
             arcade.draw_circle_outline(px, py, ZONE_RADIUS, _BORDER_COLOR, 2)
 
     def _draw_agents(self) -> None:
-        """Draw each agent as a coloured circle with two-letter initials."""
+        """Draw each agent: circle + initials + name tag + fading thought bubble."""
+        now = time.time()
         for name, cur in self._agent_cur.items():
             px, py = cur[0], cur[1]
             rgb = _AGENT_COLORS.get(name, (180, 180, 180))
@@ -294,6 +321,36 @@ class GurgaonWindow(arcade.Window):
                 anchor_x="center",
                 anchor_y="center",
             )
+
+            # Name tag above circle — color reflects mood
+            try:
+                mood = self.world.get_agent(name).get("mood", 65.0)
+            except Exception:
+                mood = 65.0
+            arcade.draw_text(
+                name.capitalize(),
+                px, py + AGENT_RADIUS + 4,
+                color=_name_tag_color(mood),
+                font_size=8,
+                bold=True,
+                anchor_x="center",
+                anchor_y="bottom",
+            )
+
+            # Thought bubble — fades linearly over BUBBLE_FADE_SECS
+            elapsed = now - self._agent_action_stamp.get(name, 0.0)
+            alpha = max(0, int(255 * (1.0 - elapsed / _BUBBLE_FADE_SECS)))
+            if alpha > 0:
+                action_text = self._agent_last_action_seen.get(name, "")
+                if action_text:
+                    arcade.draw_text(
+                        action_text,
+                        px, py - AGENT_RADIUS - 4,
+                        color=(240, 240, 160, alpha),
+                        font_size=7,
+                        anchor_x="center",
+                        anchor_y="top",
+                    )
 
     def _draw_hud(self) -> None:
         """Minimal HUD strip at the bottom (fully fleshed out in Story 4.4)."""

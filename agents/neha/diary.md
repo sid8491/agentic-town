@@ -34,3 +34,6 @@ The Cyber Hub is so bright and buzzing, but right now, the corner I'm in feels s
 
 # Day 1 — 3:30pm
 It's so quiet here in the Cyber Hub, almost unnervingly so. I just spun around, expecting at least a few people milling about, but it’s just me and the echo of my own footsteps. I guess I needed a moment to just breathe in the atmosphere before diving into any of the 'socializing' buzz.
+
+# Day 1 — 4:30pm
+Ugh, the Cyber Hub is so overwhelmingly bright right now. I just wandered around, and honestly, it's dead quiet despite the 'social' vibe they're selling. I feel a little bubble-wrapped and bored, like I’m waiting for the actual party to start. Maybe I should just grab a drink and people-watch until someone actually needs chatting.

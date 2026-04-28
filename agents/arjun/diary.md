@@ -227,3 +227,6 @@ The familiar quiet of the apartment settled around me after looking out. Seeing 
 
 # Day 1 — 3:30pm
 The afternoon air in the apartments feels heavy, thick with the scent of dust and the quiet hum of our usual life. Seeing Kavya and Deepa nearby is comforting, but right now, all I really want is the blessed silence of my room. I think I just need to shut my eyes for a while and let the noise fade out.
+
+# Day 1 — 4:30pm
+The familiar scent of home settles around me; it’s comforting, even if I’m exhausted. Seeing Kavya and Deepa nearby feels like I'm finally back on solid ground. All I want right now is just to sink into the quiet of my room and breathe properly.

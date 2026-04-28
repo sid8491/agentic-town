@@ -13,3 +13,6 @@ Staring at the little screen, I almost laughed out loud. It's absurd, trying to 
 
 # Day 1 — 3:00pm
 The system just kept telling me I'm *at* the park, even though I feel like I just spent time trying to get somewhere else. It’s frustrating when the map in my head doesn't match the robot's little internal compass. I should probably just stick to talking to the cyber_hub; at least that path seems reliable right now.
+
+# Day 1 — 4:30pm
+Ugh, the system is so maddeningly literal. I *know* I'm already here, at the park, yet it acts like I've somehow strayed and can't even acknowledge my current location. It's frustrating when the interface refuses to simply *see* me where I am.

@@ -227,6 +227,45 @@ async def llm_decide(state: AgentState) -> AgentState:
 
 
 # ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _action_label(tool_name: str, tool_args: dict) -> str:
+    """Convert a tool name + args into a short human-readable bubble string."""
+    _simple: dict[str, str] = {
+        "look_around":     "looking around...",
+        "check_needs":     "checking needs...",
+        "check_inventory": "checking inventory...",
+        "append_diary":    "writing diary...",
+        "grep_memory":     "recalling memory...",
+        "sleep_action":    "sleeping...",
+        "work":            "working...",
+    }
+    if tool_name in _simple:
+        return _simple[tool_name]
+    if tool_name == "read_file":
+        return f"reading {tool_args.get('filename', 'notes')}..."
+    if tool_name == "edit_file":
+        return f"editing {tool_args.get('filename', 'notes')}..."
+    if tool_name == "move_to":
+        return f"moving to {tool_args.get('location', 'somewhere')}..."
+    if tool_name == "talk_to":
+        return f"talking to {tool_args.get('target', 'someone')}..."
+    if tool_name == "ask_about":
+        return f"asking {tool_args.get('target', 'someone')}..."
+    if tool_name == "give_item":
+        return f"giving {tool_args.get('item', 'something')}..."
+    if tool_name == "buy":
+        return f"buying {tool_args.get('item', 'something')}..."
+    if tool_name == "sell":
+        return f"selling {tool_args.get('item', 'something')}..."
+    if tool_name == "eat":
+        return f"eating {tool_args.get('item', 'food')}..."
+    return tool_name.replace("_", " ") + "..."
+
+
+# ---------------------------------------------------------------------------
 # Node 3: execute_tool_node
 # ---------------------------------------------------------------------------
 
@@ -249,6 +288,9 @@ async def execute_tool_node(state: AgentState) -> AgentState:
     await tools.world.add_event(
         f"{agent_name} → {tool_name}: {tool_result[:60]}"
     )
+
+    # Update last-action label for the renderer (thought bubble)
+    await tools.world.set_agent_last_action(agent_name, _action_label(tool_name, tool_args))
 
     logger.info("[%s] result: %s", agent_name, tool_result)
 

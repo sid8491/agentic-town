@@ -32,3 +32,6 @@ The market is absolutely buzzing today; the energy from all these stalls and peo
 Dear Diary,
 
 The market in Sector 29 is absolutely buzzing today; the smells from the street food are incredible, a mix of spices and something sweet. I spotted Suresh near the corner, which was a nice, unexpected little highlight. It feels almost chaotic out here, but in a good, exciting way that makes me feel... alive.
+
+# Day 1 — 4:30pm
+God, my eyes are tired from just staring at everything in this market; the sheer press of people and colors is almost overwhelming. I saw Suresh hovering nearby, and it felt a bit awkward just existing in this crowded space with him. Maybe I should grab some street food and just people-watch from a bench to reset my senses.

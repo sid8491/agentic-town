@@ -10,3 +10,6 @@ Ugh, just standing here in the metro hub, and nothing. It's so eerily quiet, eve
 
 # Day 1 — 3:30pm
 The metro station is so quiet right now, just the echo of my own footsteps. It feels strangely empty, like a stage set before anyone arrives. I really need a coffee; this waiting is making me restless.
+
+# Day 1 — 4:30pm
+Just standing here by the Metro station, the usual chaotic energy of the place feels muted right now. It's surprisingly quiet, almost too empty for a 4:30 PM spot. I feel this weird mix of relief and mild anticlimax; I was bracing myself for a crowd, but there's nothing but the usual concrete and the hum of the track.

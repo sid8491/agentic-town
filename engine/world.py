@@ -145,6 +145,10 @@ class WorldState:
         """Return the location id where *name* currently is."""
         return self._state["agents"][name]["location"]
 
+    def get_agent_last_action(self, name: str) -> str:
+        """Return the last-action label for *name* (empty string if absent)."""
+        return self._state["agents"][name].get("last_action", "")
+
     def get_nearby_agents(self, name: str) -> list[str]:
         """
         Return the names of all agents sharing *name*'s current location,
@@ -165,6 +169,11 @@ class WorldState:
         """Merge *updates* into the agent dict for *name*."""
         async with self._lock:
             self._state["agents"][name].update(updates)
+
+    async def set_agent_last_action(self, name: str, label: str) -> None:
+        """Record a human-readable action label for *name* (used by renderer)."""
+        async with self._lock:
+            self._state["agents"][name]["last_action"] = label
 
     async def move_agent(self, name: str, location: str) -> bool:
         """
