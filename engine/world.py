@@ -39,18 +39,74 @@ class WorldState:
         self._loc_index: dict[str, dict] = {}
         self._lock = asyncio.Lock()
 
+    # Default starting positions / coins for a fresh world (Epic 5)
+    _FRESH_AGENTS: dict[str, dict] = {
+        "arjun":  {"location": "apartment",   "coins": 150},
+        "priya":  {"location": "cyber_city",  "coins": 300},
+        "rahul":  {"location": "metro",       "coins": 80},
+        "kavya":  {"location": "apartment",   "coins": 120},
+        "suresh": {"location": "sector29",    "coins": 200},
+        "neha":   {"location": "cyber_hub",   "coins": 180},
+        "vikram": {"location": "park",        "coins": 160},
+        "deepa":  {"location": "apartment",   "coins": 130},
+        "rohan":  {"location": "dhaba",       "coins": 40},
+        "anita":  {"location": "sector29",    "coins": 250},
+    }
+
     # ------------------------------------------------------------------
     # Persistence
     # ------------------------------------------------------------------
+
+    def _load_map_file(self) -> None:
+        """Load map.json and rebuild the location index."""
+        with open(self._map_path, "r", encoding="utf-8") as f:
+            self._map = json.load(f)
+        self._loc_index = {loc["id"]: loc for loc in self._map["locations"]}
 
     def load(self) -> None:
         """Load state and map JSON files into memory."""
         with open(self._state_path, "r", encoding="utf-8") as f:
             self._state = json.load(f)
-        with open(self._map_path, "r", encoding="utf-8") as f:
-            self._map = json.load(f)
-        # Build fast location lookup
-        self._loc_index = {loc["id"]: loc for loc in self._map["locations"]}
+        self._load_map_file()
+
+    def _build_fresh_state(self) -> None:
+        """Populate self._state with clean Day-1 defaults for all agents."""
+        agents = {
+            name: {
+                "location":         defaults["location"],
+                "hunger":           20.0,
+                "energy":           90.0,
+                "mood":             65.0,
+                "coins":            defaults["coins"],
+                "inventory":        [],
+                "inbox":            [],
+                "last_action":      "waking up",
+                "last_action_time": 360,
+            }
+            for name, defaults in self._FRESH_AGENTS.items()
+        }
+        self._state = {
+            "sim_time":    360,
+            "day":         1,
+            "paused":      False,
+            "speed":       1.0,
+            "llm_primary": "ollama",
+            "events":      [],
+            "daily_events": [],
+            "agents":      agents,
+        }
+
+    def load_or_init(self) -> None:
+        """Load state.json if it exists; otherwise build fresh defaults and save."""
+        self._load_map_file()
+        if os.path.exists(self._state_path):
+            with open(self._state_path, "r", encoding="utf-8") as f:
+                self._state = json.load(f)
+            logger.info("[world] loaded %s", self._state_path)
+        else:
+            self._build_fresh_state()
+            self._write_state()
+            logger.info("[world] initialised fresh state at %s", self._state_path)
 
     def _write_state(self) -> None:
         """Write the current in-memory state back to disk (pretty-printed).
@@ -329,6 +385,17 @@ class SimulationLoop:
         self._task: asyncio.Task | None = None
         self._runners: dict = {}   # populated lazily on first run
 
+        # Wire all engine modules to the shared WorldState instance so that
+        # tool calls, needs decay, and agent decisions all mutate the same
+        # object that the Arcade renderer reads. Must happen before any
+        # engine module creates its own WorldState at module level.
+        import engine.tools as _tools
+        _tools.world = world
+        import engine.needs as _needs
+        _needs.world = world
+        import engine.agent as _agent
+        _agent.world = world
+
     def _get_runner(self, agent_name: str):
         """Lazily import and create AgentRunner to avoid circular imports."""
         if agent_name not in self._runners:
@@ -369,21 +436,53 @@ class SimulationLoop:
         # 4. Save world state
         await self.world.save_async()
 
+        # 5. Auto-speed: fast-forward through quiet night periods
+        sleeping_count = sum(
+            1 for name in self.AGENTS
+            if "sleep" in self.world.get_agent_last_action(name).lower()
+        )
+        current_speed = self.world._state.get("speed", 1.0)
+        if sleeping_count >= 7 and current_speed < 4.0:
+            await self.world.set_speed(4.0)
+            logger.info(
+                "[loop] auto-speed UP: %d/10 sleeping → 4x", sleeping_count
+            )
+        elif sleeping_count < 5 and current_speed >= 4.0:
+            await self.world.set_speed(1.0)
+            logger.info(
+                "[loop] auto-speed DOWN: only %d sleeping → 1x", sleeping_count
+            )
+
+    async def _autosave_loop(self) -> None:
+        """Save world state every 5 real seconds, independent of tick timing."""
+        _INTERVAL = 5.0
+        while True:
+            await asyncio.sleep(_INTERVAL)
+            try:
+                await self.world.save_async()
+                logger.debug("[loop] autosaved")
+            except Exception as exc:
+                logger.warning("[loop] autosave failed: %s", exc)
+
     async def _loop(self) -> None:
         """Main loop — runs until self._running is False."""
         self._running = True
         logger.info("[loop] simulation started")
-        while self._running:
-            paused = self.world._state.get("paused", False)
-            if paused:
-                await asyncio.sleep(0.5)
-                continue
+        autosave = asyncio.create_task(self._autosave_loop())
+        try:
+            while self._running:
+                paused = self.world._state.get("paused", False)
+                if paused:
+                    await asyncio.sleep(0.5)
+                    continue
 
-            await self._tick()
+                await self._tick()
 
-            speed = self.world._state.get("speed", 1.0)
-            interval = self.BASE_INTERVAL / max(speed, 0.1)
-            await asyncio.sleep(interval)
+                speed = self.world._state.get("speed", 1.0)
+                interval = self.BASE_INTERVAL / max(speed, 0.1)
+                await asyncio.sleep(interval)
+        finally:
+            autosave.cancel()
 
         logger.info("[loop] simulation stopped")
 

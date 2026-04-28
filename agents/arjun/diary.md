@@ -242,3 +242,76 @@ The apartment feels quiet now that the immediate buzz has settled; it's just the
 
 # Day 1 — 9:15pm
 The silence here in the apartment feels heavy after the evening; just the hum of the AC and the faint scent of Deepa's jasmine soap. Seeing Kavya and Deepa settled in, it's a comforting, familiar weight of normalcy. I should probably just slip into this bed and let the quiet swallow the day’s lingering edges.
+
+# Day 1 — 9:45pm
+The quiet settling over the apartment is almost loud tonight. Seeing Kavya and Deepa nearby just settles the background hum of the day, even if we're just existing in the same space. I feel a strange mix of exhaustion and a quiet comfort just knowing they are close by.
+
+# Day 1 — 9:45pm
+The apartment still feels hushed after the day's noise, and seeing Kavya and Deepa nearby is oddly comforting. I just needed a moment to take everything in; the sheer mundane familiarity of home settled my nerves a bit. Tonight, all I want is to just breathe and let the quiet settle over everything.
+
+# Day 1 — 9:45pm
+The apartment feels quiet now, a deep wash of calm after the day's noise. Seeing Kavya and Deepa near just settled something in my chest—a familiar sort of comfort. I think I just need to sink into the couch and let the quiet speak for a while.
+
+# Day 1 — 9:45pm
+The apartment feels quiet now, just the hum of the city outside. Seeing Kavya and Deepa nearby, it's nice to know I'm not completely alone, but tonight, the thought of just slipping into the quiet seems exactly right. Exhaustion has settled deep in my bones; I think I just need a long stretch and some proper rest.
+
+# Day 1 — 10:45pm
+The apartment still feels too big and quiet after everything. Seeing Kavya and Deepa nearby is a small comfort, but it also feels like everyone is keeping their distance tonight. I think I just need to sink into the couch and just *be* for a while; my head is spinning a little.
+
+# Day 1 — 11:00pm
+Another night at Sushant Lok Apartments. Seeing Kavya and Deepa nearby feels... comfortable, I suppose. The quiet settling in now, after the day's hustle, makes me feel utterly drained, but in a way that feels like a needed balm. Just the gentle promise of sleep feels like the most important thing right now.
+
+# Day 1 — 11:15pm
+The apartment feels quiet now, almost too quiet after seeing Kavya and Deepa nearby. It’s late, and the familiar sight of the lights in the building offers a small comfort. I just feel this wave of exhaustion washing over me; I think I just need to settle in and let the day melt away.
+
+# Day 1 — 11:30pm
+The apartment is quiet now, just the hum of the refrigerator keeping me company. Seeing Kavya and Deepa nearby feels strangely comforting after the day's noise, even if I don't know what we talked about. I think I just need to collapse and let the silence settle around me for a while.
+
+# Day 1 — 11:45pm
+*November 20th*
+
+The quiet here is almost too loud. Just seeing Kavya and Deepa settled in the same vicinity—it’s a strange mix of comfort and buzzing energy. I feel drained, frankly, like I’ve run a marathon in my head even though my body hasn't moved much. Time to just surrender to the quiet.
+
+# Day 2 — 12:00am
+My fingers were actually shaking a bit before I hit send. It felt like such a big step, just reaching out to Kavya after all these times. I really hope she takes it well; I was secretly hoping this would actually break the awkwardness between our houses.
+
+# Day 2 — 12:15am
+Dear Diary,
+
+My heart is still doing a little jitterbug after talking to Kavya. It felt so easy, like I’d known her forever even though I just said hello. I hope she actually liked hearing from me; it was a little nerve-wracking, but I’m buzzing with a strange, pleasant energy right now.
+
+# Day 2 — 12:30am
+God, my palms are still a little sweaty from that quick chat. I really hope I didn't come across as too eager, but I’m glad I finally said hello. Maybe a cup of coffee sometime soon? It feels like a small victory, honestly.
+
+# Day 2 — 12:45am
+The apartment feels quiet now, a deep, heavy silence settling in after the late hours. Seeing Kavya and Deepa nearby is a small comfort, a reminder that I’m not completely alone in this little bubble. For now, though, just the soft glow of the streetlights and the promise of sleep feels like the only necessary thing.
+
+# Day 2 — 12:45am
+My thumbs finally stopped hovering over my phone screen. Talking to Kavya always feels like an effortless exhale; it’s strange how much I needed that little conversational anchor today. I’m glad things with her sound okay, even if my week was anything but smooth. Now, I just need a moment to let this little burst of connection settle in.
+
+# Day 2 — 12:45am
+Deepa's message popped up, and it felt nice to actually hear from her. I spent a little while crafting something casual, hoping it wouldn't sound too forced. Just getting a simple update feels like a small win today; it's good to reconnect with someone familiar.
+
+# Day 2 — 1:30am
+The automatic doors hissed open, and the sudden rush of recycled air hit me—a familiar, slightly sterile scent of train dust and disinfectant. I let my breath out in a slow sigh, the energy of the crowd washing over me. At least being here means I can finally start figuring out which exit leads me closer to the afternoon light.
+
+# Day 2 — 1:45am
+Finally, I'm settled in. The air here in Sushant Lok Apartments feels a little quieter already, a genuine sense of peace washing over me after the chaos of moving. I can just hear the faint sounds of the neighbourhood settling down for the evening. It feels like coming home, even if it's just temporary for now.
+
+# Day 2 — 2:00am
+The quiet of the apartment at 2 AM is oddly loud tonight. Seeing Kavya and Deepa nearby just makes the exhaustion feel heavier, like I can't afford to just... *be*. I think I need to just sink into whatever rest I can find before the morning fog rolls in.
+
+# Day 2 — 2:15am
+The rush of people just hit me as I stepped off the platform. The familiar, slightly stale air of the metro always feels like a weird sort of bubble, separating me from whatever chaos is out there. I need to get my bearings before I even think about where I'm going.
+
+# Day 2 — 2:15am
+Finally, the chaos of the morning rush is behind me. Settling into the familiar quiet of Sushant Lok Apartments feels like taking a deep, slow breath after holding it for too long. I can already hear the distant murmur of traffic, a comforting backdrop to simply *being* here for a little while.
+
+# Day 2 — 3:00am
+The rumble of the train is a familiar, comforting vibration through the floor; it always feels like the city is shaking itself awake beneath my feet. Seeing the advertisements flash past the glass makes me feel simultaneously swept away and very, very grounded in this moment. I think I need to find a spot to just watch the people stream out of the exits for a while.
+
+# Day 2 — 3:15am
+Finally, I'm here. The silence in Sushant Lok Apartments is a balm after the constant noise of the city centre. I can already smell the slightly dusty, comforting scent of a new place. A deep breath—it feels like a real exhale.
+
+# Day 2 — 3:30am
+The sudden quiet of the apartment, punctuated only by the distant hum of the city, feels both peaceful and utterly isolating. Seeing Rahul and Kavya just across the way makes the silence less oppressive, even if they are just sleeping. For now, just existing in this familiar space is enough to feel grounded.

@@ -44,3 +44,38 @@ Ugh, my eyes are still adjusting to this chaotic buzz of the market even though 
 
 # Day 1 — 9:15pm
 Oh, this market is so much louder than I expected it to be tonight. Seeing Suresh across the crowd always makes my heart give a little jolt, even when I try to act casual. I really need to stop staring at people's shoes and just focus on getting a decent cup of tea. Maybe I should just find a quiet bench and breathe for a minute.
+
+# Day 1 — 9:45pm
+The market is finally thinning out, and the energy has shifted from bustling chaos to a low, tired hum. Catching a glimpse of Suresh over there gave me a little jolt of familiar warmth, even if I don't know what we'll talk about. I feel strangely peaceful right now, like the day’s noise has finally washed out and I can just breathe.
+
+# Day 1 — 9:45pm
+The market is starting to thin out now that it's nearly ten, and I can just hear the distant sounds of the night starting to settle in. Seeing Suresh lingering near the stalls felt like a tiny anchor in the chaos of the day—a moment of familiar, if slightly awkward, company. Honestly, just walking around and absorbing the smell of the cooking spices finally feels like a deep, necessary exhale.
+
+# Day 1 — 9:45pm
+Did look_around. Life continues.
+
+# Day 2 — 12:45am
+Dear Diary,
+
+Ugh, I almost sent that message to Suresh, but it bounced back with some cryptic error message. It was so frustrating; I just needed to ask him something quick and now I have to decipher what the tech means. I feel a bit silly, like I'm wrestling with a computer instead of just having a casual chat. I really hope I can just get that simple conversation sorted soon.
+
+# Day 2 — 12:45am
+Ugh, I really hope Suresh knows what he's talking about. It felt so vulnerable sending that message, like hanging my entire 'next move' strategy on his opinion. Now I'm just sitting here, drumming my fingers, waiting for his response to tell me where I *should* be networking. Fingers crossed he gives me some genuinely useful advice and doesn't just give me the standard corporate platitudes.
+
+# Day 2 — 12:45am
+The market is starting to quiet down now that it’s this late, but seeing Suresh lingering around always feels a bit charged. I keep glancing over at him, trying to read what he’s thinking amidst the scattered evening glow of the stalls. My stomach is fluttering a little; I wonder if I should just grab some street food and distract myself, or if I should actually say something.
+
+# Day 2 — 2:15am
+Finally, I’m actually *here*. The air in Sushant Lok Apartments feels instantly calmer than the chaos of the station. I can already picture myself with a cup of tea and just… existing for a while. It feels like I’ve finally landed.
+
+# Day 2 — 2:15am
+My head is buzzing a little; I can practically hear the quiet hum of the building settling around me. Seeing everyone near—Arjun, Rahul, Kavya, Deepa—even at this late hour, just makes me feel… connected, I guess. It’s strange how home feels different when the day is done, just a quiet pool of people nearby. I think I need to just settle into bed and let the silence wash over me for a while.
+
+# Day 2 — 3:00am
+Ugh, it's barely three in the morning, and the Sector 29 Market is buzzing with this strange, tired energy. Seeing Suresh over there just staring into the distance feels heavy, like we're all just waiting for the sun to do something drastic. I think I need to grab some street food just to feel something other than the exhaustion clinging to the air.
+
+# Day 2 — 3:15am
+The market is eerily quiet at this hour, only the faint buzz of the streetlights keeping things awake. Seeing Suresh and Rohan together just... grounded me a little, even if I don't know what they were talking about. I should probably head back to the apartment and just let my brain switch off for a few hours.
+
+# Day 2 — 3:30am
+Ugh, I'm glad that got out. Talking to Suresh always feels like a little shot of adrenaline, you know? I really hope he's doing well; I was genuinely hoping to catch up properly today. Now I just have to wait for him to reply and not spiral into overthinking what he might say.

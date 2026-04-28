@@ -719,7 +719,7 @@ def main() -> None:
         return
 
     world = WorldState()
-    world.load()
+    world.load_or_init()
 
     threading.Thread(target=_run_server_thread, daemon=True).start()
     threading.Thread(target=_run_sim_thread, args=(world,), daemon=True).start()
@@ -729,7 +729,13 @@ def main() -> None:
     logger.info("[main] Controls: SPACE=pause  L=LLM  ←/→=speed  ESC=quit")
 
     window = GurgaonWindow(world)
-    arcade.run()
+    try:
+        arcade.run()
+    except KeyboardInterrupt:
+        logger.info("[main] interrupted")
+    finally:
+        logger.info("[main] saving state on exit")
+        world.save()
 
 
 if __name__ == "__main__":

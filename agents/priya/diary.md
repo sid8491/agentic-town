@@ -50,3 +50,38 @@ Ugh, it's so quiet in this district right now. The usual hustle and bustle of Cy
 
 # Day 1 — 9:15pm
 The city lights are still buzzing, even after everyone else has gone home. Just staring out the window from this sterile office feels strangely quiet, like the work never actually stopped. I feel this weird mix of exhaustion and a little bit of relief that I don't have to talk to a single person tonight.
+
+# Day 1 — 9:45pm
+Ugh, finally done with that project. My brain feels like it’s vibrating right out of my skull, but knowing I actually earned those 50 coins feels amazing. I think I deserve to just sit down with a really big, unscheduled cup of chai and just breathe for a solid hour.
+
+# Day 1 — 9:45pm
+It’s so quiet in the Cyber City Business District right now; almost eerily silent, considering how many people swarm these streets during the day. Just looking around confirms it—the rush hour crowd has completely dispersed, and there’s no one around to even bump into. I feel oddly adrift, like I've stepped out of the main current and onto a deserted platform.
+
+# Day 1 — 9:45pm
+The fluorescent lights of the Cyber City district are buzzing, but it feels strangely hollow tonight. Being out here at 9:45 PM, with nothing but the glow of the glass towers around me, is deafeningly quiet. I just sort of... looked around, and it confirmed what I already suspected: I'm completely alone in this massive, glittering place.
+
+# Day 1 — 9:45pm
+The silence in the business district tonight is almost too loud. I just feel this strange mix of exhaustion and… nothingness, looking around at all these glittering, deserted towers. At least I know there's work here tomorrow, which is something to hold onto right now.
+
+# Day 2 — 12:45am
+Dear Diary,
+
+Wow, I actually did it. Getting that work done felt like hauling myself up a really steep hill, but the 50 coins in my pocket feel like a massive weight lifted off my chest. I’m so relieved, and honestly, kind of buzzing with that little spark of accomplishment. Time for some tea!
+
+# Day 2 — 12:45am
+Ugh, seriously? I just tried to head back to the apartment, and the whole system threw an error. It's so frustrating when you *know* where you want to be, but the path just won't open up for you. Guess I’m stuck near the metro station for now, which is just *fine*.
+
+# Day 2 — 2:15am
+Ugh, it's so quiet here in the business district right now. Just me and the glow of these skyscraper windows, and absolutely no one around. I feel strangely drained, like all the energy of the day has just leaked out into the silent air. Time to head back to the metro and just zone out for a bit.
+
+# Day 2 — 2:15am
+Whew, finally on the metro. The sudden rush of people and the squeal of the train wheels always feels like a little jolt through my whole body. I think I caught a glimpse of a really interesting mural through the window, which was a nice little moment of color amidst all the grey concrete. Now, just breathe and let the journey take care of the rest of the day's chaos.
+
+# Day 2 — 3:00am
+Oh my gosh, I actually did it. I finally got that project done, and seeing the 'Worked. Earned 50 coins' pop up felt genuinely good, like a little burst of adrenaline. I can finally take a deep breath and properly relax tonight. Maybe I can treat myself to that nice tea I’ve been eyeing.
+
+# Day 2 — 3:15am
+God, it's so quiet out here, almost unnervingly so, even for 3:15 am in the heart of the business district. Just the hum of the city cooling down around me. I feel a strange mix of exhaustion and a weird kind of clarity looking at these empty streets. Time to grab some coffee and tackle whatever work waits for me.
+
+# Day 2 — 3:30am
+Ugh, I feel so drained, but in the best way. Seeing those coins pop up like that feels almost unreal; I actually earned some! I think I can finally afford that new book I’ve been eyeing.

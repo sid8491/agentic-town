@@ -49,3 +49,39 @@ It’s almost too quiet in this whole area tonight. Just the low buzz of the pla
 
 # Day 1 — 9:15pm
 Ugh, standing here in this buzzing social quarter, I feel strangely invisible. It's so loud and full of possibility, but honestly, being completely alone right now is a weird mix of freedom and awkwardness. I guess I need a proper drink just to ground myself before I try to navigate the gossip circuit.
+
+# Day 1 — 9:45pm
+Ugh, this Cyber Hub feels so vast and empty right now, even though I know it’s buzzing when people actually show up. The lights are all this cool, electric blue, but the silence is loud. I guess I’ll just wander a bit more and see if I can catch a glimpse of something interesting.
+
+# Day 1 — 9:45pm
+The lights here are almost too bright, buzzing with that fake energy of a crowded spot, even though I'm the only one right here. I just kept looking around, feeling this strange mix of wanting to be part of something and being perfectly comfortable just observing. It’s almost eerie how quiet it is right now, despite all the supposed "socializing" atmosphere.
+
+# Day 1 — 9:45pm
+Wow, it's almost ten at Cyber Hub, and this social quarter feels eerily quiet. I walked around, expecting to see the buzz, but it's just... empty. Guess I'll have to dig into that drink menu and see if something sparks the atmosphere up a bit.
+
+# Day 1 — 9:45pm
+The Cyber Hub is buzzing, but honestly, this corner feels strangely quiet. It’s so brightly lit and full of potential energy, but right now, it’s just… empty. I suppose I could try to find a little spot to just *be* for a while.
+
+# Day 2 — 12:45am
+Ugh, seriously? I'm still stuck at Cyber Hub, and the thought of being back in my apartment is literally painful right now. The system keeps throwing these little messages at me, like I'm doing something wrong. I just wanted a change of scenery, but clearly, the tech has other plans for me tonight.
+
+# Day 2 — 12:45am
+Ugh, it's so dead here in the Cyber Hub right now. I just wandered around, hoping for some sparkle or at least a decent ear to gossip with, but it's just echoes and vending machine hums. Feeling a little let down; maybe I should just find a cozy corner and order a terrible cup of coffee instead.
+
+# Day 2 — 12:45am
+Ugh, seriously? I can't even just wander over to the apartment, even though it feels like the logical next step. Stuck right here at the cyber hub, surrounded by these 'connected' spots, but still miles away from a comfy couch. I just want to sit down and breathe, but it feels like I have to navigate the whole metro system first.
+
+# Day 2 — 2:15am
+Ugh, it’s barely two in the morning, and the energy in this place is still buzzing. Seeing Vikram just hanging out here, amidst all the neon and the noise, feels both exciting and completely exhausting. I think I need to just find a quiet corner and let the city noise fade away for a bit.
+
+# Day 2 — 2:15am
+Ugh, finally messaged Vikram. I really hope he responds quickly; I've been wondering how he's actually doing, not just the polite surface stuff. My stomach feels a little fluttery, which I guess means I'm hoping for a good chat.
+
+# Day 2 — 3:00am
+The Cyber Hub is completely deserted right now; it feels almost too quiet for this area. I walked around looking, but honestly, it's like wandering through a beautiful, echoing museum at 3 AM. I think I need a coffee or maybe just to sit out in the park and breathe for a bit.
+
+# Day 2 — 3:15am
+Ugh, finally off the crowded street and into the relative calm of the metro. It’s always such a rush getting through the gates, but at least I can just stand here and watch everyone else hustle by for a minute. Hopefully, this ride will be quick enough that I can actually breathe before I have to deal with whatever awaits me.
+
+# Day 2 — 3:30am
+Finally, I'm settled in at the apartments. There's a weird mix of relief and quiet chaos right now—so much unpacking to do. At least I'm physically closer to everything I need, which feels like a huge weight off my chest. Time for a cup of tea and a deep breath.

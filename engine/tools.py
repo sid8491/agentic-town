@@ -170,12 +170,15 @@ async def look_around(agent_name: str) -> str:
 
     nearby_str = ", ".join(nearby) if nearby else "no one"
     services_str = ", ".join(services) if services else "none"
+    connected = world.get_connected_locations(location_id)
+    can_move_str = ", ".join(connected) if connected else "none"
 
     return (
         f"Location: {display} ({loc_type})\n"
         f"Time: Day {time_info['day']} — {time_info['time_str']}\n"
         f"Nearby: {nearby_str}\n"
         f"Services available: {services_str}\n"
+        f"Can move to: {can_move_str}\n"
         f"Messages in inbox: {inbox_count}"
     )
 

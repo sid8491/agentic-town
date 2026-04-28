@@ -41,6 +41,117 @@ from engine.tools import (
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
+# Schedule / archetype constants
+# ---------------------------------------------------------------------------
+
+_AGENT_ARCHETYPE: dict[str, str] = {
+    "arjun":  "office_worker",   # 9-6 office job, sleeps 11pm-6am
+    "priya":  "office_worker",   # corporate, sleeps 11pm-6am
+    "rahul":  "night_owl",       # gig worker, sleeps 2am-9am
+    "kavya":  "student",         # studies late, sleeps 1am-7am
+    "suresh": "vendor",          # opens stall early, sleeps 10pm-5am
+    "neha":   "office_worker",   # sleeps 11pm-6am
+    "vikram": "retired",         # early to bed/rise, sleeps 9pm-5am
+    "deepa":  "homemaker",       # sleeps 10pm-6am
+    "rohan":  "night_owl",       # musician/gig worker, sleeps 3am-10am
+    "anita":  "entrepreneur",    # long hours, sleeps 12am-6am
+}
+
+# Sleep windows: (sleep_start, sleep_end) in minutes since midnight.
+# When sleep_start > sleep_end the window wraps past midnight.
+_SLEEP_WINDOWS: dict[str, tuple[int, int]] = {
+    "office_worker": (1380, 360),   # 11pm–6am  (wraps midnight)
+    "night_owl":     (180, 540),    # 3am–9am   (doesn't wrap)
+    "student":       (60, 420),     # 1am–7am   (doesn't wrap)
+    "vendor":        (1320, 300),   # 10pm–5am  (wraps midnight)
+    "retired":       (1260, 300),   # 9pm–5am   (wraps midnight)
+    "homemaker":     (1320, 360),   # 10pm–6am  (wraps midnight)
+    "entrepreneur":  (0, 360),      # 12am–6am  (doesn't wrap)
+}
+
+# Work hours: (work_start, work_end) in minutes since midnight.
+_WORK_HOURS: dict[str, tuple[int, int]] = {
+    "office_worker": (540, 1080),   # 9am–6pm
+    "vendor":        (480, 1200),   # 8am–8pm
+    "entrepreneur":  (600, 1320),   # 10am–10pm
+}
+
+
+def _in_window(sim_time: int, start: int, end: int) -> bool:
+    """Return True if *sim_time* falls within the [start, end) window.
+
+    Handles windows that wrap past midnight (start > end).
+    """
+    if start <= end:
+        return start <= sim_time < end
+    # Wraps midnight: [start, 1440) ∪ [0, end)
+    return sim_time >= start or sim_time < end
+
+
+def _schedule_guidance(agent_name: str, sim_time: int) -> str:
+    """Return a short directive string for the agent based on sim_time.
+
+    Returns an empty string when no specific guidance is warranted.
+    """
+    archetype = _AGENT_ARCHETYPE.get(agent_name, "")
+    if not archetype:
+        return ""
+
+    # Build a human-readable time string without importing WorldState here.
+    sim_time = sim_time % 1440
+    hour24 = sim_time // 60
+    minute = sim_time % 60
+    suffix = "am" if hour24 < 12 else "pm"
+    hour12 = hour24 % 12 or 12
+    time_str = f"{hour12}:{minute:02d}{suffix}"
+
+    # --- Sleep window check ---
+    sleep_window = _SLEEP_WINDOWS.get(archetype)
+    if sleep_window:
+        sleep_start, sleep_end = sleep_window
+        if _in_window(sim_time, sleep_start, sleep_end):
+            return (
+                f"It is {time_str}. This is your sleep time. "
+                "Go home and sleep. "
+                "Only skip if you are critically hungry (hunger>85) or about to collapse."
+            )
+
+    # --- Morning routine (within 90 min after wake-up) ---
+    if sleep_window:
+        sleep_start, sleep_end = sleep_window
+        wake_time = sleep_end  # sleep_end is wake-up minute
+        # Minutes since wake-up (handle midnight wrap)
+        minutes_since_wake = (sim_time - wake_time) % 1440
+        if 0 <= minutes_since_wake < 90:
+            return (
+                f"It is {time_str}. You just woke up. "
+                "Freshen up, eat breakfast, then head to work or your daily activity."
+            )
+
+    # --- Evening wind-down (2 hrs before sleep) ---
+    if sleep_window:
+        sleep_start, sleep_end = sleep_window
+        wind_down_start = (sleep_start - 120) % 1440
+        if _in_window(sim_time, wind_down_start, sleep_start):
+            return (
+                f"It is {time_str}. Evening — wind down. "
+                "Head home, eat dinner, relax."
+            )
+
+    # --- Work hours ---
+    work_window = _WORK_HOURS.get(archetype)
+    if work_window:
+        work_start, work_end = work_window
+        if _in_window(sim_time, work_start, work_end):
+            return (
+                f"It is {time_str}. Normal working hours. "
+                "Prioritise being at your workplace and working."
+            )
+
+    return ""
+
+
+# ---------------------------------------------------------------------------
 # State definition
 # ---------------------------------------------------------------------------
 
@@ -132,6 +243,26 @@ async def gather_context(state: AgentState) -> AgentState:
     # Trim soul to first 300 chars to keep prompt concise
     soul_summary = soul[:300].rsplit("\n", 1)[0] if len(soul) > 300 else soul
 
+    # Last action — used to discourage repetition
+    try:
+        last_action = world.get_agent_last_action(agent_name)
+    except Exception:
+        last_action = ""
+
+    repeat_warning = (
+        f"\nYou JUST did: {last_action}. Do NOT repeat that. Pick something different."
+        if last_action and last_action not in ("waking up", "")
+        else ""
+    )
+
+    # Schedule guidance based on time-of-day and agent archetype
+    schedule_str = _schedule_guidance(agent_name, time_info["sim_time"])
+    schedule_section = (
+        "=== SCHEDULE ===\n"
+        f"{schedule_str}\n\n"
+        if schedule_str else ""
+    )
+
     # Build the LLM prompt
     llm_prompt = (
         "=== WHO YOU ARE ===\n"
@@ -145,8 +276,16 @@ async def gather_context(state: AgentState) -> AgentState:
         f"{formatted_inbox}\n\n"
         "=== RELEVANT MEMORIES ===\n"
         f"{memory_text}\n\n"
+        f"{schedule_section}"
         "=== WHAT DO YOU DO? ===\n"
-        "Choose exactly one tool to call. Be true to your character."
+        "Choose exactly one tool. Use this logic:\n"
+        "- Hungry (>50%)? → move toward food or eat something\n"
+        "- Tired (energy <40%)? → go home and sleep\n"
+        "- At work during work hours? → work to earn money\n"
+        "- Someone nearby? → talk_to them or ask_about something\n"
+        "- At a new location? → use one of its services\n"
+        "- Otherwise? → move somewhere purposeful\n"
+        f"Be decisive. Be true to your character.{repeat_warning}"
     )
 
     return {
@@ -180,8 +319,10 @@ async def llm_decide(state: AgentState) -> AgentState:
         state["llm_prompt"],
         tools=TOOL_SCHEMAS,
         system=(
-            f"You are {agent_name.capitalize()}, a character in a Gurgaon town "
-            "simulation. Stay in character. Call exactly one tool."
+            f"You are {agent_name.capitalize()}, a character in a Gurgaon town simulation. "
+            "You must call exactly one tool. Prefer active tools (move_to, talk_to, eat, "
+            "work, sleep) over passive ones (look_around). Only use look_around if you "
+            "genuinely need to reorient after arriving somewhere new."
         ),
         max_tokens=200,
         thinking=False,
