@@ -19,3 +19,12 @@ My heart is actually thumping a little bit right now. Sending that message to Ar
 
 # Day 1 — 9:30am
 The station is so… quiet right now. It's funny, surrounded by all this infrastructure, there’s nobody anywhere. I almost feel a little bubble of stillness, a momentary pause in the rush of the city that I know is just around the corner.
+
+# Day 1 — 10:00am
+The moment I stepped into the apartment, it felt like exhaling a huge, held breath. Everything here smells faintly of fresh paint and possibility, which is almost overwhelming. For now, just sinking onto the couch and taking it all in feels like enough for a perfect evening.
+
+# Day 1 — 10:15am
+The escalator ride down to the platform was surprisingly breezy, actually. I feel a little energized now, like I can finally take a deep breath that isn't flavored with office air. I hope the connection from here isn't too stressful; I just need a moment of calm before I have to think about dinner plans.
+
+# Day 1 — 10:30am
+Ugh, Cyber City. It hits you like a wall of neon and humming energy the second you step out. Everything feels too fast, too bright; I feel a little overwhelmed, like I've been dumped into a data stream that won't let me breathe. I just need to find a quiet corner and process all this glorious, chaotic overload.

@@ -2,763 +2,1041 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Gurgaon Town Life — Web Viewer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gurgaon Town Life</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; }
-  html, body {
-    margin: 0;
-    padding: 0;
-    background: #1a1a1a;
-    color: #ddd;
-    font-family: system-ui, sans-serif;
-    min-height: 100vh;
-  }
-  #error-banner {
-    display: none;
-    background: #ff6b6b;
-    color: #fff;
-    padding: 6px 12px;
-    text-align: center;
-    font-weight: bold;
-    font-size: 13px;
-  }
-  #error-banner.visible { display: block; }
-  #fatal {
-    display: none;
-    background: #ff6b6b;
-    color: #fff;
-    padding: 20px;
-    text-align: center;
-    font-size: 16px;
-  }
-  #fatal.visible { display: block; }
-  #app {
-    display: flex;
-    flex-direction: column;
-    padding: 12px;
-    gap: 12px;
-  }
-  #main-row {
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
-  }
-  #canvas-wrap {
-    position: relative;
-  }
-  canvas {
-    background: #2a2a2a;
-    display: block;
-    border: 1px solid #333;
-    cursor: pointer;
-  }
-  #event-log {
-    width: 320px;
-    background: #222;
-    border: 1px solid #333;
-    padding: 10px;
-    height: 640px;
-    overflow-y: auto;
-    font-family: monospace;
-    font-size: 11px;
-  }
-  #event-log h3 {
-    margin: 0 0 8px 0;
-    color: #fff;
-    font-size: 13px;
-    font-family: system-ui, sans-serif;
-    border-bottom: 1px solid #4a9eff;
-    padding-bottom: 4px;
-  }
-  .event-line {
-    padding: 2px 0;
-    color: #ddd;
-    word-wrap: break-word;
-  }
-  #hud {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    background: #222;
-    border: 1px solid #333;
-    padding: 10px 14px;
-    font-size: 14px;
-  }
-  #hud .item { color: #ddd; }
-  #hud .label { color: #888; margin-right: 4px; font-size: 12px; }
-  #hud .status-running { color: #51cf66; font-weight: bold; }
-  #hud .status-paused  { color: #ff6b6b; font-weight: bold; }
-  #llm-btn {
-    background: #4a9eff;
-    color: #fff;
-    border: none;
-    padding: 6px 14px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 13px;
-    font-family: system-ui, sans-serif;
-  }
-  #llm-btn:hover { background: #3a8eef; }
-  #llm-btn:disabled { opacity: 0.6; cursor: wait; }
+:root {
+  --bg:        #0c0d14;
+  --surface:   #12141f;
+  --card:      #191c2e;
+  --border:    #232640;
+  --border-hi: #353870;
+  --accent:    #ff8c42;
+  --blue:      #4e9eff;
+  --green:     #3ecf8e;
+  --red:       #ff6b6b;
+  --yellow:    #ffd43b;
+  --text:      #e8eaf2;
+  --muted:     #636882;
+  --font:      'Inter', system-ui, -apple-system, sans-serif;
+}
 
-  /* Inspector overlay */
-  #inspector {
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: 420px;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.85);
-    color: #fff;
-    padding: 24px;
-    overflow-y: auto;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s ease;
-    z-index: 100;
-    border-left: 2px solid #4a9eff;
-  }
-  #inspector.visible {
-    opacity: 1;
-    pointer-events: auto;
-  }
-  #inspector h2 {
-    margin: 0 0 4px 0;
-    font-size: 26px;
-    color: #fff;
-    text-transform: capitalize;
-  }
-  #inspector .loc {
-    color: #4a9eff;
-    font-size: 13px;
-    margin-bottom: 16px;
-  }
-  #inspector .needs { margin-bottom: 16px; }
-  #inspector .need-row {
-    display: flex;
-    align-items: center;
-    margin: 6px 0;
-    font-size: 13px;
-  }
-  #inspector .need-label {
-    width: 70px;
-    color: #aaa;
-  }
-  #inspector .bar {
-    flex: 1;
-    height: 12px;
-    background: #333;
-    border-radius: 6px;
-    overflow: hidden;
-    margin: 0 8px;
-  }
-  #inspector .bar-fill {
-    height: 100%;
-    transition: width 0.3s ease;
-  }
-  #inspector .need-val {
-    width: 40px;
-    text-align: right;
-    color: #ddd;
-    font-family: monospace;
-  }
-  #inspector .coins {
-    margin-bottom: 16px;
-    font-size: 14px;
-    color: #ffd966;
-  }
-  #inspector hr {
-    border: none;
-    border-top: 1px solid #4a9eff;
-    margin: 14px 0;
-  }
-  #inspector h4 {
-    margin: 12px 0 4px 0;
-    color: #4a9eff;
-    font-size: 14px;
-  }
-  #inspector p {
-    margin: 0 0 8px 0;
-    font-size: 13px;
-    color: #ddd;
-    white-space: pre-wrap;
-    line-height: 1.4;
-  }
-  #inspector-close {
-    position: absolute;
-    top: 8px;
-    right: 12px;
-    background: transparent;
-    border: none;
-    color: #fff;
-    font-size: 28px;
-    cursor: pointer;
-    line-height: 1;
-  }
-  #inspector-close:hover { color: #4a9eff; }
-  #diary-loading {
-    color: #888;
-    font-style: italic;
-    font-size: 12px;
-  }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 2px; }
+
+/* ── Header ── */
+#header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 52px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+
+.brand {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.brand-dot { color: var(--accent); }
+
+.hud-cluster {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  white-space: nowrap;
+  user-select: none;
+}
+.pill .val { color: var(--text); font-variant-numeric: tabular-nums; }
+
+.status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.pill.running .status-dot { background: var(--green); animation: blink 2s infinite; }
+.pill.paused  .status-dot { background: var(--red); }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.35} }
+
+#llm-btn {
+  padding: 5px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  letter-spacing: 0.2px;
+}
+#llm-btn:hover { background: var(--accent); color: #fff; }
+#llm-btn:disabled { opacity: 0.45; cursor: wait; }
+
+/* ── 3-column layout ── */
+#layout {
+  display: flex;
+  height: calc(100vh - 52px);
+  overflow: hidden;
+}
+
+/* ── Left: Roster ── */
+#roster {
+  width: 216px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 10px 8px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.col-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 6px 8px 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+  flex-shrink: 0;
+}
+
+.agent-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+.agent-card:hover { background: var(--card); border-color: var(--border); }
+.agent-card.active { background: var(--card); border-color: var(--border-hi); }
+
+.avatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 14px; color: #fff;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.agent-body { flex: 1; min-width: 0; }
+
+.agent-name {
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 1px;
+  text-transform: capitalize;
+}
+
+.agent-loc {
+  font-size: 10px;
+  color: var(--muted);
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.need-bars { display: flex; flex-direction: column; gap: 4px; }
+.need-row { display: flex; align-items: center; gap: 5px; }
+.need-icon { font-size: 9px; width: 10px; text-align: center; flex-shrink: 0; }
+.bar-track {
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.bar-fill { height: 100%; border-radius: 2px; transition: width 0.7s ease; }
+.bar-fill.hunger { background: linear-gradient(90deg, #ff8c42, #ff6b6b); }
+.bar-fill.energy { background: linear-gradient(90deg, #4e9eff, #63e6be); }
+.bar-fill.mood   { background: linear-gradient(90deg, #3ecf8e, #a9e34b); }
+
+.agent-action {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-style: italic;
+}
+
+/* ── Center: Map ── */
+#map-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  overflow: hidden;
+  padding: 16px;
+  min-width: 0;
+}
+
+#canvas {
+  display: block;
+  border-radius: 14px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+}
+
+/* ── Right: Events ── */
+#feed-col {
+  width: 272px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#feed-col .col-title { border-bottom: 1px solid var(--border); }
+
+#event-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 0;
+}
+
+.event-item {
+  display: flex;
+  gap: 10px;
+  padding: 7px 14px;
+  transition: background 0.12s;
+}
+.event-item:hover { background: var(--card); }
+
+.event-pip {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.event-body { flex: 1; min-width: 0; }
+.event-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 2px;
+}
+.event-agent {
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: capitalize;
+}
+.event-time { font-size: 10px; color: var(--muted); flex-shrink: 0; }
+.event-text {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.45;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* ── Error banner ── */
+#error-banner {
+  display: none;
+  position: fixed;
+  top: 52px; left: 0; right: 0;
+  background: rgba(255,107,107,0.95);
+  color: #fff;
+  text-align: center;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  z-index: 500;
+  backdrop-filter: blur(4px);
+}
+#error-banner.visible { display: block; }
+
+/* ── Inspector modal ── */
+#inspector {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+#inspector.visible { pointer-events: auto; opacity: 1; }
+
+#inspector-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(3px);
+}
+
+#inspector-panel {
+  position: absolute;
+  top: 0; right: 0;
+  width: 380px;
+  height: 100%;
+  background: var(--surface);
+  border-left: 1px solid var(--border-hi);
+  overflow-y: auto;
+  padding: 24px 22px;
+  transform: translateX(32px);
+  transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+#inspector.visible #inspector-panel { transform: translateX(0); }
+
+.inspector-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+#ins-avatar {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; font-weight: 700; color: #fff;
+  flex-shrink: 0;
+}
+.inspector-title { flex: 1; }
+#ins-name { font-size: 20px; font-weight: 700; text-transform: capitalize; margin-bottom: 3px; }
+#ins-loc { font-size: 12px; color: var(--muted); }
+
+#inspector-close {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  line-height: 1;
+  transition: color 0.15s, background 0.15s;
+  align-self: flex-start;
+}
+#inspector-close:hover { color: var(--text); background: var(--card); }
+
+.ins-section {}
+.ins-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ins-need-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.ins-need-label { width: 58px; font-size: 12px; color: var(--muted); }
+.ins-bar-track {
+  flex: 1; height: 8px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 4px; overflow: hidden;
+}
+.ins-bar-fill { height: 100%; border-radius: 4px; transition: width 0.7s ease; }
+.ins-bar-fill.hunger { background: linear-gradient(90deg,#ff8c42,#ff6b6b); }
+.ins-bar-fill.energy { background: linear-gradient(90deg,#4e9eff,#63e6be); }
+.ins-bar-fill.mood   { background: linear-gradient(90deg,#3ecf8e,#a9e34b); }
+.ins-need-val {
+  width: 28px; text-align: right;
+  font-size: 12px; color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.coins-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255,212,59,0.08);
+  border: 1px solid rgba(255,212,59,0.22);
+  color: var(--yellow);
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.diary-entry { margin-bottom: 16px; }
+.diary-day {
+  font-size: 11px; font-weight: 600;
+  color: var(--blue);
+  margin-bottom: 5px;
+}
+.diary-body {
+  font-size: 12px; color: var(--muted);
+  line-height: 1.65; white-space: pre-wrap;
+}
 </style>
 </head>
 <body>
 
-<div id="error-banner">Reconnecting...</div>
-<div id="fatal"></div>
+<div id="error-banner">⚠ Reconnecting to server...</div>
 
-<div id="app">
-  <div id="main-row">
-    <div id="canvas-wrap">
-      <canvas id="canvas" width="960" height="640"></canvas>
-    </div>
-    <div id="event-log">
-      <h3>EVENT LOG</h3>
-      <div id="event-list"></div>
-    </div>
+<!-- ── Header ── -->
+<header id="header">
+  <div class="brand">
+    <span>🏙</span>
+    <span><span class="brand-dot">Gurgaon</span> Town Life</span>
   </div>
+  <div class="hud-cluster">
+    <div class="pill">
+      <span class="val" id="hud-day">Day —</span>
+      <span style="color:var(--border-hi)">|</span>
+      <span class="val" id="hud-time">—:—</span>
+    </div>
+    <div class="pill running" id="pill-status">
+      <span class="status-dot"></span>
+      <span class="val" id="hud-status-text">Running</span>
+    </div>
+    <div class="pill">⚡ <span class="val" id="hud-speed">1×</span></div>
+    <button id="llm-btn">⬡ Ollama</button>
+  </div>
+</header>
 
-  <div id="hud">
-    <div class="item"><span class="label">Day</span><span id="hud-day">-</span></div>
-    <div class="item"><span class="label">Time</span><span id="hud-time">-</span></div>
-    <div class="item"><span class="label">Speed</span><span id="hud-speed">-</span></div>
-    <div class="item"><span class="label">Status</span><span id="hud-status">-</span></div>
-    <div class="item"><span class="label">LLM</span>
-      <button id="llm-btn">-</button>
-    </div>
-  </div>
+<!-- ── Layout ── -->
+<div id="layout">
+
+  <aside id="roster">
+    <div class="col-title">Residents</div>
+  </aside>
+
+  <main id="map-wrap">
+    <canvas id="canvas"></canvas>
+  </main>
+
+  <aside id="feed-col">
+    <div class="col-title" style="padding:14px 16px 10px">Live Events</div>
+    <div id="event-list"></div>
+  </aside>
+
 </div>
 
+<!-- ── Inspector ── -->
 <div id="inspector">
-  <button id="inspector-close" title="Close">&times;</button>
-  <h2 id="ins-name">-</h2>
-  <div class="loc" id="ins-loc">-</div>
-
-  <div class="needs">
-    <div class="need-row">
-      <span class="need-label">Hunger</span>
-      <div class="bar"><div class="bar-fill" id="ins-hunger-bar" style="width:0%; background:#ff6b6b;"></div></div>
-      <span class="need-val" id="ins-hunger-val">0</span>
+  <div id="inspector-backdrop"></div>
+  <div id="inspector-panel">
+    <div class="inspector-head">
+      <div id="ins-avatar">A</div>
+      <div class="inspector-title">
+        <div id="ins-name">—</div>
+        <div id="ins-loc">—</div>
+      </div>
+      <button id="inspector-close">✕</button>
     </div>
-    <div class="need-row">
-      <span class="need-label">Energy</span>
-      <div class="bar"><div class="bar-fill" id="ins-energy-bar" style="width:0%; background:#4a9eff;"></div></div>
-      <span class="need-val" id="ins-energy-val">0</span>
-    </div>
-    <div class="need-row">
-      <span class="need-label">Mood</span>
-      <div class="bar"><div class="bar-fill" id="ins-mood-bar" style="width:0%; background:#51cf66;"></div></div>
-      <span class="need-val" id="ins-mood-val">0</span>
-    </div>
-  </div>
 
-  <div class="coins" id="ins-coins">Coins: 0</div>
+    <div class="ins-section">
+      <div class="ins-label">Needs</div>
+      <div class="ins-need-row">
+        <span class="ins-need-label">Hunger</span>
+        <div class="ins-bar-track"><div class="ins-bar-fill hunger" id="ins-hunger-bar" style="width:0%"></div></div>
+        <span class="ins-need-val" id="ins-hunger-val">0</span>
+      </div>
+      <div class="ins-need-row">
+        <span class="ins-need-label">Energy</span>
+        <div class="ins-bar-track"><div class="ins-bar-fill energy" id="ins-energy-bar" style="width:0%"></div></div>
+        <span class="ins-need-val" id="ins-energy-val">0</span>
+      </div>
+      <div class="ins-need-row">
+        <span class="ins-need-label">Mood</span>
+        <div class="ins-bar-track"><div class="ins-bar-fill mood" id="ins-mood-bar" style="width:0%"></div></div>
+        <span class="ins-need-val" id="ins-mood-val">0</span>
+      </div>
+    </div>
 
-  <hr>
-  <h4 style="color:#fff; border-bottom:1px solid #4a9eff; padding-bottom:4px;">Recent Diary</h4>
-  <div id="ins-diary">
-    <div id="diary-loading">Loading diary...</div>
+    <div class="ins-section">
+      <div class="ins-label">Wallet</div>
+      <div class="coins-badge">🪙 <span id="ins-coins">0</span> coins</div>
+    </div>
+
+    <div class="ins-section">
+      <div class="ins-label">Diary</div>
+      <div id="ins-diary">
+        <div style="color:var(--muted);font-size:12px;font-style:italic">Loading...</div>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
 (function () {
-  'use strict';
+'use strict';
 
-  // -----------------------------------------------------------------------
-  // State
-  // -----------------------------------------------------------------------
-  const canvas = document.getElementById('canvas');
-  const ctx = canvas.getContext('2d');
+// ── Agent metadata ─────────────────────────────────────────────────────────
 
-  let mapData = null;          // { locations: [...] }
-  let locById = {};            // id -> location
-  let stateData = null;        // latest /api/state response
-  const agents = {};           // name -> { displayX, displayY, targetX, targetY, ... }
+const AGENT_NAMES = ['anita','arjun','deepa','kavya','neha','priya','rahul','rohan','suresh','vikram'];
 
-  // Tile geometry — must match engine/main.py constants.
-  const TILE_SIZE = 32;
-  const BOX_W = 110;
-  const BOX_H = 70;
+const AGENT_COLOR = {
+  arjun:  '#ff6b6b',
+  priya:  '#ffc078',
+  rahul:  '#63e6be',
+  kavya:  '#74c0fc',
+  suresh: '#ff8787',
+  neha:   '#d0bfff',
+  vikram: '#4dd0e1',
+  deepa:  '#f783ac',
+  rohan:  '#66d9e8',
+  anita:  '#a9e34b',
+};
 
-  // Color per location type (map.json doesn't ship colors).
-  const TYPE_COLOR = {
-    home:     '#6b8e6b',
-    transit:  '#6b7a8e',
-    work:     '#8e7a6b',
-    social:   '#8e6b8e',
-    food:     '#cc8844',
-    shopping: '#a89e6b',
-    leisure:  '#51a86b'
-  };
+const TYPE_FILL_TOP = {
+  home:     '#1e3a2f', transit: '#1a2a4a', work:     '#3a2010',
+  social:   '#2e1a3a', food:    '#3a2a10', shopping: '#2a2a1a',
+  leisure:  '#142e1a',
+};
+const TYPE_FILL_BOT = {
+  home:     '#111f1a', transit: '#0e1628', work:     '#200e04',
+  social:   '#1a0e22', food:    '#201408', shopping: '#181810',
+  leisure:  '#0a1810',
+};
+const TYPE_BORDER_COLOR = {
+  home:     '#3ecf8e', transit: '#4e9eff', work:     '#ff8c42',
+  social:   '#d0bfff', food:    '#ffd43b', shopping: '#a9e34b',
+  leisure:  '#63e6be',
+};
+const TYPE_ICON = {
+  home: '🏠', transit: '🚇', work: '💼',
+  social: '🎭', food: '🍛', shopping: '🛒', leisure: '🌿',
+};
 
-  function tilePixel(loc) {
-    return {
-      x: loc.tile_x * TILE_SIZE + TILE_SIZE / 2,
-      y: loc.tile_y * TILE_SIZE + TILE_SIZE / 2
-    };
+// ── State ──────────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+let mapData = null;
+let locById = {};
+let stateData = null;
+let sprites = {};           // name → {displayX, displayY, targetX, targetY}
+let relEdges = {};          // "from|to" → sentiment
+let inspectorAgent = null;
+let animT = 0;
+
+// ── Canvas sizing ──────────────────────────────────────────────────────────
+
+function resizeCanvas() {
+  const wrap = document.getElementById('map-wrap');
+  canvas.width  = Math.max(200, wrap.clientWidth  - 32);
+  canvas.height = Math.max(200, wrap.clientHeight - 32);
+  if (stateData) onStateUpdate();
+}
+window.addEventListener('resize', () => { resizeCanvas(); });
+resizeCanvas();
+
+// tile coords → canvas pixels (tile_y flipped so y=0 is at bottom)
+function tile2px(tx, ty) {
+  const padX = 80, padY = 55;
+  const sx = (canvas.width  - padX * 2) / 28;
+  const sy = (canvas.height - padY * 2) / 18;
+  return { x: padX + tx * sx, y: canvas.height - padY - ty * sy };
+}
+
+function locCenter(locId) {
+  const l = locById[locId];
+  if (!l) return { x: canvas.width / 2, y: canvas.height / 2 };
+  return tile2px(l.tile_x, l.tile_y);
+}
+
+function agentOffset(idx) {
+  return { dx: idx % 2 === 0 ? -19 : 19, dy: -19 + Math.floor(idx / 2) * 38 };
+}
+
+// ── Rounded rect helper ────────────────────────────────────────────────────
+
+function rrect(cx, x, y, w, h, r) {
+  cx.beginPath();
+  cx.moveTo(x + r, y);
+  cx.lineTo(x + w - r, y);
+  cx.arcTo(x + w, y, x + w, y + r, r);
+  cx.lineTo(x + w, y + h - r);
+  cx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  cx.lineTo(x + r, y + h);
+  cx.arcTo(x, y + h, x, y + h - r, r);
+  cx.lineTo(x, y + r);
+  cx.arcTo(x, y, x + r, y, r);
+  cx.closePath();
+}
+
+// ── Roster cards ──────────────────────────────────────────────────────────
+
+function buildRoster() {
+  const roster = document.getElementById('roster');
+  for (const name of AGENT_NAMES) {
+    const color = AGENT_COLOR[name] || '#888';
+    const card = document.createElement('div');
+    card.className = 'agent-card';
+    card.dataset.name = name;
+    card.innerHTML =
+      `<div class="avatar" style="background:${color}">${name[0].toUpperCase()}</div>` +
+      `<div class="agent-body">` +
+        `<div class="agent-name">${name}</div>` +
+        `<div class="agent-loc" id="cl-${name}">—</div>` +
+        `<div class="need-bars">` +
+          `<div class="need-row"><span class="need-icon">🔥</span>` +
+            `<div class="bar-track"><div class="bar-fill hunger" id="ch-${name}" style="width:50%"></div></div></div>` +
+          `<div class="need-row"><span class="need-icon">⚡</span>` +
+            `<div class="bar-track"><div class="bar-fill energy" id="ce-${name}" style="width:70%"></div></div></div>` +
+          `<div class="need-row"><span class="need-icon">✨</span>` +
+            `<div class="bar-track"><div class="bar-fill mood"   id="cm-${name}" style="width:60%"></div></div></div>` +
+        `</div>` +
+        `<div class="agent-action" id="ca-${name}">—</div>` +
+      `</div>`;
+    card.addEventListener('click', () => openInspector(name));
+    roster.appendChild(card);
   }
-  function locBox(loc) {
-    const c = tilePixel(loc);
-    return { x: c.x - BOX_W / 2, y: c.y - BOX_H / 2, w: BOX_W, h: BOX_H };
-  }
+}
 
-  // Palette of 10 distinct colours, one per agent in alphabetical order.
-  const AGENT_NAMES = ['anita', 'arjun', 'deepa', 'kavya', 'neha',
-                       'priya', 'rahul', 'rohan', 'suresh', 'vikram'];
-  const PALETTE = [
-    '#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6',
-    '#1abc9c', '#e67e22', '#34495e', '#d35400', '#16a085'
-  ];
-  const agentColor = {};
-  AGENT_NAMES.forEach((n, i) => { agentColor[n] = PALETTE[i % PALETTE.length]; });
+// ── State update ───────────────────────────────────────────────────────────
 
-  let inspectorAgent = null;   // name of agent currently inspected, or null
+function onStateUpdate() {
+  if (!stateData || !stateData.agents) return;
 
-  // Relationship graph (Story 7.1) — polled every 30s, keyed "from|to".
-  let relationshipEdges = {};
+  const groupIdx = {};
+  for (const name of Object.keys(stateData.agents).sort()) {
+    const ag = stateData.agents[name];
+    const lid = ag.location;
+    const idx = groupIdx[lid] || 0;
+    groupIdx[lid] = idx + 1;
 
-  // -----------------------------------------------------------------------
-  // Error banner
-  // -----------------------------------------------------------------------
-  const banner = document.getElementById('error-banner');
-  function showBanner() { banner.classList.add('visible'); }
-  function hideBanner() { banner.classList.remove('visible'); }
+    const c = locCenter(lid);
+    const { dx, dy } = agentOffset(idx);
+    const tx = c.x + dx, ty = c.y + dy;
+    if (!sprites[name]) sprites[name] = { displayX: tx, displayY: ty, targetX: tx, targetY: ty };
+    else { sprites[name].targetX = tx; sprites[name].targetY = ty; }
 
-  function showFatal(msg) {
-    const el = document.getElementById('fatal');
-    el.textContent = msg;
-    el.classList.add('visible');
-  }
-
-  // -----------------------------------------------------------------------
-  // API helpers
-  // -----------------------------------------------------------------------
-  async function fetchJSON(url, opts) {
-    const resp = await fetch(url, opts);
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    return resp.json();
-  }
-
-  async function loadMap(retries) {
-    retries = retries === undefined ? 5 : retries;
-    try {
-      mapData = await fetchJSON('/api/map');
-      locById = {};
-      (mapData.locations || []).forEach(l => { locById[l.id] = l; });
-    } catch (e) {
-      if (retries > 0) {
-        setTimeout(() => loadMap(retries - 1), 1000);
-      } else {
-        showFatal('Failed to load /api/map after 5 retries. Is the server running?');
-      }
-    }
-  }
-
-  async function pollState() {
-    try {
-      const data = await fetchJSON('/api/state');
-      stateData = data;
-      hideBanner();
-      onStateUpdate();
-    } catch (e) {
-      showBanner();
-    }
-  }
-
-  async function pollRelationships() {
-    try {
-      const data = await fetchJSON('/api/relationships');
-      const next = {};
-      for (const e of (data.edges || [])) {
-        next[e.from + '|' + e.to] = e.sentiment;
-      }
-      relationshipEdges = next;
-    } catch (e) {
-      // ignore — existing graph stays cached
-    }
-  }
-
-  async function getLLM() {
-    try {
-      const data = await fetchJSON('/api/llm');
-      setLLMButton(data.provider);
-    } catch (e) { /* ignore */ }
-  }
-
-  async function toggleLLM() {
-    if (!stateData) return;
-    const cur = (stateData.llm_primary || 'ollama').toLowerCase();
-    const next = cur === 'ollama' ? 'gemini' : 'ollama';
-    const btn = document.getElementById('llm-btn');
-    btn.disabled = true;
-    try {
-      await fetchJSON('/api/llm/' + next, { method: 'POST' });
-      await pollState();
-    } catch (e) {
-      // swallow; banner will show on next poll if state fails
-    } finally {
-      btn.disabled = false;
-    }
-  }
-
-  // -----------------------------------------------------------------------
-  // State update handling
-  // -----------------------------------------------------------------------
-  function locCenter(locId) {
-    const l = locById[locId];
-    if (!l) return { x: canvas.width / 2, y: canvas.height / 2 };
-    return tilePixel(l);
-  }
-
-  // Compute offset for the i-th agent at a location with n total agents,
-  // so they don't all sit on top of each other.
-  function agentOffset(index) {
-    // 2-column grid offset by ±15
-    const col = index % 2;
-    const row = Math.floor(index / 2);
-    const dx = (col === 0 ? -15 : 15);
-    const dy = -15 + row * 30;
-    return { dx: dx, dy: dy };
-  }
-
-  function onStateUpdate() {
-    if (!stateData || !stateData.agents) return;
-
-    // Group agents by location to compute stable offsets
-    const groupCounts = {};
-    const sortedNames = Object.keys(stateData.agents).sort();
-
-    for (const name of sortedNames) {
-      const a = stateData.agents[name];
-      const locId = a.location;
-      const idx = groupCounts[locId] || 0;
-      groupCounts[locId] = idx + 1;
-
-      const center = locCenter(locId);
-      const off = agentOffset(idx);
-      const tx = center.x + off.dx;
-      const ty = center.y + off.dy;
-
-      if (!agents[name]) {
-        agents[name] = {
-          displayX: tx, displayY: ty,
-          targetX: tx, targetY: ty,
-          location: locId
-        };
-      } else {
-        agents[name].targetX = tx;
-        agents[name].targetY = ty;
-        agents[name].location = locId;
-      }
-    }
-
-    // HUD
-    document.getElementById('hud-day').textContent = stateData.day != null ? stateData.day : '-';
-    document.getElementById('hud-time').textContent = stateData.time_str || '-';
-    const speed = stateData.speed != null ? stateData.speed : 1;
-    document.getElementById('hud-speed').textContent = speed + 'x';
-    const statusEl = document.getElementById('hud-status');
-    if (stateData.paused) {
-      statusEl.textContent = 'PAUSED';
-      statusEl.className = 'status-paused';
-    } else {
-      statusEl.textContent = 'RUNNING';
-      statusEl.className = 'status-running';
-    }
-    setLLMButton(stateData.llm_primary);
-
-    // Event log (newest at top)
-    const evList = document.getElementById('event-list');
-    evList.innerHTML = '';
-    const events = (stateData.events || []).slice(-20).reverse();
-    for (const ev of events) {
-      const line = document.createElement('div');
-      line.className = 'event-line';
-      const time = ev.time || '';
-      const text = ev.text || '';
-      let combined = '[' + time + '] ' + text;
-      if (combined.length > 60) combined = combined.substring(0, 59) + '…';
-      line.textContent = combined;
-      evList.appendChild(line);
-    }
-
-    // Refresh inspector if open (for live needs/coins/location)
-    if (inspectorAgent) refreshInspectorLive();
-  }
-
-  function setLLMButton(provider) {
-    const btn = document.getElementById('llm-btn');
-    if (!provider) { btn.textContent = '-'; return; }
-    const p = provider.toLowerCase();
-    btn.textContent = p === 'gemini' ? 'Gemini' : 'Ollama';
-  }
-
-  // -----------------------------------------------------------------------
-  // Drawing
-  // -----------------------------------------------------------------------
-  function moodRingColor(mood) {
-    if (mood >= 70) return '#51cf66';
-    if (mood >= 40) return '#ffd43b';
-    return '#ff6b6b';
-  }
-
-  function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // 1. Connection lines (gray, 1px), avoid drawing twice
-    if (mapData) {
-      ctx.strokeStyle = '#444';
-      ctx.lineWidth = 1;
-      const drawn = new Set();
-      for (const loc of mapData.locations) {
-        const c1 = locCenter(loc.id);
-        for (const other of (loc.connected_to || [])) {
-          const key = loc.id < other ? loc.id + '|' + other : other + '|' + loc.id;
-          if (drawn.has(key)) continue;
-          drawn.add(key);
-          if (!locById[other]) continue;
-          const c2 = locCenter(other);
-          ctx.beginPath();
-          ctx.moveTo(c1.x, c1.y);
-          ctx.lineTo(c2.x, c2.y);
-          ctx.stroke();
-        }
-      }
-
-      // 2. Locations
-      ctx.lineWidth = 2;
-      for (const loc of mapData.locations) {
-        const b = locBox(loc);
-        ctx.fillStyle = TYPE_COLOR[loc.type] || '#666';
-        ctx.fillRect(b.x, b.y, b.w, b.h);
-        ctx.strokeStyle = '#000';
-        ctx.strokeRect(b.x, b.y, b.w, b.h);
-        ctx.fillStyle = '#fff';
-        ctx.font = '11px system-ui, sans-serif';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        ctx.fillText(loc.display_name || loc.id, b.x + 4, b.y + 4);
-      }
-    }
-
-    // 3. Agents — lerp positions
-    if (stateData && stateData.agents) {
-      for (const name of Object.keys(agents)) {
-        const a = agents[name];
-        a.displayX += (a.targetX - a.displayX) * 0.1;
-        a.displayY += (a.targetY - a.displayY) * 0.1;
-      }
-
-      // 3a. Relationship lines between co-located agents (drawn BEFORE
-      // agent circles so circles overlay the line).
-      const byLoc = {};
-      for (const n of Object.keys(stateData.agents)) {
-        const lid = stateData.agents[n].location;
-        if (!lid) continue;
-        (byLoc[lid] = byLoc[lid] || []).push(n);
-      }
-      ctx.lineWidth = 1.5;
-      for (const lid of Object.keys(byLoc)) {
-        const names = byLoc[lid];
-        if (names.length < 2) continue;
-        for (let i = 0; i < names.length; i++) {
-          for (let j = i + 1; j < names.length; j++) {
-            const a = names[i], b = names[j];
-            const sAB = relationshipEdges[a + '|' + b];
-            const sBA = relationshipEdges[b + '|' + a];
-            let color;
-            if (sAB === 'hostile' || sBA === 'hostile') {
-              color = '#dc5050';
-            } else if (sAB === 'friendly' || sBA === 'friendly') {
-              color = '#33cc66';
-            } else {
-              color = '#777';
-            }
-            const pa = agents[a], pb = agents[b];
-            if (!pa || !pb) continue;
-            ctx.strokeStyle = color;
-            ctx.beginPath();
-            ctx.moveTo(pa.displayX, pa.displayY);
-            ctx.lineTo(pb.displayX, pb.displayY);
-            ctx.stroke();
-          }
-        }
-      }
-
-      const sortedNames = Object.keys(stateData.agents).sort();
-      for (const name of sortedNames) {
-        const ag = stateData.agents[name];
-        const a = agents[name];
-        if (!a) continue;
-
-        const x = a.displayX, y = a.displayY;
-        const r = 14;
-
-        // Ring (mood color)
-        ctx.beginPath();
-        ctx.arc(x, y, r + 2, 0, Math.PI * 2);
-        ctx.fillStyle = moodRingColor(ag.mood != null ? ag.mood : 50);
-        ctx.fill();
-
-        // Inner fill
-        ctx.beginPath();
-        ctx.arc(x, y, r, 0, Math.PI * 2);
-        ctx.fillStyle = agentColor[name] || '#888';
-        ctx.fill();
-
-        // Initial
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 14px system-ui, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText((name[0] || '?').toUpperCase(), x, y);
-
-        // Name tag (above)
-        ctx.font = '10px system-ui, sans-serif';
-        ctx.fillStyle = '#ddd';
-        ctx.textBaseline = 'bottom';
-        ctx.fillText(name, x, y - r - 4);
-
-        // Thought bubble
-        const action = (ag.last_action || '').trim();
-        if (action && action !== 'waking up') {
-          let txt = action;
-          if (txt.length > 18) txt = txt.substring(0, 18) + '…';
-          ctx.font = '10px system-ui, sans-serif';
-          const padX = 4, padY = 2;
-          const metrics = ctx.measureText(txt);
-          const tw = metrics.width + padX * 2;
-          const th = 14;
-          const bx = x - tw / 2;
-          const by = y + r + 4;
-          ctx.fillStyle = 'rgba(255,255,255,0.9)';
-          ctx.fillRect(bx, by, tw, th);
-          ctx.strokeStyle = '#333';
-          ctx.lineWidth = 1;
-          ctx.strokeRect(bx, by, tw, th);
-          ctx.fillStyle = '#222';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'top';
-          ctx.fillText(txt, x, by + padY);
-        }
-      }
-    }
-
-    requestAnimationFrame(draw);
-  }
-
-  // -----------------------------------------------------------------------
-  // Click → inspect
-  // -----------------------------------------------------------------------
-  canvas.addEventListener('click', (e) => {
-    if (!stateData || !stateData.agents) return;
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const cx = (e.clientX - rect.left) * scaleX;
-    const cy = (e.clientY - rect.top) * scaleY;
-
-    let hit = null;
-    for (const name of Object.keys(agents)) {
-      const a = agents[name];
-      const dx = cx - a.displayX;
-      const dy = cy - a.displayY;
-      if (dx * dx + dy * dy <= (14 + 4) * (14 + 4)) {
-        hit = name;
-        break;
-      }
-    }
-    if (hit) openInspector(hit);
-  });
-
-  async function openInspector(name) {
-    inspectorAgent = name;
-    const panel = document.getElementById('inspector');
-    panel.classList.add('visible');
-    document.getElementById('ins-name').textContent = name;
-
-    refreshInspectorLive();
-
-    // Diary
-    const diaryEl = document.getElementById('ins-diary');
-    diaryEl.innerHTML = '<div id="diary-loading">Loading diary...</div>';
-    try {
-      const data = await fetchJSON('/api/agent/' + encodeURIComponent(name) + '/diary');
-      const entries = (data.entries || []).slice(0, 5);
-      if (entries.length === 0) {
-        diaryEl.innerHTML = '<p style="color:#888;font-style:italic;">No diary entries yet.</p>';
-      } else {
-        diaryEl.innerHTML = '';
-        for (const ent of entries) {
-          const h = document.createElement('h4');
-          h.textContent = ent.day_header || '';
-          diaryEl.appendChild(h);
-          const p = document.createElement('p');
-          p.textContent = ent.body || '';
-          diaryEl.appendChild(p);
-        }
-      }
-    } catch (e) {
-      diaryEl.innerHTML = '<p style="color:#ff6b6b;">Failed to load diary.</p>';
-    }
-  }
-
-  function refreshInspectorLive() {
-    if (!inspectorAgent || !stateData || !stateData.agents) return;
-    const ag = stateData.agents[inspectorAgent];
-    if (!ag) return;
+    // Roster cards
     const loc = locById[ag.location];
-    document.getElementById('ins-loc').textContent =
-      'At: ' + (loc ? loc.display_name : ag.location || 'unknown');
-
-    const setBar = (id, val) => {
-      const v = Math.max(0, Math.min(100, val || 0));
-      document.getElementById(id + '-bar').style.width = v + '%';
-      document.getElementById(id + '-val').textContent = Math.round(v);
-    };
-    setBar('ins-hunger', ag.hunger);
-    setBar('ins-energy', ag.energy);
-    setBar('ins-mood', ag.mood);
-
-    document.getElementById('ins-coins').textContent = 'Coins: ' + (ag.coins != null ? ag.coins : 0);
+    const setEl = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    const setW  = (id, v) => { const el = document.getElementById(id); if (el) el.style.width = Math.max(0,Math.min(100,v||0))+'%'; };
+    setEl('cl-' + name, '📍 ' + (loc ? loc.display_name : ag.location || '—'));
+    setW('ch-' + name, ag.hunger);
+    setW('ce-' + name, ag.energy);
+    setW('cm-' + name, ag.mood);
+    setEl('ca-' + name, (ag.last_action || '—').trim());
   }
 
-  function closeInspector() {
-    inspectorAgent = null;
-    document.getElementById('inspector').classList.remove('visible');
+  // Header
+  const setEl = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  setEl('hud-day', 'Day ' + (stateData.day ?? '—'));
+  setEl('hud-time', stateData.time_str || '—:—');
+  setEl('hud-speed', (stateData.speed ?? 1) + '×');
+  const pill = document.getElementById('pill-status');
+  const pillTxt = document.getElementById('hud-status-text');
+  if (stateData.paused) { pill.className='pill paused'; pillTxt.textContent='Paused'; }
+  else                  { pill.className='pill running'; pillTxt.textContent='Running'; }
+  setLLMButton(stateData.llm_primary);
+
+  // Event feed
+  const evList = document.getElementById('event-list');
+  evList.innerHTML = '';
+  const events = (stateData.events || []).slice(-30).reverse();
+  for (const ev of events) {
+    const text = ev.text || '';
+    const m = text.match(/^([a-z]+)[:\s]/i);
+    const agName = m ? m[1].toLowerCase() : null;
+    const color = (agName && AGENT_COLOR[agName]) ? AGENT_COLOR[agName] : '#636882';
+    const div = document.createElement('div');
+    div.className = 'event-item';
+    div.innerHTML =
+      `<div class="event-pip" style="background:${color}"></div>` +
+      `<div class="event-body">` +
+        `<div class="event-head">` +
+          `<span class="event-agent" style="color:${color}">${esc(agName || 'system')}</span>` +
+          `<span class="event-time">${esc(ev.time || '')}</span>` +
+        `</div>` +
+        `<div class="event-text">${esc(text)}</div>` +
+      `</div>`;
+    evList.appendChild(div);
   }
 
-  document.getElementById('inspector-close').addEventListener('click', closeInspector);
+  if (inspectorAgent) refreshInspectorLive();
+}
 
-  document.addEventListener('click', (e) => {
-    const panel = document.getElementById('inspector');
-    if (!panel.classList.contains('visible')) return;
-    if (panel.contains(e.target)) return;
-    if (e.target === canvas) return; // canvas handler decides
-    closeInspector();
-  });
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
 
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeInspector();
-  });
+// ── Canvas draw loop ───────────────────────────────────────────────────────
 
-  // -----------------------------------------------------------------------
-  // LLM button
-  // -----------------------------------------------------------------------
-  document.getElementById('llm-btn').addEventListener('click', toggleLLM);
+function draw(ts) {
+  animT = ts || 0;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // -----------------------------------------------------------------------
-  // Boot
-  // -----------------------------------------------------------------------
-  loadMap();
-  pollState();
-  getLLM();
-  pollRelationships();
-  setInterval(pollState, 2000);
-  setInterval(pollRelationships, 30000);
+  // Background
+  ctx.fillStyle = '#0c0d14';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  if (mapData) {
+    // 1. Connection lines (dashed)
+    const drawn = new Set();
+    for (const loc of mapData.locations) {
+      const c1 = tile2px(loc.tile_x, loc.tile_y);
+      for (const other of (loc.connected_to || [])) {
+        const key = loc.id < other ? loc.id+'|'+other : other+'|'+loc.id;
+        if (drawn.has(key) || !locById[other]) continue;
+        drawn.add(key);
+        const c2 = tile2px(locById[other].tile_x, locById[other].tile_y);
+        const g = ctx.createLinearGradient(c1.x, c1.y, c2.x, c2.y);
+        g.addColorStop(0, 'rgba(78,158,255,0.25)');
+        g.addColorStop(1, 'rgba(78,158,255,0.08)');
+        ctx.strokeStyle = g;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([5, 7]);
+        ctx.beginPath(); ctx.moveTo(c1.x, c1.y); ctx.lineTo(c2.x, c2.y); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // 2. Location boxes
+    const bw = Math.min(128, Math.max(90, canvas.width / 10));
+    const bh = Math.min(54, Math.max(40, canvas.height / 14));
+    ctx.font = '500 11px Inter, system-ui';
+
+    for (const loc of mapData.locations) {
+      const c = tile2px(loc.tile_x, loc.tile_y);
+      const bx = c.x - bw/2, by = c.y - bh/2;
+      const borderColor = TYPE_BORDER_COLOR[loc.type] || '#4e9eff';
+
+      // Glow
+      ctx.shadowColor = borderColor + '88';
+      ctx.shadowBlur = 14;
+
+      // Gradient fill
+      const g = ctx.createLinearGradient(bx, by, bx, by + bh);
+      g.addColorStop(0, TYPE_FILL_TOP[loc.type] || '#1e1e30');
+      g.addColorStop(1, TYPE_FILL_BOT[loc.type] || '#111128');
+      ctx.fillStyle = g;
+      rrect(ctx, bx, by, bw, bh, 9);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Border
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = 1.5;
+      ctx.globalAlpha = 0.65;
+      rrect(ctx, bx, by, bw, bh, 9);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      // Icon
+      ctx.font = '14px system-ui';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(TYPE_ICON[loc.type] || '📍', c.x, by + bh * 0.32);
+
+      // Name (one or two words)
+      ctx.font = '500 10px Inter, system-ui';
+      ctx.fillStyle = '#c8cae0';
+      const words = (loc.display_name || loc.id).split(' ');
+      const line1 = words.slice(0, 2).join(' ');
+      const line2 = words.length > 2 ? words.slice(2).join(' ') : null;
+      if (line2) {
+        ctx.fillText(line1, c.x, by + bh * 0.68);
+        ctx.font = '10px Inter, system-ui';
+        ctx.fillStyle = '#8b8eaa';
+        ctx.fillText(line2, c.x, by + bh * 0.85);
+      } else {
+        ctx.fillText(line1, c.x, by + bh * 0.72);
+      }
+    }
+  }
+
+  // 3. Co-location relationship lines
+  if (stateData && stateData.agents) {
+    const byLoc = {};
+    for (const n of Object.keys(stateData.agents)) {
+      const lid = stateData.agents[n].location;
+      if (lid) (byLoc[lid] = byLoc[lid] || []).push(n);
+    }
+    ctx.setLineDash([]);
+    ctx.lineWidth = 1.5;
+    for (const lid of Object.keys(byLoc)) {
+      const ns = byLoc[lid];
+      for (let i = 0; i < ns.length; i++) {
+        for (let j = i+1; j < ns.length; j++) {
+          const a = ns[i], b = ns[j];
+          const sAB = relEdges[a+'|'+b], sBA = relEdges[b+'|'+a];
+          let col;
+          if (sAB==='hostile'||sBA==='hostile')  col='rgba(255,107,107,0.65)';
+          else if (sAB==='friendly'||sBA==='friendly') col='rgba(62,207,142,0.65)';
+          else col='rgba(99,104,130,0.4)';
+          const pa = sprites[a], pb = sprites[b];
+          if (!pa || !pb) continue;
+          ctx.strokeStyle = col;
+          ctx.beginPath(); ctx.moveTo(pa.displayX, pa.displayY); ctx.lineTo(pb.displayX, pb.displayY); ctx.stroke();
+        }
+      }
+    }
+  }
+
+  // 4. Agents
+  if (stateData && stateData.agents) {
+    for (const name of Object.keys(stateData.agents).sort()) {
+      const sp = sprites[name];
+      if (!sp) continue;
+      sp.displayX += (sp.targetX - sp.displayX) * 0.12;
+      sp.displayY += (sp.targetY - sp.displayY) * 0.12;
+
+      const ag = stateData.agents[name];
+      const x = sp.displayX, y = sp.displayY;
+      const r = 15;
+      const color = AGENT_COLOR[name] || '#888';
+      const mood = ag.mood ?? 50;
+      const isSelected = name === inspectorAgent;
+
+      // Pulse for selected agent
+      if (isSelected) {
+        const pr = r + 7 + Math.sin(animT / 380) * 2.5;
+        ctx.beginPath(); ctx.arc(x, y, pr, 0, Math.PI*2);
+        ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+        ctx.globalAlpha = 0.35; ctx.stroke(); ctx.globalAlpha = 1;
+      }
+
+      // Glow
+      ctx.shadowColor = color; ctx.shadowBlur = 12;
+
+      // Mood ring
+      const moodColor = mood >= 70 ? '#3ecf8e' : mood >= 40 ? '#ffd43b' : '#ff6b6b';
+      ctx.beginPath(); ctx.arc(x, y, r+2.5, 0, Math.PI*2);
+      ctx.fillStyle = moodColor; ctx.fill();
+
+      // Avatar
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
+      ctx.fillStyle = color; ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Initial
+      ctx.fillStyle = 'rgba(255,255,255,0.93)';
+      ctx.font = 'bold 12px Inter, system-ui';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(name[0].toUpperCase(), x, y);
+
+      // Name tag
+      ctx.font = '500 9px Inter, system-ui';
+      ctx.fillStyle = '#c8cae0';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(name, x, y - r - 5);
+
+      // Action bubble
+      const action = (ag.last_action || '').trim();
+      if (action && action !== 'waking up' && action !== 'sleeping') {
+        let txt = action.length > 22 ? action.slice(0, 21) + '…' : action;
+        ctx.font = '9px Inter, system-ui';
+        const tw = ctx.measureText(txt).width + 12, th = 15;
+        const bx = x - tw/2, by = y + r + 5;
+        rrect(ctx, bx, by, tw, th, 5);
+        ctx.fillStyle = 'rgba(18,20,31,0.92)'; ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 0.5;
+        rrect(ctx, bx, by, tw, th, 5); ctx.stroke();
+        ctx.fillStyle = '#9a9cb8';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(txt, x, by + th/2);
+      }
+    }
+  }
+
   requestAnimationFrame(draw);
+}
+
+// ── Inspector ──────────────────────────────────────────────────────────────
+
+async function openInspector(name) {
+  inspectorAgent = name;
+  const color = AGENT_COLOR[name] || '#888';
+
+  document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('active'));
+  const card = document.querySelector('.agent-card[data-name="'+name+'"]');
+  if (card) card.classList.add('active');
+
+  const av = document.getElementById('ins-avatar');
+  av.textContent = name[0].toUpperCase();
+  av.style.background = color;
+  document.getElementById('ins-name').textContent = name;
+  document.getElementById('inspector').classList.add('visible');
+  refreshInspectorLive();
+
+  const diaryEl = document.getElementById('ins-diary');
+  diaryEl.innerHTML = '<div style="color:var(--muted);font-size:12px;font-style:italic">Loading...</div>';
+  try {
+    const data = await fetchJSON('/api/agent/' + name + '/diary');
+    const entries = (data.entries || []).slice(0, 5);
+    if (!entries.length) {
+      diaryEl.innerHTML = '<div style="color:var(--muted);font-size:12px;font-style:italic">No diary entries yet.</div>';
+    } else {
+      diaryEl.innerHTML = '';
+      for (const ent of entries) {
+        const div = document.createElement('div');
+        div.className = 'diary-entry';
+        div.innerHTML =
+          `<div class="diary-day">${esc(ent.day_header||'')}</div>` +
+          `<div class="diary-body">${esc(ent.body||'')}</div>`;
+        diaryEl.appendChild(div);
+      }
+    }
+  } catch (e) {
+    diaryEl.innerHTML = '<div style="color:var(--red);font-size:12px">Failed to load diary.</div>';
+  }
+}
+
+function refreshInspectorLive() {
+  if (!inspectorAgent || !stateData || !stateData.agents) return;
+  const ag = stateData.agents[inspectorAgent];
+  if (!ag) return;
+  const loc = locById[ag.location];
+  document.getElementById('ins-loc').textContent = '📍 ' + (loc ? loc.display_name : ag.location || '—');
+  const setBar = (bId, vId, val) => {
+    const v = Math.max(0, Math.min(100, val || 0));
+    const b = document.getElementById(bId); if (b) b.style.width = v + '%';
+    const e = document.getElementById(vId); if (e) e.textContent = Math.round(v);
+  };
+  setBar('ins-hunger-bar','ins-hunger-val', ag.hunger);
+  setBar('ins-energy-bar','ins-energy-val', ag.energy);
+  setBar('ins-mood-bar',  'ins-mood-val',   ag.mood);
+  const c = document.getElementById('ins-coins'); if (c) c.textContent = ag.coins ?? 0;
+}
+
+function closeInspector() {
+  inspectorAgent = null;
+  document.getElementById('inspector').classList.remove('visible');
+  document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('active'));
+}
+
+document.getElementById('inspector-close').addEventListener('click', closeInspector);
+document.getElementById('inspector-backdrop').addEventListener('click', closeInspector);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeInspector(); });
+
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const sx = canvas.width / rect.width, sy = canvas.height / rect.height;
+  const cx = (e.clientX - rect.left) * sx, cy = (e.clientY - rect.top) * sy;
+  for (const name of Object.keys(sprites)) {
+    const sp = sprites[name];
+    const dx = cx - sp.displayX, dy = cy - sp.displayY;
+    if (dx*dx + dy*dy <= (15+4)*(15+4)) { openInspector(name); return; }
+  }
+  closeInspector();
+});
+
+// ── API & boot ─────────────────────────────────────────────────────────────
+
+async function fetchJSON(url, opts) {
+  const r = await fetch(url, opts);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+
+const banner = document.getElementById('error-banner');
+
+async function loadMap(retries) {
+  retries = retries === undefined ? 6 : retries;
+  try {
+    mapData = await fetchJSON('/api/map');
+    locById = {};
+    (mapData.locations || []).forEach(l => { locById[l.id] = l; });
+  } catch (e) {
+    if (retries > 0) setTimeout(() => loadMap(retries - 1), 1200);
+    else banner.textContent = '✕ Failed to reach server. Is main.py running?';
+  }
+}
+
+async function pollState() {
+  try {
+    stateData = await fetchJSON('/api/state');
+    banner.classList.remove('visible');
+    onStateUpdate();
+  } catch (e) { banner.classList.add('visible'); }
+}
+
+async function pollRelationships() {
+  try {
+    const data = await fetchJSON('/api/relationships');
+    const next = {};
+    for (const e of (data.edges || [])) next[e.from+'|'+e.to] = e.sentiment;
+    relEdges = next;
+  } catch (e) { /* keep cached */ }
+}
+
+function setLLMButton(provider) {
+  const btn = document.getElementById('llm-btn');
+  const p = (provider || '').toLowerCase();
+  btn.textContent = p === 'gemini' ? '✦ Gemini' : '⬡ Ollama';
+}
+
+async function toggleLLM() {
+  if (!stateData) return;
+  const cur = (stateData.llm_primary || 'ollama').toLowerCase();
+  const next = cur === 'ollama' ? 'gemini' : 'ollama';
+  const btn = document.getElementById('llm-btn');
+  btn.disabled = true;
+  try { await fetchJSON('/api/llm/' + next, { method: 'POST' }); await pollState(); }
+  catch (e) { /* ignore */ }
+  finally { btn.disabled = false; }
+}
+document.getElementById('llm-btn').addEventListener('click', toggleLLM);
+
+buildRoster();
+loadMap();
+pollState();
+pollRelationships();
+setInterval(pollState, 2000);
+setInterval(pollRelationships, 30000);
+requestAnimationFrame(draw);
 
 })();
 </script>

@@ -21,3 +21,15 @@ Ugh. It was so frustrating just now. I was genuinely hoping to see Rohan, and of
 
 # Day 1 — 9:30am
 Another day, another chunk of work done. Twenty-five coins—enough for a decent meal tonight, I think. It always feels a little satisfying, like finally putting a big puzzle piece in place, even if the puzzle is just my life. Time to rest those tired hands.
+
+# Day 1 — 10:00am
+Ugh, what was that? Tried to message Rohan and got this totally useless error message. It's annoying how technology can be so frustrating when all I really wanted was a simple 'yes' or 'no'. Guess I'll have to try talking to him in person instead.
+
+# Day 1 — 10:15am
+Another day, another hurdle cleared. Twenty-five coins felt surprisingly solid in my pocket; it’s more than I was expecting after today's muck. A quiet sense of satisfaction settles over me, the kind that whispers, *you're actually getting somewhere.* Time to find a decent meal that doesn't taste like regret.
+
+# Day 1 — 10:30am
+Ugh, running around asking people if Suresh is still around feels so desperate. I just messaged Priya about it, hoping she has an answer. Now I just have to sit here and wait for her reply, which is the worst part. I really hope I'm not making a fuss over who works at the shop.
+
+# Day 1 — 10:45am
+My brain feels pleasantly fried right now, in the best possible way. Twenty-five coins—a solid haul from just a few hours of focused effort. It’s satisfying, this feeling of knowing that the sweat equity actually paid off. Time to rest my weary fingers before I start counting them all up.

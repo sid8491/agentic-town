@@ -19,3 +19,12 @@ The air in Sector 29 feels different already; heavier, maybe, with the scent of 
 
 # Day 1 — 9:30am
 Ugh, checking my stats again feels like a necessary chore, but it was good to see everything mostly in order. Hunger is dipping a bit, so I'll definitely need to grab something decent to eat soon, but hey, at least my mood is practically off the charts right now. Forty coins—not a fortune, but enough for a small treat, I guess.
+
+# Day 1 — 10:00am
+Pappu Dhaba. The smell of spiced smoke and cumin immediately hit me the moment I stepped off the beat-up cart. It's so wonderfully chaotic here; the noise of clanking pots and vendors calling out is almost music to my ears. I think I might just sit on that low bench and watch the world go by for a while.
+
+# Day 1 — 10:15am
+Ugh, seriously? I just remember thinking I was hungry and *poof*, nothing. My stomach let out a little groan of disappointment. Guess I need to actually check the cupboard before I get the craving, or I'll just be starring at an empty spot on my snack plate all day.
+
+# Day 1 — 10:30am
+God, the energy in Sector 29 is something else; it hits you right in the chest. Everything smells like a blend of spiced street food and ozone. I feel slightly overwhelmed, honestly, but in the best way—like I’m suddenly standing in the middle of a thousand possible decisions. Need to get my bearings before I get lost in the crowd.
