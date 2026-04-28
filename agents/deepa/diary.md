@@ -4,3 +4,6 @@ The apartment still feels quiet, just the soft morning light filtering through t
 
 # Day 1 — 6:30am
 Ugh, I’m so relieved to see my energy is still high, even if my tummy is starting to rumble a little. It’s a small thing, just knowing I need to grab a snack soon, but it makes me feel more grounded. At least the mood seems okay, so that’s a win for today.
+
+# Day 1 — 6:45am
+Ugh, the metro was so packed today. I almost got swept away by the crowd near HUDA City Centre, which was a bit chaotic. At least I found a spot to breathe for a second, just watching everyone rush by the glass. Now, I just need to find a quiet corner and recover from the rush.

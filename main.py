@@ -122,6 +122,11 @@ _relationship_cache: dict[tuple[str, str], str] = {}
 _relationship_last_load: float = 0.0
 _RELATIONSHIP_RELOAD_SECS: float = 30.0
 
+# Daily summary modal overlay (Story 7.2)
+# Set by on_update when world.pop_daily_summary() returns a pending summary.
+# Cleared automatically after 5 real seconds.
+_summary_modal: dict | None = None   # {"text": ..., "day": ..., "expires": time.time() + 5}
+
 
 def _get_relationships() -> dict[tuple[str, str], str]:
     """Return cached relationship graph, reloading every 30s from memory.md files."""
@@ -335,6 +340,7 @@ class GurgaonWindow(arcade.Window):
     # ------------------------------------------------------------------
 
     def on_update(self, dt: float) -> None:
+        global _summary_modal
         factor = min(1.0, dt * LERP_SPEED)
         targets = self._compute_agent_targets()
         now = time.time()
@@ -351,6 +357,11 @@ class GurgaonWindow(arcade.Window):
             if new_action != self._agent_last_action_seen.get(name):
                 self._agent_last_action_seen[name] = new_action
                 self._agent_action_stamp[name] = now
+
+        # Check for a new daily summary from the sim thread (Story 7.2)
+        pending = self.world.pop_daily_summary()
+        if pending:
+            _summary_modal = {**pending, "expires": time.time() + 5.0}
 
     def _compute_agent_targets(self) -> dict[str, tuple[float, float]]:
         """Read world state and assign spread-out target pixel positions."""
@@ -387,6 +398,13 @@ class GurgaonWindow(arcade.Window):
         self._draw_event_log()
         self._draw_hud()
         self._draw_inspect_panel()
+        # Daily summary modal overlay (Story 7.2) — drawn last so it's on top
+        global _summary_modal
+        if _summary_modal is not None:
+            if time.time() < _summary_modal["expires"]:
+                self._draw_summary_modal(_summary_modal)
+            else:
+                _summary_modal = None
 
     def _draw_grid(self) -> None:
         """Faint tile grid — gives the map a graph-paper feel."""
@@ -686,6 +704,75 @@ class GurgaonWindow(arcade.Window):
                          color=(62, 68, 98), font_size=7,
                          anchor_x="center", anchor_y="center")
 
+    def _draw_summary_modal(self, modal: dict) -> None:
+        """Draw a semi-transparent modal overlay with the daily summary text."""
+        _MODAL_W: int = 560
+        _LINE_H: int = 22
+        _PADDING: int = 18
+        _TITLE_H: int = 30
+
+        title = f"Day {modal['day']} Summary"
+        body_text = modal.get("text", "")
+
+        # Word-wrap the body to ~60 chars per line
+        words = body_text.split()
+        lines: list[str] = []
+        current = ""
+        for word in words:
+            candidate = (current + " " + word).strip()
+            if len(candidate) <= 60:
+                current = candidate
+            else:
+                if current:
+                    lines.append(current)
+                current = word
+        if current:
+            lines.append(current)
+
+        modal_h = _TITLE_H + len(lines) * _LINE_H + _PADDING * 2
+
+        cx = WINDOW_W / 2
+        cy = WINDOW_H / 2
+
+        left   = cx - _MODAL_W / 2
+        right  = cx + _MODAL_W / 2
+        bottom = cy - modal_h / 2
+        top    = cy + modal_h / 2
+
+        # Semi-transparent dark background
+        arcade.draw_lrbt_rectangle_filled(left, right, bottom, top, (20, 20, 20, 200))
+        arcade.draw_lrbt_rectangle_outline(left, right, bottom, top, (80, 80, 120, 220), 2)
+
+        # Title in gold
+        arcade.draw_text(
+            title,
+            cx,
+            top - _PADDING - _TITLE_H / 2,
+            color=(255, 215, 0),
+            font_size=14,
+            bold=True,
+            anchor_x="center",
+            anchor_y="center",
+        )
+
+        # Separator line under title
+        sep_y = top - _PADDING - _TITLE_H
+        arcade.draw_line(left + 12, sep_y, right - 12, sep_y, (80, 80, 120, 180), 1)
+
+        # Body lines in light gray
+        text_top = sep_y - 6
+        for i, line in enumerate(lines):
+            y = text_top - i * _LINE_H - _LINE_H / 2
+            arcade.draw_text(
+                line,
+                cx,
+                y,
+                color=(220, 220, 220),
+                font_size=10,
+                anchor_x="center",
+                anchor_y="center",
+            )
+
     # ------------------------------------------------------------------
     # Input handlers
     # ------------------------------------------------------------------
@@ -910,10 +997,26 @@ def reset_world(
 # ---------------------------------------------------------------------------
 
 
+def _parse_start_time(value: str) -> int:
+    """Parse a HH:MM string into minutes since midnight (0–1439)."""
+    try:
+        h, m = value.strip().split(":")
+        minutes = int(h) * 60 + int(m)
+        if not (0 <= minutes < 1440):
+            raise ValueError
+        return minutes
+    except (ValueError, AttributeError):
+        raise argparse.ArgumentTypeError(
+            f"Invalid time {value!r} — use HH:MM format, e.g. 14:30"
+        )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Gurgaon Town Life simulation")
     parser.add_argument("--reset", action="store_true",
                         help="Reset world state and agent runtime files (preserves soul.md)")
+    parser.add_argument("--time", metavar="HH:MM", type=_parse_start_time,
+                        help="Start (or override) simulation time, e.g. --time 14:30")
     args = parser.parse_args()
 
     if args.reset:
@@ -922,6 +1025,11 @@ def main() -> None:
 
     world = WorldState()
     world.load_or_init()
+
+    if args.time is not None:
+        world._state["sim_time"] = args.time
+        logger.info("[main] sim_time overridden to %s (%d min)",
+                    world.time_to_str(args.time), args.time)
 
     # Wire the running WorldState into the FastAPI module so its /api/state
     # /api/map and /api/agent/{name}/diary endpoints can serve live data.

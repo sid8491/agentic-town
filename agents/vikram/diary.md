@@ -4,3 +4,6 @@ The morning air in Leisure Valley Park feels unbelievably fresh, even this early
 
 # Day 1 — 6:30am
 The air here in the Cyber Hub feels buzzing, like static electricity right before a storm. It's overwhelmingly bright, all neon edges and chatter, but there's a definite energy to it, a thousand little connections sparking at once. I feel both energized and slightly overwhelmed, like standing in the middle of a giant, beautiful circuit board.
+
+# Day 1 — 6:45am
+The rush of the train was jarring, a sudden lurch that always takes my breath away for a second. Now that I'm standing here, amidst the flow of people, I can finally take a deep breath. It smells a bit stale, but at least I'm moving; the city is breathing, and so am I.

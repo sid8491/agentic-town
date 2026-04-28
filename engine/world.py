@@ -10,6 +10,7 @@ import asyncio
 import json
 import logging
 import os
+import pathlib
 
 logger = logging.getLogger(__name__)
 
@@ -113,9 +114,13 @@ class WorldState:
 
         Internal helper shared by both save() and save_async().
         Callers are responsible for holding the lock when needed.
+
+        Keys starting with ``_`` (such as ``_pending_summary``) are excluded
+        from the saved JSON so they never pollute state.json.
         """
+        state_copy = {k: v for k, v in self._state.items() if not k.startswith("_")}
         with open(self._state_path, "w", encoding="utf-8") as f:
-            json.dump(self._state, f, indent=2)
+            json.dump(state_copy, f, indent=2)
 
     def save(self) -> None:
         """Write the current in-memory state back to disk (sync, no lock)."""
@@ -353,6 +358,25 @@ class WorldState:
         async with self._lock:
             self._state["llm_primary"] = provider
 
+    # ------------------------------------------------------------------
+    # Daily summary (Story 7.2)
+    # ------------------------------------------------------------------
+
+    def set_daily_summary(self, summary: str, day: int) -> None:
+        """Store a completed day's summary for the Arcade renderer to pick up.
+
+        Stored under ``_pending_summary`` (underscore prefix = excluded from
+        state.json by ``_write_state``).  GIL-safe for cross-thread use.
+        """
+        self._state["_pending_summary"] = {"text": summary, "day": day}
+
+    def pop_daily_summary(self) -> dict | None:
+        """Return and clear the pending daily summary, or None if absent.
+
+        Called from the Arcade main thread each frame; safe under the GIL.
+        """
+        return self._state.pop("_pending_summary", None)
+
 
 # ---------------------------------------------------------------------------
 # SimulationLoop
@@ -421,8 +445,12 @@ class SimulationLoop:
             self.world._state.get("speed", 1.0),
         )
 
-        # 1. Advance game time
+        # 1. Advance game time (detect day rollover for daily summary)
+        old_day = self.world._state["day"]
         self.world.advance_time(self.TICK_MINUTES)
+        new_day = self.world._state["day"]
+        if new_day != old_day:
+            asyncio.create_task(self._generate_daily_summary(old_day))
 
         # 2. Decay all agent needs
         from engine.needs import decay_all_agents
@@ -452,6 +480,58 @@ class SimulationLoop:
             logger.info(
                 "[loop] auto-speed DOWN: only %d sleeping → 1x", sleeping_count
             )
+
+    async def _generate_daily_summary(
+        self,
+        completed_day: int,
+        output_dir: pathlib.Path | None = None,
+    ) -> None:
+        """Generate a narrative summary of the completed day via LLM.
+
+        Saves to ``world/daily_log_day_{completed_day}.txt`` (or *output_dir*
+        if provided, for testing).  Also signals the Arcade renderer by calling
+        ``world.set_daily_summary()``.
+        """
+        from engine.llm import call_llm
+
+        events = self.world._state.get("events", [])
+        if not events:
+            return
+
+        # Use last 60 events
+        recent = events[-60:]
+        events_text = "\n".join(f"- [{e['time']}] {e['text']}" for e in recent)
+        prompt = (
+            f"Day {completed_day} of Gurgaon Town Life has ended.\n\n"
+            f"Here are the key events:\n{events_text}\n\n"
+            "Write a 3-5 sentence narrative summary of the day as if you were a journalist "
+            "writing about this small community. Be specific about who did what, and note any "
+            "interesting interactions or patterns. Keep it warm and human."
+        )
+
+        try:
+            response = await call_llm(
+                prompt,
+                system="You are a journalist summarising a day in a small Gurgaon community.",
+                max_tokens=300,
+                thinking=False,
+            )
+            summary = response.text or f"Day {completed_day}: events recorded."
+        except Exception as exc:
+            logger.warning("[loop] daily summary failed: %s", exc)
+            summary = f"Day {completed_day}: {len(events)} events recorded."
+
+        # Save to file
+        save_dir = output_dir if output_dir is not None else pathlib.Path("world")
+        log_path = save_dir / f"daily_log_day_{completed_day}.txt"
+        try:
+            log_path.write_text(summary, encoding="utf-8")
+            logger.info("[loop] daily summary saved to %s", log_path)
+        except Exception as exc:
+            logger.warning("[loop] could not write summary: %s", exc)
+
+        # Signal the Arcade renderer to display the modal
+        self.world.set_daily_summary(summary, completed_day)
 
     async def _autosave_loop(self) -> None:
         """Save world state every 5 real seconds, independent of tick timing."""
