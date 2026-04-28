@@ -16,3 +16,12 @@ Just standing here by the Metro station, the usual chaotic energy of the place f
 
 # Day 1 — 9:00pm
 Just stood here at the Metro station, kind of absorbing the low hum of the place. It was completely deserted, which was both weirdly peaceful and slightly unnerving. I guess it's just the lull after the rush, leaving you with too much time to think.
+
+# Day 1 — 9:15pm
+Just standing here in the metro plaza, feeling completely alone despite the buzzing energy around. It’s so quiet right now, the kind of quiet that makes you acutely aware of your own footsteps echoing. I guess I just needed a minute to let the day's noise fade away before heading home.
+
+# Day 1 — 9:15pm
+Wow, it's pretty empty here at the Metro, which is a relief after the crowds I expected. Just waiting for the trains to move things along, I guess. Feeling a weird mix of quiet and… nowhere to be. Time to find a bench and just breathe for a minute.
+
+# Day 1 — 9:15pm
+Just standing here at the Metro, it's weirdly quiet for such a busy spot, especially this late. The whole area feels kind of deserted right now, just the hum of the city fading in the background. I should probably head out soon; I'm feeling a bit adrift, like I don't really know where to go from here.

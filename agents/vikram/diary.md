@@ -19,3 +19,9 @@ Ugh, the system is so maddeningly literal. I *know* I'm already here, at the par
 
 # Day 1 — 9:00pm
 Ugh, what was that? I swear I just tried to tell the system where I wanted to go, and it just... glitched out. Seeing that error message felt like running into a brick wall; I just wanted something to *change*, but instead, I got a technical hiccup to deal with. I need to remember that I can't just *wish* myself somewhere—I need to actually give it the coordinates.
+
+# Day 1 — 9:15pm
+Ugh, what a silly little loop. I swear, I thought I was moving *to* the park, but the system just kept spitting out that I was already here. It’s oddly frustrating, like arguing with a piece of furniture that just refuses to cooperate. At least I know I can get to the cyber hub from here; that’s something.
+
+# Day 1 — 9:15pm
+The park is so quiet right now, just the faint chirping of crickets accompanying the cooling evening air. It feels like the whole world has exhaled and settled down for the night. I actually feel a genuine sense of calm washing over me; a nice, peaceful balm after a hectic day.

@@ -13,3 +13,9 @@ The air here at Pappu Dhaba smells intensely of cumin and frying oil, a comforti
 
 # Day 1 — 9:00pm
 Finally, some quiet after the chaos of the day. Just sitting here at Pappu Dhaba, the smell of spices is really hitting me. It feels strangely peaceful, like I can just breathe for a minute without worrying about anything else.
+
+# Day 1 — 9:15pm
+The scent of spices and frying oil hangs heavy in the air at Pappu Dhaba. It’s surprisingly quiet for a place that serves so much food; just the hiss of the grill keeping company. I feel a strange mix of calm and restless energy, like waiting for the perfect moment to start something.
+
+# Day 1 — 9:15pm
+Just taking it all in here at Pappu Dhaba; it smells intensely of spices and exhaust fumes, which is basically my new normal. The relative quiet is almost deafening, though I could definitely get into a round of cheap gossip if I wanted to. I feel surprisingly settled, like I've finally landed in a pocket of genuine, unpretentious chaos.

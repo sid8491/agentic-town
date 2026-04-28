@@ -24,6 +24,7 @@ import argparse
 import asyncio
 import logging
 import math
+import pathlib
 import threading
 import time
 
@@ -70,6 +71,10 @@ _LOG_W: int   = 250          # content width in px
 _LOG_LINE_H: int = 13        # px per log line
 _LOG_MAX: int = 10           # max entries displayed at once
 _LOG_X: int   = WINDOW_W - _LOG_W - 10   # left edge of log text
+
+# Agent inspect panel (right side overlay)
+_PANEL_W: int = 280
+_PANEL_X: int = WINDOW_W - _PANEL_W   # left edge of panel = 680
 
 _MAP_BG        = (18,  20,  28)
 _GRID_COLOR    = (38,  40,  52)
@@ -179,6 +184,43 @@ def _format_event_log_line(event: dict, max_len: int = 36) -> str:
     return line[:max_len]
 
 
+def _parse_diary_entries(text: str, n: int = 3) -> list[tuple[str, str]]:
+    """Return the last *n* (header, body) pairs from a diary.md string."""
+    entries: list[tuple[str, str]] = []
+    current_header: str | None = None
+    current_lines: list[str] = []
+    for line in text.splitlines():
+        if line.startswith("# Day"):
+            if current_header is not None:
+                body = "\n".join(current_lines).strip()
+                if body:
+                    entries.append((current_header, body))
+            current_header = line[2:].strip()   # strip "# " prefix
+            current_lines = []
+        elif current_header is not None:
+            current_lines.append(line)
+    if current_header is not None:
+        body = "\n".join(current_lines).strip()
+        if body:
+            entries.append((current_header, body))
+    return entries[-n:] if entries else []
+
+
+def _agent_hit(
+    agent_cur: dict[str, list[float]],
+    x: float,
+    y: float,
+    radius: int = AGENT_RADIUS + 6,
+) -> str | None:
+    """Return the first agent whose circle contains pixel (x, y), or None."""
+    for name, cur in agent_cur.items():
+        dx = cur[0] - x
+        dy = cur[1] - y
+        if dx * dx + dy * dy <= radius * radius:
+            return name
+    return None
+
+
 def _draw_hud_btn(x1: int, x2: int, cy: int, label: str, disabled: bool = False) -> None:
     """Draw a labelled rectangular button in the HUD strip."""
     bg     = (16, 18, 28) if disabled else (22, 26, 44)
@@ -250,6 +292,9 @@ class GurgaonWindow(arcade.Window):
         # LLM toggle button bounding box (x1, x2) — used for mouse-click detection
         self._llm_btn: tuple[int, int] = (WINDOW_W - 190, WINDOW_W - 8)
 
+        # Currently inspected agent (None = panel closed)
+        self._inspect_agent: str | None = None
+
     # ------------------------------------------------------------------
     # Update (lerp agent positions)
     # ------------------------------------------------------------------
@@ -305,6 +350,7 @@ class GurgaonWindow(arcade.Window):
         self._draw_agents()
         self._draw_event_log()
         self._draw_hud()
+        self._draw_inspect_panel()
 
     def _draw_grid(self) -> None:
         """Faint tile grid — gives the map a graph-paper feel."""
@@ -459,6 +505,112 @@ class GurgaonWindow(arcade.Window):
             arcade.draw_text(line, _LOG_X, y, color=(105, 118, 158),
                              font_size=8, anchor_x="left", anchor_y="bottom")
 
+    def _draw_inspect_panel(self) -> None:
+        """Right-side panel showing selected agent's needs + last 3 diary entries."""
+        name = self._inspect_agent
+        if name is None:
+            return
+
+        cx = _PANEL_X           # left edge of panel
+        mx = cx + 12            # content left margin
+        cw = _PANEL_W - 24      # usable content width
+        y  = WINDOW_H - 10      # current draw cursor (top → down)
+
+        # Panel background + left border
+        arcade.draw_lrbt_rectangle_filled(cx, WINDOW_W, HUD_HEIGHT, WINDOW_H, (7, 9, 20, 238))
+        arcade.draw_line(cx, HUD_HEIGHT, cx, WINDOW_H, (48, 54, 82), 2)
+
+        # --- Agent name ---
+        y -= 28
+        agent_rgb = _AGENT_COLORS.get(name, (180, 180, 180))
+        arcade.draw_text(name.upper(), mx, y, color=(*agent_rgb, 255),
+                         font_size=16, bold=True, anchor_x="left", anchor_y="center")
+
+        # Location
+        y -= 20
+        try:
+            loc_id = self.world.get_agent_location(name)
+            loc_display = self.world.get_location(loc_id).get("display_name", loc_id)
+        except Exception:
+            loc_display = "Unknown"
+        arcade.draw_text(f"@ {loc_display}", mx, y,
+                         color=(110, 122, 158), font_size=8,
+                         anchor_x="left", anchor_y="center")
+
+        # Separator
+        y -= 12
+        arcade.draw_line(cx + 6, y, WINDOW_W - 6, y, (42, 48, 72), 1)
+
+        # --- Needs bars ---
+        y -= 18
+        arcade.draw_text("NEEDS", mx, y, color=(125, 136, 175), font_size=9, bold=True,
+                         anchor_x="left", anchor_y="center")
+        try:
+            ag = self.world.get_agent(name)
+            hunger = float(ag.get("hunger", 0))
+            energy = float(ag.get("energy", 0))
+            mood   = float(ag.get("mood", 0))
+        except Exception:
+            hunger = energy = mood = 50.0
+
+        bar_x   = mx + 54
+        bar_w   = 148
+        bar_h   = 6
+        for lbl, val, clr in [
+            ("Hunger", hunger, (215, 85,  50)),
+            ("Energy", energy, (65,  145, 225)),
+            ("Mood",   mood,   (75,  195, 105)),
+        ]:
+            y -= 20
+            arcade.draw_text(lbl, mx, y, color=(145, 152, 185), font_size=8,
+                             anchor_x="left", anchor_y="center")
+            arcade.draw_lrbt_rectangle_filled(bar_x, bar_x + bar_w, y - bar_h, y + bar_h, (26, 28, 44))
+            fill = max(0, int(bar_w * val / 100))
+            if fill:
+                arcade.draw_lrbt_rectangle_filled(bar_x, bar_x + fill, y - bar_h, y + bar_h, clr)
+            arcade.draw_text(f"{int(val)}%", bar_x + bar_w + 6, y,
+                             color=(95, 105, 138), font_size=8,
+                             anchor_x="left", anchor_y="center")
+
+        # Separator
+        y -= 14
+        arcade.draw_line(cx + 6, y, WINDOW_W - 6, y, (42, 48, 72), 1)
+
+        # --- Diary entries ---
+        y -= 18
+        arcade.draw_text("DIARY", mx, y, color=(125, 136, 175), font_size=9, bold=True,
+                         anchor_x="left", anchor_y="center")
+
+        diary_path = pathlib.Path("agents") / name / "diary.md"
+        entries = []
+        if diary_path.exists():
+            entries = _parse_diary_entries(diary_path.read_text(encoding="utf-8"), n=3)
+
+        if not entries:
+            y -= 18
+            arcade.draw_text("No diary entries yet.", mx, y,
+                             color=(72, 78, 108), font_size=8,
+                             anchor_x="left", anchor_y="center")
+        else:
+            for header, body in entries:
+                y -= 18
+                arcade.draw_text(header, mx, y, color=(148, 168, 218), font_size=8, bold=True,
+                                 anchor_x="left", anchor_y="top")
+                y -= 14
+                # Cap body length and strip reasoning chains
+                display = body[:220].split("\n")[0]   # first paragraph, 220 chars
+                arcade.draw_text(display, mx, y, color=(128, 136, 168), font_size=7,
+                                 multiline=True, width=cw, anchor_x="left", anchor_y="top")
+                lines = max(1, len(display) // 38 + 1)
+                y -= lines * 10 + 8
+
+        # Close hint
+        arcade.draw_line(cx + 6, HUD_HEIGHT + 22, WINDOW_W - 6, HUD_HEIGHT + 22, (42, 48, 72), 1)
+        arcade.draw_text("Click elsewhere or ESC to close",
+                         cx + _PANEL_W // 2, HUD_HEIGHT + 11,
+                         color=(62, 68, 98), font_size=7,
+                         anchor_x="center", anchor_y="center")
+
     # ------------------------------------------------------------------
     # Input handlers
     # ------------------------------------------------------------------
@@ -474,10 +626,20 @@ class GurgaonWindow(arcade.Window):
 
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int) -> None:
         if button == 1:  # left click
+            # LLM button in HUD strip
             lx1, lx2 = self._llm_btn
             cy = HUD_HEIGHT // 2
             if lx1 <= x <= lx2 and (cy - 14) <= y <= (cy + 14):
                 self._toggle_llm()
+                return
+
+            # Agent sprite click (map area only)
+            if y > HUD_HEIGHT:
+                hit = _agent_hit(self._agent_cur, x, y)
+                if hit:
+                    self._inspect_agent = hit
+                    return
+                self._inspect_agent = None   # click elsewhere closes panel
 
     def on_key_press(self, key: int, modifiers: int) -> None:
         if key == arcade.key.SPACE:
@@ -505,7 +667,10 @@ class GurgaonWindow(arcade.Window):
             logger.info("[window] speed -> %.2gx", new)
 
         elif key == arcade.key.ESCAPE:
-            self.close()
+            if self._inspect_agent is not None:
+                self._inspect_agent = None
+            else:
+                self.close()
 
 
 # ---------------------------------------------------------------------------

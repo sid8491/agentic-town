@@ -16,3 +16,9 @@ The late afternoon light streaming into the living room feels almost too bright 
 
 # Day 1 — 9:00pm
 The quiet of the apartment finally settled around me after looking around, and it felt almost too still. Seeing Arjun and Kavya just a short distance away is a comfort, a soft hum of familiar presence. Right now, though, all I crave is just the deep, uncomplicated quiet of sleep.
+
+# Day 1 — 9:15pm
+The quiet after looking around has settled over everything; it’s a strange mix of calm and barely contained energy. Seeing Arjun and Kavya nearby makes the apartment feel less empty, even if it's just them for now. I think I just need to sink into whatever deep sleep feels best tonight.
+
+# Day 1 — 9:15pm
+The apartment still feels quiet, except for the distant murmur of life outside the window. Seeing Arjun and Kavya nearby is comforting, knowing they’re close even if we aren't together right now. Honestly, just having this familiar little corner to myself for a bit feels like the best medicine after a long day.

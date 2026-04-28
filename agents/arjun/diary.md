@@ -233,3 +233,12 @@ The familiar scent of home settles around me; it’s comforting, even if I’m e
 
 # Day 1 — 9:00pm
 The quiet in the apartment after looking around was almost deafening. Seeing Kavya and Deepa nearby, it's a comforting reminder of people, even if right now, all I really want is nothing but the quiet of my own space. It feels like a much-needed moment to just breathe and let the day settle.
+
+# Day 1 — 9:15pm
+The apartment feels quiet now, just the usual hum of the night settling in. Seeing Kavya and Deepa nearby is nice, a grounding reminder of familiar faces after a long day. It’s good just to be back in the orbit of home right now.
+
+# Day 1 — 9:15pm
+The apartment feels quiet now that the immediate buzz has settled; it's just the low hum of the city outside. Seeing Kavya and Deepa nearby, even just knowing they're close, brings a strange sense of calm. For now, just sinking into the comfort of this quiet space feels like the best kind of medicine.
+
+# Day 1 — 9:15pm
+The silence here in the apartment feels heavy after the evening; just the hum of the AC and the faint scent of Deepa's jasmine soap. Seeing Kavya and Deepa settled in, it's a comforting, familiar weight of normalcy. I should probably just slip into this bed and let the quiet swallow the day’s lingering edges.

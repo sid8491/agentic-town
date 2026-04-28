@@ -13,3 +13,12 @@ Just a quick look around the apartment—nothing dramatic, just the usual quiet 
 
 # Day 1 — 9:00pm
 The familiar quiet of the apartment washes over me now that I've seen who's around. Seeing Arjun and Deepa just settles something in my chest, a sort of comfortable weight. I think I need nothing more than the quiet of these four walls tonight to just *be*.
+
+# Day 1 — 9:15pm
+The quiet of the apartment is settling around me now, only broken by the distant murmur of voices. Seeing Arjun and Deepa nearby, even just from the window, makes me feel a little less alone than I expected today. I think I need to just sink into the sofa for a while; the energy of the day has finally worn me down.
+
+# Day 1 — 9:15pm
+The apartment feels so quiet right now, just the sound of the city hum outside. Seeing Arjun and Deepa nearby, it’s comforting, but it also makes me feel a little adrift, like I’m hovering between being with people and needing my own space. For tonight, I think I'll just settle in and enjoy the quiet.
+
+# Day 1 — 9:15pm
+The apartment feels quiet now, just the hum of the AC keeping me company. Seeing Arjun and Deepa nearby always brings a little buzz, but right now, I just crave the stillness. Finally, the day can just… end.
