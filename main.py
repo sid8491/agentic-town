@@ -97,6 +97,8 @@ _LABEL_COLOR   = (210, 215, 220, 255)
 AGENT_RADIUS: int = 13          # pixel radius of each agent circle
 LERP_SPEED: float = 2.0         # lerp factor per second (arrives in ~0.5 s)
 
+SPEED_LEVELS: list[float] = [0.25, 0.5, 1.0, 2.0, 4.0]   # Story 7.3
+
 # Unique colours per agent — bright enough to read against dark zones
 _AGENT_COLORS: dict[str, tuple[int, int, int]] = {
     "arjun":  (255,  88,  65),
@@ -547,9 +549,8 @@ class GurgaonWindow(arcade.Window):
         # Speed controls (center-left)
         paused = self.world._state.get("paused", False)
         speed  = self.world._state.get("speed", 1.0)
-        speeds = [0.25, 0.5, 1.0, 2.0, 4.0]
-        at_min = abs(speed - speeds[0]) < 0.01
-        at_max = abs(speed - speeds[-1]) < 0.01
+        at_min = abs(speed - SPEED_LEVELS[0]) < 0.01
+        at_max = abs(speed - SPEED_LEVELS[-1]) < 0.01
 
         _draw_hud_btn(208, 268, cy, "SLOW", disabled=at_min)
 
@@ -813,18 +814,16 @@ class GurgaonWindow(arcade.Window):
             self._toggle_llm()
 
         elif key == arcade.key.LEFT:
-            speeds = [0.25, 0.5, 1.0, 2.0, 4.0]
             cur = self.world._state.get("speed", 1.0)
-            idx = next((i for i, s in enumerate(speeds) if abs(s - cur) < 0.01), 2)
-            new = speeds[max(0, idx - 1)]
+            idx = next((i for i, s in enumerate(SPEED_LEVELS) if abs(s - cur) < 0.01), 2)
+            new = SPEED_LEVELS[max(0, idx - 1)]
             self.world._state["speed"] = new
             logger.info("[window] speed -> %.2gx", new)
 
         elif key == arcade.key.RIGHT:
-            speeds = [0.25, 0.5, 1.0, 2.0, 4.0]
             cur = self.world._state.get("speed", 1.0)
-            idx = next((i for i, s in enumerate(speeds) if abs(s - cur) < 0.01), 2)
-            new = speeds[min(len(speeds) - 1, idx + 1)]
+            idx = next((i for i, s in enumerate(SPEED_LEVELS) if abs(s - cur) < 0.01), 2)
+            new = SPEED_LEVELS[min(len(SPEED_LEVELS) - 1, idx + 1)]
             self.world._state["speed"] = new
             logger.info("[window] speed -> %.2gx", new)
 
