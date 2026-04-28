@@ -210,3 +210,26 @@ def get_agent_diary(name: str) -> dict:
         raise HTTPException(status_code=404, detail={"error": f"Unknown agent: {name}"})
     entries = _read_diary_entries(name, n=5)
     return {"agent": name, "entries": entries}
+
+
+# ---------------------------------------------------------------------------
+# /api/relationships — directed relationship graph (Story 7.1)
+# ---------------------------------------------------------------------------
+
+
+@app.get("/api/relationships")
+def get_relationships() -> dict:
+    """
+    Return the relationship graph parsed from each agent's memory.md.
+
+    Response shape:
+        {"edges": [{"from": "arjun", "to": "rohan", "sentiment": "friendly"}, ...]}
+    """
+    from engine.relationships import parse_all_relationships
+    edges = parse_all_relationships()
+    return {
+        "edges": [
+            {"from": a, "to": b, "sentiment": s}
+            for (a, b), s in edges.items()
+        ]
+    }

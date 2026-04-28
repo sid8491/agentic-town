@@ -111,6 +111,33 @@ _AGENT_COLORS: dict[str, tuple[int, int, int]] = {
     "anita":  (178,  88, 228),
 }
 
+# Relationship line colours (Story 7.1)
+_REL_COLOR_FRIENDLY: tuple[int, int, int] = (50, 200, 100)
+_REL_COLOR_HOSTILE:  tuple[int, int, int] = (220, 80, 80)
+_REL_COLOR_NEUTRAL:  tuple[int, int, int] = (120, 120, 120)
+_REL_LINE_WIDTH: float = 1.5
+
+# Module-scope relationship cache, refreshed every 30 seconds
+_relationship_cache: dict[tuple[str, str], str] = {}
+_relationship_last_load: float = 0.0
+_RELATIONSHIP_RELOAD_SECS: float = 30.0
+
+
+def _get_relationships() -> dict[tuple[str, str], str]:
+    """Return cached relationship graph, reloading every 30s from memory.md files."""
+    global _relationship_cache, _relationship_last_load
+    now = time.time()
+    if now - _relationship_last_load > _RELATIONSHIP_RELOAD_SECS:
+        from engine.relationships import parse_all_relationships
+        try:
+            _relationship_cache = parse_all_relationships()
+        except Exception as exc:
+            logger.warning("[relationships] parse failed: %s", exc)
+            _relationship_cache = {}
+        _relationship_last_load = now
+    return _relationship_cache
+
+
 # Two-letter initials shown inside each agent circle
 _AGENT_INITIALS: dict[str, str] = {
     "arjun":  "AR",
@@ -355,6 +382,7 @@ class GurgaonWindow(arcade.Window):
         self._draw_zones()
         for label in self._loc_labels:
             label.draw()
+        self._draw_relationship_lines()
         self._draw_agents()
         self._draw_event_log()
         self._draw_hud()
@@ -387,6 +415,45 @@ class GurgaonWindow(arcade.Window):
             rgb = _ZONE_COLORS.get(loc.get("type", "home"), (110, 110, 110))
             arcade.draw_circle_filled(px, py, ZONE_RADIUS, (*rgb, 215))
             arcade.draw_circle_outline(px, py, ZONE_RADIUS, _BORDER_COLOR, 2)
+
+    def _draw_relationship_lines(self) -> None:
+        """Draw thin coloured lines between every pair of co-located agents.
+
+        Color rule (Story 7.1):
+          - either direction hostile          → red
+          - else, either direction friendly   → green
+          - else                              → gray
+        """
+        edges = _get_relationships()
+
+        # Group agents by current world location
+        by_loc: dict[str, list[str]] = {}
+        for name in _AGENT_COLORS:
+            try:
+                loc_id = self.world.get_agent_location(name)
+            except Exception:
+                continue
+            by_loc.setdefault(loc_id, []).append(name)
+
+        for loc_id, agents_here in by_loc.items():
+            if len(agents_here) < 2:
+                continue
+            for i in range(len(agents_here)):
+                for j in range(i + 1, len(agents_here)):
+                    a, b = agents_here[i], agents_here[j]
+                    s_ab = edges.get((a, b))
+                    s_ba = edges.get((b, a))
+
+                    if s_ab == "hostile" or s_ba == "hostile":
+                        color = _REL_COLOR_HOSTILE
+                    elif s_ab == "friendly" or s_ba == "friendly":
+                        color = _REL_COLOR_FRIENDLY
+                    else:
+                        color = _REL_COLOR_NEUTRAL
+
+                    ax, ay = self._agent_cur[a]
+                    bx, by_ = self._agent_cur[b]
+                    arcade.draw_line(ax, ay, bx, by_, color, _REL_LINE_WIDTH)
 
     def _draw_agents(self) -> None:
         """Draw each agent: circle + initials + name tag + fading thought bubble."""

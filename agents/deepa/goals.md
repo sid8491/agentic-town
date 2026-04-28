@@ -1,3 +1,5 @@
+# Goals
+
 - Look at the MBA alumni network properly — not scroll past it — and find one event or one person worth connecting with this month
 - Buy something from Anita's boutique that is just for me, not for a wedding or a school function — just because I want it
 - Tell Neha about the MBA at some point and see what she actually says — she seemed like someone who would say something useful

@@ -316,6 +316,9 @@
 
   let inspectorAgent = null;   // name of agent currently inspected, or null
 
+  // Relationship graph (Story 7.1) — polled every 30s, keyed "from|to".
+  let relationshipEdges = {};
+
   // -----------------------------------------------------------------------
   // Error banner
   // -----------------------------------------------------------------------
@@ -361,6 +364,19 @@
       onStateUpdate();
     } catch (e) {
       showBanner();
+    }
+  }
+
+  async function pollRelationships() {
+    try {
+      const data = await fetchJSON('/api/relationships');
+      const next = {};
+      for (const e of (data.edges || [])) {
+        next[e.from + '|' + e.to] = e.sentiment;
+      }
+      relationshipEdges = next;
+    } catch (e) {
+      // ignore — existing graph stays cached
     }
   }
 
@@ -535,6 +551,42 @@
         a.displayY += (a.targetY - a.displayY) * 0.1;
       }
 
+      // 3a. Relationship lines between co-located agents (drawn BEFORE
+      // agent circles so circles overlay the line).
+      const byLoc = {};
+      for (const n of Object.keys(stateData.agents)) {
+        const lid = stateData.agents[n].location;
+        if (!lid) continue;
+        (byLoc[lid] = byLoc[lid] || []).push(n);
+      }
+      ctx.lineWidth = 1.5;
+      for (const lid of Object.keys(byLoc)) {
+        const names = byLoc[lid];
+        if (names.length < 2) continue;
+        for (let i = 0; i < names.length; i++) {
+          for (let j = i + 1; j < names.length; j++) {
+            const a = names[i], b = names[j];
+            const sAB = relationshipEdges[a + '|' + b];
+            const sBA = relationshipEdges[b + '|' + a];
+            let color;
+            if (sAB === 'hostile' || sBA === 'hostile') {
+              color = '#dc5050';
+            } else if (sAB === 'friendly' || sBA === 'friendly') {
+              color = '#33cc66';
+            } else {
+              color = '#777';
+            }
+            const pa = agents[a], pb = agents[b];
+            if (!pa || !pb) continue;
+            ctx.strokeStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(pa.displayX, pa.displayY);
+            ctx.lineTo(pb.displayX, pb.displayY);
+            ctx.stroke();
+          }
+        }
+      }
+
       const sortedNames = Object.keys(stateData.agents).sort();
       for (const name of sortedNames) {
         const ag = stateData.agents[name];
@@ -703,7 +755,9 @@
   loadMap();
   pollState();
   getLLM();
+  pollRelationships();
   setInterval(pollState, 2000);
+  setInterval(pollRelationships, 30000);
   requestAnimationFrame(draw);
 
 })();
