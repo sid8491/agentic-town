@@ -28,7 +28,7 @@ import re
 from pathlib import Path
 from typing import Literal
 
-Sentiment = Literal["friendly", "neutral", "hostile"]
+Sentiment = Literal["romantic", "friendly", "neutral", "hostile"]
 
 ALL_AGENTS: list[str] = [
     "arjun", "priya", "rahul", "kavya", "suresh",
@@ -39,6 +39,30 @@ _ALL_AGENTS_SET = set(ALL_AGENTS)
 # ---------------------------------------------------------------------------
 # Sentiment vocabulary
 # ---------------------------------------------------------------------------
+
+# Words that specifically signal romantic interest — scored separately so that a
+# single "crush" or "attracted" lifts an edge to "romantic" without needing the
+# full positive-word threshold.
+ROMANTIC_WORDS: set[str] = {
+    "crush", "attracted", "attraction",
+    "beautiful", "handsome", "gorgeous",
+    "heart", "heartbeat",
+    "miss", "missed", "missing",
+    "feelings", "feeling for",
+    "romantic", "romance",
+    "intimate", "intimacy",
+    "adore", "adores", "adored",
+    "longing", "desire", "desires", "yearning",
+    "affection", "affectionate",
+    "tender", "passionate", "passion",
+    "flirt", "flirting", "flirted",
+    "butterflies",
+}
+
+_ROM_RE = re.compile(
+    r"\b(" + "|".join(sorted(map(re.escape, ROMANTIC_WORDS), key=len, reverse=True)) + r")\b",
+    re.IGNORECASE,
+)
 
 POSITIVE_WORDS: set[str] = {
     "like", "likes", "liked",
@@ -86,7 +110,15 @@ def _score_text(text: str) -> int:
     return pos - neg
 
 
-def _classify(score: int) -> Sentiment:
+def _score_romantic(text: str) -> int:
+    """Return count of romantic-vocabulary hits."""
+    return len(_ROM_RE.findall(text))
+
+
+def _classify(score: int, romantic: int = 0) -> Sentiment:
+    # Any romantic signal + overall positive tone → romantic
+    if romantic >= 1 and score >= 1:
+        return "romantic"
     if score >= 1:
         return "friendly"
     if score <= -1:
@@ -168,7 +200,7 @@ def parse_agent_relationships(
         body_end = headers[i + 1].start() if i + 1 < len(headers) else len(section)
         body = section[body_start:body_end]
 
-        out[other] = _classify(_score_text(body))
+        out[other] = _classify(_score_text(body), _score_romantic(body))
 
     return out
 

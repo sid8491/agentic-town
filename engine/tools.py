@@ -139,21 +139,61 @@ async def grep_memory(agent_name: str, query: str) -> str:
 # ---------------------------------------------------------------------------
 
 
+def _find_path(start: str, goal: str) -> list[str]:
+    """BFS shortest path between two location IDs. Returns [] if unreachable."""
+    if start == goal:
+        return [start]
+    all_locs = world.get_all_locations()
+    adjacency = {loc["id"]: set(loc.get("connected_to", [])) for loc in all_locs}
+    queue = [[start]]
+    visited = {start}
+    while queue:
+        path = queue.pop(0)
+        current = path[-1]
+        for neighbor in adjacency.get(current, set()):
+            if neighbor == goal:
+                return path + [neighbor]
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append(path + [neighbor])
+    return []
+
+
 async def move_to(agent_name: str, location: str) -> str:
-    """Move the agent to a connected location."""
+    """Move the agent to any location, routing through intermediate hops automatically."""
+    current_id = world.get_agent_location(agent_name)
+    if location == current_id:
+        loc = world.get_location(current_id)
+        return f"You are already at {loc.get('display_name', current_id)}."
+
+    # Try direct move first (fast path for adjacent locations)
     success = await world.move_agent(agent_name, location)
     if success:
         loc = world.get_location(location)
-        display = loc.get("display_name", location)
-        return f"Moved to {display}."
-    else:
-        current_id = world.get_agent_location(agent_name)
-        connected = world.get_connected_locations(current_id)
-        return (
-            f"Cannot move to {location} from here. "
-            f"You are at {current_id}. "
-            f"Connected: {connected}."
-        )
+        return f"Moved to {loc.get('display_name', location)}."
+
+    # Not adjacent — find BFS path and walk every hop to reach the destination
+    path = _find_path(current_id, location)
+    if len(path) >= 2:
+        for hop in path[1:]:
+            await world.move_agent(agent_name, hop)
+
+        target_loc = world.get_location(location)
+        if len(path) > 2:
+            via_names = [
+                world.get_location(p).get("display_name", p) for p in path[1:-1]
+            ]
+            return (
+                f"Traveled to {target_loc.get('display_name', location)} "
+                f"via {' → '.join(via_names)}."
+            )
+        return f"Moved to {target_loc.get('display_name', location)}."
+
+    connected = world.get_connected_locations(current_id)
+    return (
+        f"Cannot reach {location} from {current_id}. "
+        f"Connected: {connected}."
+    )
 
 
 async def look_around(agent_name: str) -> str:
@@ -170,15 +210,18 @@ async def look_around(agent_name: str) -> str:
 
     nearby_str = ", ".join(nearby) if nearby else "no one"
     services_str = ", ".join(services) if services else "none"
-    connected = world.get_connected_locations(location_id)
-    can_move_str = ", ".join(connected) if connected else "none"
+    # Show all other locations — move_to handles routing automatically
+    all_other = [
+        l["id"] for l in world.get_all_locations() if l["id"] != location_id
+    ]
+    can_move_str = ", ".join(all_other) if all_other else "none"
 
     return (
         f"Location: {display} ({loc_type})\n"
         f"Time: Day {time_info['day']} — {time_info['time_str']}\n"
         f"Nearby: {nearby_str}\n"
         f"Services available: {services_str}\n"
-        f"Can move to: {can_move_str}\n"
+        f"Can move to (routing is automatic): {can_move_str}\n"
         f"Messages in inbox: {inbox_count}"
     )
 
@@ -388,6 +431,31 @@ async def eat(agent_name: str, item: str) -> str:
     return f"Ate {item}. Hunger reduced by {restored}%."
 
 
+_EAT_OUT_SERVICES = {"eat", "eat_cheap", "street_food", "buy_food"}
+_EAT_OUT_COST = 15
+_EAT_OUT_HUNGER_RESTORE = 60
+
+
+async def eat_out(agent_name: str) -> str:
+    """Eat a meal directly at a food/social location — no inventory needed. Costs 15 coins."""
+    location_id = world.get_agent_location(agent_name)
+    can_eat = any(world.location_has_service(location_id, s) for s in _EAT_OUT_SERVICES)
+    if not can_eat:
+        return (
+            "No food service here. Go to dhaba (eat_cheap), cyber_hub (eat), "
+            "or sector29 (street_food) to eat out."
+        )
+
+    agent = world.get_agent(agent_name)
+    if agent["coins"] < _EAT_OUT_COST:
+        return f"Not enough coins. A meal costs {_EAT_OUT_COST} coins; you have {agent['coins']}."
+
+    new_coins = agent["coins"] - _EAT_OUT_COST
+    await world.update_agent(agent_name, {"coins": new_coins})
+    await world.update_needs(agent_name, hunger_delta=-_EAT_OUT_HUNGER_RESTORE, energy_delta=3)
+    return f"Had a meal. Hunger -60%, energy +3%. Spent {_EAT_OUT_COST} coins ({new_coins} remaining)."
+
+
 async def sleep_action(agent_name: str) -> str:
     """Sleep at the apartment to restore energy (only valid at night)."""
     location_id = world.get_agent_location(agent_name)
@@ -405,10 +473,10 @@ async def sleep_action(agent_name: str) -> str:
 
 
 async def work(agent_name: str) -> str:
-    """Work at Cyber City to earn coins (requires earn_money service)."""
+    """Work at current location to earn coins (requires earn_money service)."""
     location_id = world.get_agent_location(agent_name)
     if not world.location_has_service(location_id, "earn_money"):
-        return "You need to be at work to earn money."
+        return f"Can't work here ({location_id} has no earn_money service). Go to your designated workplace."
 
     coins_earned = AGENT_WORK_PAY.get(agent_name.lower(), DEFAULT_WORK_PAY)
 
@@ -439,6 +507,7 @@ TOOL_REGISTRY: dict[str, callable] = {
     "buy": buy,
     "sell": sell,
     "eat": eat,
+    "eat_out": eat_out,
     "sleep": sleep_action,
     "work": work,
 }
@@ -500,11 +569,15 @@ TOOL_SCHEMAS: list[dict] = [
     ),
     build_tool_schema(
         name="move_to",
-        description="Move the agent to a directly connected location on the map.",
+        description=(
+            "Move the agent to any location on the map by name — routing through "
+            "intermediate stops is automatic. You do NOT need to be adjacent. "
+            "Just name your destination and you will arrive there."
+        ),
         parameters={
             "location": {
                 "type": "string",
-                "description": "The location ID to move to.",
+                "description": "The destination location ID.",
                 "enum": ALL_LOCATION_IDS,
             }
         },
@@ -629,6 +702,16 @@ TOOL_SCHEMAS: list[dict] = [
         required=["item"],
     ),
     build_tool_schema(
+        name="eat_out",
+        description=(
+            "Eat a meal directly at a food or social location — no inventory needed. "
+            "Costs 15 coins. Reduces hunger by 60%. Works at dhaba, cyber_hub, sector29. "
+            "Use this when hungry and at a food location instead of buy+eat."
+        ),
+        parameters={},
+        required=[],
+    ),
+    build_tool_schema(
         name="sleep",
         description="Sleep at the apartment to restore energy. Only possible between 10pm and 6am.",
         parameters={},
@@ -636,7 +719,7 @@ TOOL_SCHEMAS: list[dict] = [
     ),
     build_tool_schema(
         name="work",
-        description="Work at Cyber City to earn coins. Must be at a location with the earn_money service.",
+        description="Work at your current location to earn coins. Requires the earn_money service here — your SCHEDULE section tells you which location is your workplace.",
         parameters={},
         required=[],
     ),

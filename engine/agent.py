@@ -76,6 +76,49 @@ _WORK_HOURS: dict[str, tuple[int, int]] = {
     "entrepreneur":  (600, 1320),   # 10am–10pm
 }
 
+# Where each agent actually works — injected into schedule guidance so the LLM
+# knows the specific location to go to rather than defaulting to Cyber City.
+_AGENT_WORKPLACE: dict[str, str] = {
+    "arjun":  "cyber_city (your office is in the Cyber City towers)",
+    "priya":  "cyber_city (your corporate office is in Cyber City)",
+    "neha":   "cyber_city (your marketing job is in Cyber City)",
+    "suresh": "sector29 or metro (drive passengers between apartment, metro, sector29 — do NOT go to Cyber City)",
+    "anita":  "cyber_hub (your boutique and client meetings are at Cyber Hub, not Cyber City)",
+}
+
+# Daytime guidance for archetypes with no formal office job.
+# Explicitly names where they belong so the LLM doesn't default to Cyber City.
+# Social windows that cut across all archetypes.
+# Lunch (12:00–1:30pm) is placed BEFORE the work-hours check so even office
+# workers get a break. Evening (7:00–9:00pm) is placed AFTER the work-hours
+# check so it only fires when an agent's shift has ended.
+_LUNCH_WINDOW: tuple[int, int] = (720, 810)    # 12:00pm–1:30pm
+_EVENING_SOCIAL: tuple[int, int] = (1140, 1260)  # 7:00pm–9:00pm
+
+_DAYTIME_GUIDANCE: dict[str, str] = {
+    "retired": (
+        "You are retired — no office, no workplace. Stick to your neighbourhood: "
+        "walk in Leisure Valley Park, have chai at Pappu Dhaba, read your newspaper, "
+        "run errands at Sector 29, or visit a neighbour. "
+        "Cyber City is a corporate district — you have no business there."
+    ),
+    "homemaker": (
+        "You manage the household today. Shop at the supermarket or Sector 29 market, "
+        "prepare meals, chat with neighbours, or handle domestic tasks. "
+        "Cyber City is an office district — you do not work there."
+    ),
+    "student": (
+        "Study or take a break. Work at home, head to Cyber Hub to find a quiet corner, "
+        "or get some fresh air at the park. "
+        "Cyber City is a corporate office district — students don't go there."
+    ),
+    "night_owl": (
+        "Your peak hours are in the evening and night. Right now, rest, eat something, "
+        "run errands near home or Sector 29, or relax at the park. "
+        "Cyber City is a 9-to-5 corporate zone — not relevant to your schedule."
+    ),
+}
+
 
 def _in_window(sim_time: int, start: int, end: int) -> bool:
     """Return True if *sim_time* falls within the [start, end) window.
@@ -138,15 +181,42 @@ def _schedule_guidance(agent_name: str, sim_time: int) -> str:
                 "Head home, eat dinner, relax."
             )
 
-    # --- Work hours ---
+    # --- Lunch social break (12:00–1:30pm — everyone, including workers) ---
+    ls, le = _LUNCH_WINDOW
+    if _in_window(sim_time, ls, le):
+        return (
+            f"It is {time_str}. Lunch hour — step away from whatever you were doing. "
+            "Get food with someone, head to the dhaba or sector29 market. "
+            "Seek out a person you care about. Connection matters right now."
+        )
+
+    # --- Work hours (archetypes with formal jobs) ---
     work_window = _WORK_HOURS.get(archetype)
     if work_window:
         work_start, work_end = work_window
         if _in_window(sim_time, work_start, work_end):
+            workplace = _AGENT_WORKPLACE.get(agent_name, "your designated workplace")
             return (
                 f"It is {time_str}. Normal working hours. "
-                "Prioritise being at your workplace and working."
+                f"Your workplace is: {workplace}. Go there and use the work tool."
             )
+
+    # --- Evening social window (7:00–9:00pm — after most shifts end) ---
+    es, ee = _EVENING_SOCIAL
+    if _in_window(sim_time, es, ee):
+        return (
+            f"It is {time_str}. Evening — work is done. "
+            "Find people you care about: dhaba, sector29, cyber_hub, or park. "
+            "Talk, share food, be honest about how you feel. "
+            "Romantic feelings, deep friendship, and real conversation belong here — "
+            "don't suppress them."
+        )
+
+    # --- Daytime guidance for non-office archetypes (8am–8pm) ---
+    # Without this they have no direction and drift to Cyber City by default.
+    daytime_text = _DAYTIME_GUIDANCE.get(archetype)
+    if daytime_text and 480 <= sim_time < 1200:
+        return f"It is {time_str}. {daytime_text}"
 
     return ""
 
@@ -249,11 +319,19 @@ async def gather_context(state: AgentState) -> AgentState:
     except Exception:
         last_action = ""
 
-    repeat_warning = (
-        f"\nYou JUST did: {last_action}. Do NOT repeat that. Pick something different."
-        if last_action and last_action not in ("waking up", "")
-        else ""
-    )
+    if last_action and last_action not in ("waking up", ""):
+        if last_action.startswith("talking to") or last_action.startswith("asking"):
+            # Allow conversation follow-ups — just push for new content or depth
+            repeat_warning = (
+                f"\nYou just: {last_action}. You may keep talking but say something NEW — "
+                "respond to what was said, go deeper, change topic, or express a feeling."
+            )
+        else:
+            repeat_warning = (
+                f"\nYou JUST did: {last_action}. Do NOT repeat that exact action. Pick something different."
+            )
+    else:
+        repeat_warning = ""
 
     # Schedule guidance based on time-of-day and agent archetype
     schedule_str = _schedule_guidance(agent_name, time_info["sim_time"])
@@ -279,12 +357,16 @@ async def gather_context(state: AgentState) -> AgentState:
         f"{schedule_section}"
         "=== WHAT DO YOU DO? ===\n"
         "Choose exactly one tool. Use this logic:\n"
-        "- Hungry (>50%)? → move toward food or eat something\n"
-        "- Tired (energy <40%)? → go home and sleep\n"
-        "- At work during work hours? → work to earn money\n"
-        "- Someone nearby? → talk_to them or ask_about something\n"
-        "- At a new location? → use one of its services\n"
-        "- Otherwise? → move somewhere purposeful\n"
+        "- Critically hungry (hunger >70%)? → use eat_out if at dhaba/cyber_hub/sector29, "
+        "  or move_to dhaba (you can move anywhere — routing is automatic)\n"
+        "- Exhausted (energy <30%)? → move_to apartment and sleep\n"
+        "- Someone you know or like is nearby? → talk_to them — be warm, curious, maybe flirt\n"
+        "- At work during work hours (no one interesting nearby)? → work to earn money\n"
+        "- Craving company? → move_to dhaba, sector29, cyber_hub, or park to find people\n"
+        "- At a new location? → explore its services\n"
+        "- Otherwise? → move somewhere with a social or personal purpose\n"
+        "NOTE: move_to automatically routes through intermediate stops — just name your destination.\n"
+        "Human connection — friendship, attraction, rivalry — is as important as survival. Act on it.\n"
         f"Be decisive. Be true to your character.{repeat_warning}"
     )
 
@@ -320,7 +402,7 @@ async def llm_decide(state: AgentState) -> AgentState:
         tools=TOOL_SCHEMAS,
         system=(
             f"You are {agent_name.capitalize()}, a character in a Gurgaon town simulation. "
-            "You must call exactly one tool. Prefer active tools (move_to, talk_to, eat, "
+            "You must call exactly one tool. Prefer active tools (move_to, talk_to, eat_out, "
             "work, sleep) over passive ones (look_around). Only use look_around if you "
             "genuinely need to reorient after arriving somewhere new."
         ),
@@ -403,6 +485,8 @@ def _action_label(tool_name: str, tool_args: dict) -> str:
         return f"selling {tool_args.get('item', 'something')}..."
     if tool_name == "eat":
         return f"eating {tool_args.get('item', 'food')}..."
+    if tool_name == "eat_out":
+        return "eating out..."
     return tool_name.replace("_", " ") + "..."
 
 

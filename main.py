@@ -60,7 +60,7 @@ HUD_HEIGHT: int = 50          # bottom strip reserved for HUD (Story 4.4)
 WINDOW_W: int = TILE_SIZE * MAP_COLS           # 960 px
 WINDOW_H: int = TILE_SIZE * MAP_ROWS + HUD_HEIGHT  # 690 px
 
-ZONE_RADIUS: int = 36         # pixel radius for each location circle
+ZONE_RADIUS: int = 44         # pixel radius for each location circle
 
 # Location-type colours (RGB)
 _ZONE_COLORS: dict[str, tuple[int, int, int]] = {
@@ -118,6 +118,7 @@ _AGENT_COLORS: dict[str, tuple[int, int, int]] = {
 _REL_COLOR_FRIENDLY: tuple[int, int, int] = (50, 200, 100)
 _REL_COLOR_HOSTILE:  tuple[int, int, int] = (220, 80, 80)
 _REL_COLOR_NEUTRAL:  tuple[int, int, int] = (120, 120, 120)
+_REL_COLOR_ROMANTIC: tuple[int, int, int] = (255, 105, 180)
 _REL_LINE_WIDTH: float = 1.5
 
 # Module-scope relationship cache, refreshed every 30 seconds
@@ -464,11 +465,29 @@ class GurgaonWindow(arcade.Window):
 
     def _draw_zones(self) -> None:
         """Coloured circles for each location, bordered in white."""
+        agent_counts: dict[str, int] = {}
+        for name in _AGENT_COLORS:
+            try:
+                lid = self.world.get_agent_location(name)
+                agent_counts[lid] = agent_counts.get(lid, 0) + 1
+            except Exception:
+                pass
+
         for lid, loc in self._loc_meta.items():
             px, py = self._loc_pixels[lid]
             rgb = _ZONE_COLORS.get(loc.get("type", "home"), (110, 110, 110))
             arcade.draw_circle_filled(px, py, ZONE_RADIUS, (*rgb, 215))
             arcade.draw_circle_outline(px, py, ZONE_RADIUS, _BORDER_COLOR, 2)
+
+            count = agent_counts.get(lid, 0)
+            if count > 0:
+                bx = px + int(ZONE_RADIUS * 0.72)
+                by = py + int(ZONE_RADIUS * 0.72)
+                badge_color = (255, 140, 65) if count >= 5 else (78, 158, 255)
+                arcade.draw_circle_filled(bx, by, 10, (*badge_color, 240))
+                arcade.draw_text(str(count), bx, by, color=(255, 255, 255),
+                                 font_size=7, bold=True,
+                                 anchor_x="center", anchor_y="center")
 
     def _draw_relationship_lines(self) -> None:
         """Draw thin coloured lines between every pair of co-located agents.
@@ -499,15 +518,23 @@ class GurgaonWindow(arcade.Window):
                     s_ba = edges.get((b, a))
 
                     if s_ab == "hostile" or s_ba == "hostile":
-                        color = _REL_COLOR_HOSTILE
+                        color, width = _REL_COLOR_HOSTILE, _REL_LINE_WIDTH
+                    elif s_ab == "romantic" or s_ba == "romantic":
+                        color, width = _REL_COLOR_ROMANTIC, 2.5
                     elif s_ab == "friendly" or s_ba == "friendly":
-                        color = _REL_COLOR_FRIENDLY
+                        color, width = _REL_COLOR_FRIENDLY, _REL_LINE_WIDTH
                     else:
-                        color = _REL_COLOR_NEUTRAL
+                        color, width = _REL_COLOR_NEUTRAL, _REL_LINE_WIDTH
 
                     ax, ay = self._agent_cur[a]
                     bx, by_ = self._agent_cur[b]
-                    arcade.draw_line(ax, ay, bx, by_, color, _REL_LINE_WIDTH)
+                    arcade.draw_line(ax, ay, bx, by_, color, width)
+                    if s_ab == "romantic" or s_ba == "romantic":
+                        mx, my = (ax + bx) / 2, (ay + by_) / 2
+                        arcade.draw_text("♥", mx, my,
+                                         color=(*_REL_COLOR_ROMANTIC, 220),
+                                         font_size=12,
+                                         anchor_x="center", anchor_y="center")
 
     def _draw_agents(self) -> None:
         """Draw each agent: circle + initials + name tag + fading thought bubble."""
