@@ -1,6 +1,3 @@
 
-# Day 1 — 6:15am
-The apartment air feels instantly different, quieter than the bustle of the metro station. I finally feel like I’ve shed the layers of the city just by walking through this door. It’s good to just *be* somewhere settled for a while.
-
 # Day 1 — 6:30am
-Morning's just started, and the familiar faces—Priya, Rahul, Neha, Anita—are all around. It feels like the calm before the usual morning chaos, a gentle hum of shared space that's both comforting and slightly overwhelming. I just need a moment to process the day ahead before I even think about making coffee.
+Waking up in this familiar quiet, the soft pre-dawn light filtering through the curtains. It’s good to just take a moment before the day truly starts; the silence here feels like a warm blanket after a long night. I can sense everyone is nearby, a comforting knowledge even before seeing a face.

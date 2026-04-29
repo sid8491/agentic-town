@@ -667,6 +667,7 @@ let relEdges = {};
 let locAgentCount = {};   // loc id → number of agents there (updated each tick)
 let inspectorAgent = null;
 let animT = 0;
+let BOX_W = 140, BOX_H = 90;  // adaptive box dims, updated by updateBoxDims()
 
 // ── Canvas sizing ──────────────────────────────────────────────────────────
 
@@ -674,6 +675,7 @@ function resizeCanvas() {
   const wrap = document.getElementById('map-wrap');
   canvas.width  = Math.max(200, wrap.clientWidth  - 32);
   canvas.height = Math.max(200, wrap.clientHeight - 32);
+  updateBoxDims();
   if (stateData) onStateUpdate();
 }
 window.addEventListener('resize', resizeCanvas);
@@ -712,11 +714,15 @@ function clientBFS(startId, goalId) {
   return [startId, goalId];
 }
 
-// Radial placement: agents spread in a circle around the location centre.
-// Radius grows with crowd size so they never overlap each other.
+// Radial placement: agents spread in a circle around the location centre,
+// constrained so they never leave the location box boundary.
 function agentOffset(idx, total) {
   if (total <= 1) return { dx: 0, dy: 0 };
-  const r = Math.max(30, 18 + total * 6); // r=30 for 2, r=78 for 10
+  const AGENT_R = 19;  // avatar radius (16) + mood ring (2.5), rounded up
+  // Maximum radial reach that keeps the agent circle inside the box.
+  const maxR = Math.min(BOX_W, BOX_H) / 2 - AGENT_R - 4;
+  // Desired radius grows with crowd but is capped to stay in-bounds.
+  const r = Math.min(Math.max(maxR, 12), 12 + total * 4);
   const angle = (idx / total) * Math.PI * 2 - Math.PI / 2; // start at top
   return { dx: Math.cos(angle) * r, dy: Math.sin(angle) * r };
 }
@@ -782,6 +788,19 @@ function rrect(cx, x, y, w, h, r) {
   cx.lineTo(x+r, y+h); cx.arcTo(x, y+h, x, y+h-r, r);
   cx.lineTo(x, y+r); cx.arcTo(x, y, x+r, y, r);
   cx.closePath();
+}
+
+// Box dimensions — derived from tile spacing so they scale with canvas size.
+// Tightest horizontal gap: 6 tiles (sector29 ↔ supermarket).
+// Tightest vertical gap:   5 tiles (dhaba ↔ sector29).
+// We use 85% of each gap so there's always a visible margin between boxes.
+// NOTE: BOX_W/BOX_H are declared near the top of the IIFE (temporal dead zone fix).
+function updateBoxDims() {
+  const padX = 80, padY = 55;
+  const sx = (canvas.width  - padX * 2) / 28;
+  const sy = (canvas.height - padY * 2) / 18;
+  BOX_W = Math.max(120, sx * 6 * 0.85);
+  BOX_H = Math.max(80,  sy * 5 * 0.85);
 }
 
 // ── Build roster + overview ────────────────────────────────────────────────
@@ -968,9 +987,11 @@ function draw(ts) {
       }
     }
 
-    // 2. Location boxes
-    const bw = Math.min(160, Math.max(120, canvas.width / 6.5));
-    const bh = Math.min(66, Math.max(54, canvas.height / 11));
+    // 2. Location boxes — size comes from BOX_W/BOX_H (adaptive to canvas)
+    const bw = BOX_W, bh = BOX_H;
+    const iconFs  = Math.max(14, Math.floor(bh * 0.20));
+    const nameFs  = Math.max(10, Math.floor(bh * 0.13));
+    const name2Fs = Math.max(9,  Math.floor(bh * 0.11));
 
     for (const loc of mapData.locations) {
       const c = tile2px(loc.tile_x, loc.tile_y);
@@ -982,32 +1003,32 @@ function draw(ts) {
       g.addColorStop(0, TYPE_FILL_TOP[loc.type]||'#1e1e30');
       g.addColorStop(1, TYPE_FILL_BOT[loc.type]||'#111128');
       ctx.fillStyle = g;
-      rrect(ctx, bx, by, bw, bh, 9); ctx.fill();
+      rrect(ctx, bx, by, bw, bh, 10); ctx.fill();
       ctx.shadowBlur = 0;
 
       ctx.strokeStyle = borderColor; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.65;
-      rrect(ctx, bx, by, bw, bh, 9); ctx.stroke(); ctx.globalAlpha = 1;
+      rrect(ctx, bx, by, bw, bh, 10); ctx.stroke(); ctx.globalAlpha = 1;
 
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.font = '14px system-ui';
-      ctx.fillText(TYPE_ICON[loc.type]||'📍', c.x, by + bh*0.32);
+      ctx.font = iconFs + 'px system-ui';
+      ctx.fillText(TYPE_ICON[loc.type]||'📍', c.x, by + bh*0.30);
 
-      ctx.font = '500 10px Inter, system-ui'; ctx.fillStyle = '#c8cae0';
+      ctx.font = '600 ' + nameFs + 'px Inter, system-ui'; ctx.fillStyle = '#c8cae0';
       const words = (loc.display_name || loc.id).split(' ');
       const line1 = words.slice(0,2).join(' ');
       const line2 = words.length > 2 ? words.slice(2).join(' ') : null;
       if (line2) {
-        ctx.fillText(line1, c.x, by+bh*0.64);
-        ctx.font = '10px Inter, system-ui'; ctx.fillStyle='#8b8eaa';
-        ctx.fillText(line2, c.x, by+bh*0.82);
+        ctx.fillText(line1, c.x, by+bh*0.62);
+        ctx.font = name2Fs + 'px Inter, system-ui'; ctx.fillStyle='#8b8eaa';
+        ctx.fillText(line2, c.x, by+bh*0.80);
       } else {
-        ctx.fillText(line1, c.x, by+bh*0.72);
+        ctx.fillText(line1, c.x, by+bh*0.70);
       }
 
       // Agent count badge — top-right corner of box
       const n = locAgentCount[loc.id] || 0;
       if (n > 0) {
-        const badgeR = 10;
+        const badgeR = 11;
         const bx2 = bx + bw - 1, by2 = by + 1;
         ctx.shadowBlur = 0;
         ctx.beginPath(); ctx.arc(bx2, by2, badgeR, 0, Math.PI*2);

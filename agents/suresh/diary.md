@@ -1,6 +1,6 @@
 
 # Day 1 — 6:15am
-Ugh, the market is starting to stir, but it's still quiet enough right now. I just took a look around, and honestly, it’s just… beige. Makes me feel a bit restless, like I should be doing something already, but I guess I’ll just absorb the atmosphere for a bit longer. Maybe I’ll check out the street food when the real rush hits.
+Ugh, finally at Pappu Dhaba. The smell of cumin and frying oil already hits you, which is exactly what I needed after that stale office air. I can already hear the sounds—the clatter of steel plates, the shouting of the chaiwalla. This is going to be perfect.
 
 # Day 1 — 6:30am
-Whew, finally at Pappu Dhaba. The smell of spices and woodsmoke just hit me, and it’s instantly comforting. I can already hear the clatter of dishes; I think I might actually relax here.
+Another morning, another digital nudge sent out to Rohan. It was just a simple 'good morning' text, but now I'm left hanging, waiting for the 'how's it going' answer. I really hope things are going well for him; I was hoping to catch up today. Now I just sit here, waiting for the little *ping*.
