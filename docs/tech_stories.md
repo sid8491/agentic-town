@@ -485,6 +485,605 @@ Stories in this epic are all `viewer.html`-only changes unless noted. No backend
 
 ---
 
+### Story 8.7 — Conversation History Panel
+**As a spectator**, I want to read the full back-and-forth between two agents so I can follow the story arc of their relationship.
+
+**Tasks:**
+- Add a `GET /api/conversations` endpoint to `server.py` — returns the rolling log of all `talk_to` messages (last 300, stored in `world/state.json["conversations"]`); optional `?a=&b=` query params filter by agent pair
+- In `tools.py`, call `world.add_conversation(sender, recipient, message)` inside `talk_to()` whenever a message is delivered
+- In `viewer.html`, add a `#convo-panel` overlay (chat-bubble style, sent=right/blue, received=left/neutral)
+- Clicking a live speech bubble on the map opens the panel filtered to that pair
+- Clicking the activity card in the inspector sidebar (when the agent is talking) also opens the panel for that pair
+- Panel fetches `GET /api/conversations?a=X&b=Y` on open and re-fetches every 4 seconds while visible
+- Close button + click-outside dismisses; no state is persisted — purely ephemeral UI
+
+**Done when:** Clicking a "Neha is talking to Arjun" speech bubble opens a scrollable chat panel showing their full message history from the current session. Replies from both sides are visible.
+
+---
+
+### Story 8.8 — Hinglish Agent Speech
+**As a spectator**, I want agents to speak and write in modern Indian English (Hinglish) — a natural mix of English and Hindi romanised — so the simulation feels authentically set in urban India.
+
+**Tasks:**
+- In `engine/agent.py`, add a `=== HOW YOU SPEAK ===` section to the main decision prompt:
+  - Instruct the agent to mix Hindi words/phrases naturally into English sentences
+  - Provide ~10 example words (yaar, bhai, kya, acha, nahi, haan, sahi, thoda, zyada, arrey)
+  - Ratio guidance: ~70% English, ~30% Hindi; no Devanagari script — romanised only
+  - Apply to all `talk_to` messages and internal monologue
+- Update the `reflect()` diary prompt system message to `"a Gurgaon resident writing in your private diary in Hinglish"` and include a short example Hinglish diary line
+
+**Done when:** After a few ticks, `talk_to` messages and diary entries contain Hindi words interspersed naturally in English sentences. No Devanagari appears. The tone matches how a young urban Delhiite actually texts.
+
+---
+
+## Epic 9: Emergent Behavior & Story Depth
+
+This epic addresses the "diary repetition / conversation trap" problem identified in audit:
+agents currently default to messaging each other every tick, recycle the same 1–2 relationships,
+write near-identical diary entries, and have no cross-day continuity. The world has no
+friction (instant travel, free food, no bills), no conflict (nobody can refuse), and no
+memory of yesterday. These stories give agents stakes, memory, and the ability to disagree,
+so the same well-written souls can produce actual stories instead of positivity loops.
+
+Build in order — 9.1 and 9.2 unlock the rest. 9.3–9.5 are independent of each other and
+can be parallelised after 9.2 lands.
+
+---
+
+### Story 9.1 — Per-Pair Conversation History in Agent Context
+**As an agent**, I want to remember what I said to someone yesterday so I don't restart
+the same conversation every tick.
+
+**Tasks:**
+- In `engine/world.py`, add `get_conversation_history(agent_a, agent_b, limit=10)` that
+  reads from the existing `conversations` rolling log and returns the last N messages
+  between this specific pair (most recent first), formatted as `"[time] sender: text"`.
+- In `engine/agent.py`'s `gather_context` node, for each unread inbox sender, fetch the
+  last 10 messages with that sender and inject them as a `=== RECENT EXCHANGES WITH {name} ===`
+  block in the prompt (one block per unread sender, max 3 blocks to stay under token budget).
+- Replace the current "Have unread messages? → reply with talk_to — acknowledge what they said"
+  directive with: *"Have unread messages? Read the full thread above first. Has this loop
+  been circling for 3+ exchanges with no concrete plan? Either propose something specific
+  (time + place + activity) or stop messaging and do something else."*
+- Add a hard rule: *"Do NOT send a message that repeats the gist of your last 3 messages
+  to the same person. If you have nothing new to say, take an action instead."*
+
+**Done when:** Across 20 ticks, no two consecutive `talk_to` messages from the same agent
+to the same recipient have a cosine-similarity > 0.85 on bag-of-words. Diary entries stop
+showing "finally messaged X" repeatedly within a single game day.
+
+---
+
+### Story 9.2 — Night Reflection + Yesterday's Lesson
+**As an agent**, I want yesterday's reflection to shape today's behavior so I'm not
+running Groundhog Day.
+
+**Tasks:**
+- In `engine/agent.py`, add a `night_reflection(agent_name)` async function called once
+  per agent at the day-boundary tick (when `sim_time` rolls past midnight).
+- The function makes one LLM call with: soul.md, today's diary entries, today's events
+  involving this agent. Prompt: *"Write 2–3 sentences. What surprised you today? What
+  pattern in your own behavior do you notice? What's one concrete thing you want to do
+  differently tomorrow?"*
+- Store the result in `world/state.json` under `agents[name].yesterday_reflection`
+  (overwrite each day — only the most recent is kept).
+- In `gather_context`, if `yesterday_reflection` is set, inject it as a
+  `=== YESTERDAY YOU WROTE ===` block immediately above the decision ladder.
+- Add to the decision ladder: *"If yesterday's reflection names a behavior to change,
+  pick an action that honors it — even if it's harder than the default."*
+
+**Done when:** At the Day 1 → Day 2 boundary, every agent has a non-empty
+`yesterday_reflection` field. On Day 2, at least 3 agents take an action that
+verifiably differs from their Day 1 default pattern (e.g., Arjun who messaged Kavya 9
+times on Day 1 messages her ≤3 times on Day 2, OR sends a concrete plan on first contact).
+
+---
+
+### Story 9.3 — Refuse / Disagree Tools
+**As an agent**, I want to be able to say no, push back, or set boundaries so the
+simulation produces conflict, not just compliance.
+
+**Tasks:**
+- Add `refuse(target, reason)` to `engine/tools.py`: deposits a structured "refusal"
+  message into target's inbox. Marks the sender's `last_action` as
+  `"declined to {target}: {reason}"`. Costs the sender -2 mood; costs the target -3 mood.
+- Add `disagree(target, topic, position)`: deposits a stronger pushback message into
+  target's inbox, tagged with `event_type: "conflict"`. Both parties get a small
+  short-term mood hit (-4 each) but the relationship trust score (per Story 7.1) is
+  modulated based on whether they later reconcile.
+- In the decision ladder prompt, add: *"You are allowed to refuse. If a request conflicts
+  with your goals or values, use `refuse` — agreeing to everything is not in character.
+  If you genuinely disagree about something that matters, use `disagree` rather than
+  pretending to agree."*
+- In each soul.md, ensure there's at least one explicit "things I push back on" line
+  (e.g., Priya: *"I don't pretend to enjoy small talk when I'm tired"*; Arjun: *"I
+  resist commitments that pull me away from the startup"*). Audit and add where missing.
+
+**Done when:** Across 100 ticks, at least 5 `refuse` and 2 `disagree` calls are made
+across the 10 agents organically (no scripted prompts). Diary entries reflect the
+emotional impact ("Kavya said no. I'm trying not to read into it.").
+
+---
+
+### Story 9.4 — Rent + Daily Bills (Economic Pressure)
+**As the simulation**, I need agents to face real money pressure so working and
+spending become meaningful choices.
+
+**Tasks:**
+- Add `monthly_rent` (int, coins) per agent in `world/state.json`, sized to archetype:
+  office_worker 60, vendor 25, retired 40, student 20, entrepreneur 50, homemaker 0
+  (paid by partner), night_owl 35.
+- Every 4 game days at midnight, deduct rent from each agent's coin balance. If the
+  agent goes negative, set `agent.financial_stress = true` for the next 4 days.
+- When `financial_stress` is true, inject into the prompt: *"You are behind on rent.
+  Consider working extra, eating cheap (eat at home, skip eat_out), or asking someone
+  you trust for help."*
+- Audit starting balances: Rohan, Rahul, Deepa, Anita should start with 1–1.5x rent
+  (tight); Vikram, Priya can start with 3–4x (comfortable). This creates baseline
+  inequality that drives behavior diversity.
+- Add a viewer indicator: agents with `financial_stress = true` show a small ₹! badge
+  next to their sprite (purely cosmetic, drawn in viewer.html).
+
+**Done when:** By Day 5, at least 2 agents have hit `financial_stress`. Their next-day
+behavior shows an observable shift toward `work` actions and away from `eat_out`. At
+least one agent uses `talk_to` to ask another agent for help with money.
+
+---
+
+### Story 9.5 — Shared Plans + Joint Actions
+**As two agents**, when we agree to meet, we should actually meet — and feel
+disappointment if the other doesn't show.
+
+**Tasks:**
+- Add `shared_plans` array in `world/state.json`, each entry:
+  `{participants: [a, b], location, target_time, status: "pending"|"completed"|"failed", created_at}`.
+- Add `propose_plan(target, location, time, activity)` tool — writes a pending plan
+  and a `talk_to` message asking confirmation.
+- Add `confirm_plan(plan_id)` and `decline_plan(plan_id, reason)` tools — target
+  responds; plan flips to `confirmed` or `declined`.
+- At each tick, the engine checks pending/confirmed plans:
+  - If `target_time` reached and both participants are at `location` → mark `completed`,
+    grant +8 mood to both, restore +50% hunger if location offers food, log a narrative
+    event ("Arjun and Kavya had coffee at cyber_hub, as planned").
+  - If `target_time` reached and one or both absent → mark `failed`. The agent who
+    showed up gets -10 mood and a memory entry: *"{Other} didn't show up at {location}
+    today. Need to figure out what that means."* The absent agent gets a soft reminder
+    in their next prompt: *"You missed your plan with {other} at {location}. They
+    waited."*
+- In the decision ladder, add above social directives: *"If you have a confirmed plan
+  in the next 30 game minutes, prioritize moving toward `{plan.location}` over
+  everything except critical hunger/energy."*
+
+**Done when:** Within 100 ticks, at least 3 plans are proposed organically. At least
+one completes successfully (both show up, both get mood boost). At least one fails
+(one shows, one doesn't) and the resulting diary entries reflect real disappointment
+and not "felt light."
+
+---
+
+### Story 9.6 — Personality-Weighted Decision Ladder
+**As distinct characters**, we should make distinct choices in the same situation —
+not all follow the identical default flowchart.
+
+**Tasks:**
+- In `engine/agent.py`, add `personality_modifier(agent_name, mood, archetype) -> str`
+  returning a short prompt fragment injected just before the decision ladder.
+- Per-archetype directives:
+  - office_worker (Arjun, Priya, Neha): *"You instinctively prefer working through
+    problems over socializing about them. When tired, you'd rather be alone than in a
+    crowd."*
+  - vendor (Suresh, Rahul): *"You read your surroundings before acting. Notice who's
+    around. You initiate small interactions easily."*
+  - retired (Vikram): *"You move at your own pace. You don't chase anyone. You prefer
+    being asked over asking."*
+  - homemaker (Deepa, Anita): *"Your default radius is family/household. You step
+    outside that radius rarely and deliberately."*
+  - student (Kavya): *"You're reactive and emotional. You text first, think later.
+    Big mood swings are normal."*
+  - night_owl (Rohan): *"Daytime drains you. Evenings energize you. You avoid
+    morning crowds."*
+  - entrepreneur (others): *"You're constantly evaluating people for usefulness or
+    signal. You initiate strategically, not warmly."*
+- Add mood-based overrides:
+  - mood < 30: *"You're depleted. Doing the reach-out is harder than usual but might
+    matter more. Or — protect yourself. Both are valid."*
+  - mood > 75: *"You're flowing. Take the harder action you've been postponing."*
+
+**Done when:** Across 50 ticks, the 10 agents show measurable behavioral spread on
+identical situations (e.g., when 3+ agents are at cyber_hub, the office_workers are
+significantly more likely to leave or sit alone than the vendors/students). Diary
+voice differences sharpen — readers can identify agent from a single anonymized
+diary entry with >70% accuracy.
+
+---
+
+### Story 9.7 — Memory Consolidation (Daily Pattern Recognition)
+**As an agent**, I want my long-term memory to grow with what I've actually
+learned, not just seed facts from Day 1.
+
+**Tasks:**
+- At the day-boundary tick (same hook as Story 9.2), after `night_reflection`,
+  trigger `consolidate_memory(agent_name)` if it's been ≥3 days since the last
+  consolidation for that agent.
+- The function makes one LLM call with: current `memory.md`, last 3 days of diary
+  entries, last 3 days of events involving this agent. Prompt: *"You are this agent
+  reviewing your recent past. Update your memory.md. Add new observations about
+  yourself or others. Sharpen or correct existing entries that turned out wrong.
+  Keep entries terse — one to two lines each. Do not delete the seed relationships,
+  but you can refine them."*
+- Write the result back to `agents/{name}/memory.md`, replacing the file.
+- Log a `memory_updated` event to the world event log so observers can see when an
+  agent's understanding shifted.
+
+**Done when:** By Day 6, at least 5 agents have a `memory.md` that differs
+materially from its Day 1 starting state. The diffs include at least one new
+observation about another agent that wasn't in the seed (e.g., *"Priya talks
+about burnout but never asks for help — that's a pattern"*).
+
+---
+
+### Story 9.8 — Scheduled External Events
+**As the world**, I should occasionally throw something at the agents so they
+adapt instead of grinding the same routine.
+
+**Tasks:**
+- Create `world/scheduled_events.json` with a list of events:
+  `{day, hour, location, type, description, affected_agents: [...] | "all" | "archetype:office_worker"}`.
+- Seed examples:
+  - Day 3, 13:00, cyber_hub, "meetup", *"A small startup meetup is happening — relevant
+    for entrepreneurs and office_workers"*, affected: `archetype:office_worker,entrepreneur`.
+  - Day 4, 09:00–18:00, all outdoor locations, "monsoon", *"Heavy rain. Movement to
+    outdoor locations is unappealing. Most people are staying inside."*, affected: `"all"`.
+  - Day 5, 19:00, dhaba, "festival_prep", *"Locals are gathering at dhaba ahead of a
+    small festival. Crowded, lively."*, affected: `"all"`.
+- In `gather_context`, if an active scheduled event matches the agent (by archetype or
+  "all"), inject a `=== TODAY ===` section above the schedule guidance.
+- For monsoon-type events, also add a soft mechanical effect: `move_to` outdoor
+  locations costs +1 mood (reluctance) for the duration.
+- Surface upcoming events in the viewer's spotlight strip (Story 8.5) when within
+  2 game hours.
+
+**Done when:** Day 3's meetup pulls at least 3 office_worker/entrepreneur agents to
+cyber_hub at 13:00 organically. Day 4's monsoon visibly reduces outdoor location
+visits compared to baseline. Diary entries reference the events ("had to skip my
+walk because of the rain").
+
+---
+
+## Epic 10: Make It a Show, Not a Simulator
+
+This epic addresses the "spectator boredom" problem identified after Epic 8 shipped:
+even with characters talking, writing diaries, and emergent behavior, watching the
+web viewer is dull. The root cause is *format* — the current viewer is built like a
+debug UI for someone who already understands the simulation. To entertain a stranger
+who tunes in for 90 seconds, the experience has to do three jobs the current viewer
+does not: **tell them where to look**, **tell them why it matters**, **skip the
+boring parts**.
+
+This epic turns the simulation viewer into a show. Stories 10.1–10.5 are the core
+moves. 10.6–10.10 are cheap dressing that punches above its weight.
+
+Build 10.1 (Director Mode) and 10.2 (Narrator) first — they're the highest-impact
+moves and everything else layers on top. 10.5 (auto-pacing) should land early too
+because dead-air is the single biggest reason viewers drop. The rest can be
+parallelised.
+
+---
+
+### Story 10.1 — Cinematic Director Mode (Auto-Protagonist Camera)
+**As a spectator**, I want the camera to follow whoever is most interesting *right
+now* so I always know where to look — instead of staring at 10 dots with equal
+weight.
+
+**Tasks:**
+- In `viewer.html`, add a `directorMode` boolean (default `true`) and a toggle
+  button in the HUD (`🎬 Director` ↔ `🗺️ Overview`).
+- When director mode is on, the canvas zooms into a smaller bounding box around
+  the current "protagonist" agent. Other agents and locations still render but at
+  reduced opacity (~40%).
+- Compute `protagonist_score` per agent each poll cycle as a weighted sum:
+  - `+10` if part of an active conversation (any other agent at same location with
+    talk-tagged `last_action`)
+  - `+8` if a confirmed `shared_plan` (Story 9.5) is starting in <30 game minutes
+  - `+7` if mood < 25 or > 80 (emotional extreme)
+  - `+6` if `financial_stress = true` (Story 9.4)
+  - `+5` if hunger > 80 or energy < 20 (crisis halo from Story 8.2)
+  - `+4` if just received a `refuse` or `disagree` event (Story 9.3) within last
+    20 game minutes
+  - `+2` per event involving this agent in the last 30 game minutes (recency boost)
+- Pick the highest-scoring agent as protagonist. Hold focus for **at least** 20
+  real seconds before allowing a cut, to avoid jitter. Auto-cut to the new top
+  scorer after that, with a smooth 600ms ease-in pan.
+- Show a small "📺 Following: {Name}" pill in the top-left corner during director
+  mode, with portrait thumbnail.
+- Clicking any agent forces them as protagonist for 60 real seconds (manual
+  override), then auto-resumes scoring.
+
+**Done when:** Director mode keeps the viewer on a meaningful agent at all times.
+Within 5 minutes of watching, the camera has cut to at least 3 different agents
+based on actual events. No focus-thrash (no cuts faster than every 20 seconds
+unless manually overridden).
+
+---
+
+### Story 10.2 — LLM-Generated Live Narrator
+**As a spectator**, I want voiceover-style commentary on what's happening so the
+sim feels like a documentary, not surveillance footage.
+
+**Tasks:**
+- Add `engine/narrator.py` with `generate_narration(world_state, recent_events,
+  protagonist_name) -> str` returning 1–2 sentences.
+- Prompt template: *"You are a calm, observant narrator describing a slice-of-life
+  show set in modern Gurgaon. In 1–2 sentences (max 30 words total), describe what
+  {protagonist} is doing right now and the emotional subtext. Use present tense.
+  Be specific. Do not summarize, do not editorialize, do not name internal stats
+  like 'mood'. Examples: 'Arjun has been pacing near Cyber Hub for ten minutes. He's
+  checking his phone. Kavya hasn't replied.' / 'Priya finally took a break — she's
+  at the coffee shop alone, watching the rain.'"*
+- Inputs to the prompt: protagonist soul (one-line summary), protagonist's
+  `last_action`, location, `recent_events` involving this agent (last 5), current
+  mood/hunger/energy as qualitative descriptors only ("tired", "hungry", "low",
+  "lifted").
+- Trigger one narration call every 30 real seconds, OR immediately on a director
+  cut (Story 10.1), whichever comes first. Cache by `(protagonist, last_action,
+  location)` tuple to avoid redundant calls.
+- Add `GET /api/narration` endpoint in `server.py` returning the latest narration
+  string + timestamp.
+- In `viewer.html`, add a 36px tall narration bar at the bottom of the canvas
+  area. New narrations slide in from the right and out to the left. Optional
+  small "🔊" button to enable browser TTS (`window.speechSynthesis`) — off by
+  default to avoid surprising the viewer.
+
+**Done when:** A 5-minute watch produces ~10 distinct narration lines, each
+accurately reflecting what the protagonist is doing. Narration changes within 5
+seconds of a director cut. TTS works when enabled. No more than ~12 LLM calls per
+5 minutes (cost ceiling).
+
+---
+
+### Story 10.3 — Scene Staging for Dramatic Moments
+**As a spectator**, I want dramatic moments to *interrupt* the normal view with a
+cinematic cut-in so I don't miss them.
+
+**Tasks:**
+- Define "moment triggers" detected each poll cycle:
+  - Two agents with confirmed `shared_plan` (Story 9.5) both arriving at the
+    location → "the meet-up"
+  - A `refuse` or `disagree` event landing → "the rejection"
+  - First `talk_to` between two agents who haven't spoken in ≥1 game day → "the
+    reconnection"
+  - Mood crash (Δmood ≤ -15 in one tick) → "the moment it hit"
+  - Plan failure (one shows, one doesn't, per Story 9.5) → "the no-show"
+- On trigger, render a Scene Card overlay (centered modal, dimmed background):
+  - Both agents' portrait thumbnails facing each other (or one alone for mood crash)
+  - Caption strip: a short phrase from `engine/narrator.py` framed as a scene
+    heading (e.g., *"Cyber Hub — afternoon. Arjun arrives. Kavya is already
+    there."*)
+  - The actual `talk_to` message text typed character-by-character (~25 chars/sec)
+    in chat-bubble style
+  - Soft musical sting on open (Story 10.8 dependency — graceful no-op if absent)
+- Hold for 8 real seconds (longer if dialogue is still typing), then ease-out and
+  return to director mode.
+- Maximum one scene card per 30 real seconds — queue triggers if multiple fire close
+  together. Pick the highest-scoring trigger when queueing (use the same priority
+  order listed above).
+- Add a `🎬 Replay last scene` button in the HUD that re-shows the most recent
+  scene card.
+
+**Done when:** Within a 10-minute watch, at least 2 scene cards trigger on real
+moments (no test fixtures). Dialogue types out legibly, the scene returns cleanly
+to director mode, and no two scene cards fire within 30 seconds of each other.
+
+---
+
+### Story 10.4 — Plot Threads Tracker (Sidebar)
+**As a spectator**, I want a persistent sidebar of active storylines so I always
+have something to root for or against.
+
+**Tasks:**
+- Add `engine/plots.py` with `detect_plot_threads(world_state) -> list[PlotThread]`,
+  where a thread is `{id, title, participants, status_text, progress: 0-1, last_updated}`.
+- Auto-detect threads from existing state (no LLM needed):
+  - **Pending shared plans** (Story 9.5): *"Will {A} and {B} actually meet at
+    {location}?"* — progress = (game_minutes_remaining / 240) inverted
+  - **Refused/declined plans**: *"Awkwardness between {A} and {B}"* — surfaces for
+    24 game hours after a `refuse` or `decline_plan` event
+  - **Financial stress** (Story 9.4): *"{Name}'s rent crisis"* — progress = days
+    behind / 4
+  - **Mood spirals**: any agent with mood < 30 for ≥ 6 game hours → *"{Name} is
+    sinking"*
+  - **Conversation streaks**: 5+ messages between same pair in last 3 game hours →
+    *"{A} and {B} can't stop messaging"*
+  - **Active disagreements** (Story 9.3): unresolved `disagree` events → *"{A}
+    and {B} are arguing about {topic}"*
+- Add `GET /api/plot_threads` endpoint returning the current list.
+- In `viewer.html`, add a 280px-wide right sidebar showing up to 5 threads sorted
+  by `last_updated` desc:
+  - Each thread: title (1 line, bold), participant portrait thumbnails, progress
+    bar (or status badge for non-progressable threads), a "tap to focus camera"
+    affordance that forces the participants as protagonist (Story 10.1 override).
+- Threads auto-expire 24 game hours after `last_updated` if no new events.
+- Closing a thread (X button) hides it for the rest of the session.
+
+**Done when:** After 5 game days of simulation, the sidebar consistently shows 3–5
+threads. Tapping a thread cuts the camera to its participants. Threads update or
+expire correctly as state changes — no stale entries linger past 24 game hours.
+
+---
+
+### Story 10.5 — Drama-Driven Auto-Pacing
+**As a spectator**, I want the sim to fast-forward boring stretches automatically
+so I'm never staring at nothing happening.
+
+**Tasks:**
+- Extend the existing night auto-speed logic in `engine/world.py`'s
+  `SimulationLoop._tick` with a more general "drama detector".
+- Each tick, compute `drama_score`:
+  - `+5` per `talk_to` event in the last 4 ticks
+  - `+8` per `refuse`/`disagree` event in the last 4 ticks (Story 9.3)
+  - `+10` per active scene card or unresolved shared plan in <30 game minutes
+  - `+3` per agent with mood < 30 or > 75
+  - `+2` per agent in motion (between locations)
+- Speed mapping:
+  - `drama_score >= 15`: speed 1x (live)
+  - `drama_score 8–14`: speed 1x (default, no change)
+  - `drama_score 3–7`: speed 2x with a "⏩ quiet stretch" pill in the HUD
+  - `drama_score 0–2` for ≥ 60 real seconds: speed 4x with "⏩⏩ skipping ahead"
+    pill, soft visual desaturation
+- The existing night auto-speed (Story 5.3) still applies and overrides drama-based
+  speed when ≥7 agents are sleeping.
+- Any scene card trigger (Story 10.3) immediately drops speed back to 1x for the
+  duration of the card.
+- Manual speed override (Story 7.3) wins over auto-pacing — show a "🔒 Speed locked"
+  indicator while the manual override is active.
+
+**Done when:** During a 10-minute watch with no active conflict, the sim spends
+≥ 30% of the time at 2x or 4x. The moment a `talk_to` event between two agents
+fires, speed is back at 1x within 1 tick. Manual speed lock fully disables
+auto-pacing and is reflected in the HUD.
+
+---
+
+### Story 10.6 — Portraits Everywhere
+**As a spectator**, I want to see the agents' faces in every UI element so the
+characters feel like people, not colored dots.
+
+**Tasks:**
+- Audit every place agent identity is rendered in `viewer.html` and replace text
+  initials with the portrait avatar (already served by `GET /api/agent/{name}/avatar`):
+  - Event feed (Story 8.3): 18px circular avatar at the start of each event line
+  - Spotlight strip (Story 8.5): inline avatars next to named agents
+  - Speech bubbles (Story 8.4): tiny avatar on the bubble pointer side
+  - Narration bar (Story 10.2): protagonist's avatar at the left edge
+  - Scene cards (Story 10.3): full-size portraits (already specified)
+  - Plot thread sidebar (Story 10.4): participant avatars (already specified)
+  - Day-change recap overlay (Story 8.6): "most active agent" shown with portrait
+- Cache avatar fetches client-side in a `Map<name, HTMLImageElement>` populated
+  on first poll. Fall back to colored circle + initials if image fails to load.
+- Avatars should match agent color via a 2px ring border so identity is still
+  legible at small sizes.
+
+**Done when:** No piece of UI in the viewer references an agent purely by name
+or initials when their portrait could be shown instead. Avatars load once and
+are reused across all UI elements without flicker.
+
+---
+
+### Story 10.7 — Mood Emoji Floaters
+**As a spectator**, I want big visual cues when agents have emotional shifts so I
+catch the drama without reading text.
+
+**Tasks:**
+- In `viewer.html`, track per-agent `previousMood` across poll cycles. On each
+  poll, compute `Δmood = currentMood - previousMood`.
+- Emit a floating emoji from the agent's sprite when:
+  - `Δmood >= +10` → 😍 (mood spike up)
+  - `Δmood >= +5` → 🙂
+  - `Δmood <= -10` → 😞 (mood crash)
+  - `Δmood <= -5` → 😕
+  - Just received a `refuse` event → 😶
+  - Just received a `disagree` event → 😤
+  - Hunger crossed 80 going up → 🍛
+  - Energy dropped below 20 → 🥱
+- Render as a 24px emoji that floats up 60px over 1.5s with ease-out, fading from
+  opacity 1 → 0. Stack with 6px horizontal offset if multiple fire on same agent
+  in same poll.
+- Limit one floater per agent per poll to avoid spam.
+
+**Done when:** When an agent's mood drops sharply, a 😞 visibly floats up from
+their sprite. When they receive a refusal, a 😶 floater appears. Across a
+10-minute watch, at least 8 floaters appear across all agents, accurately
+reflecting state changes.
+
+---
+
+### Story 10.8 — Sound Design
+**As a spectator**, I want ambient sound and audio cues for events so the show
+has texture and I notice things even when not staring at the screen.
+
+**Tasks:**
+- Add `static/audio/` directory with royalty-free assets:
+  - `ambient_city.mp3` — looping low-volume city background (auto, traffic, faint
+    voices). Plays continuously when sim is running.
+  - `ui_event.mp3` — short tick on new event_feed entry
+  - `ui_message.mp3` — soft chime on new `talk_to` event
+  - `sting_drama.mp3` — 1.5s musical sting for scene card open (Story 10.3)
+  - `sting_refusal.mp3` — slightly dissonant sting for `refuse`/`disagree` events
+  - `chime_dayboundary.mp3` — bell on day-change overlay (Story 8.6)
+- Add a 🔊 audio toggle button in the HUD (default: **off** — never auto-play
+  audio without explicit consent, browsers will block it anyway).
+- All audio at 30% default volume, with a slider in a settings popover.
+- Add a per-channel mute (ambient / UI / stings) so viewers can keep ambient and
+  mute stings, or vice versa.
+- Use the Web Audio API directly — no library dependency.
+
+**Done when:** Toggling audio on plays the city ambient loop. Each event type
+triggers its specific cue (verifiable by inspecting the audio queue). All cues
+respect master volume and per-channel mutes. Audio survives a poll-cycle refresh
+without re-triggering existing loops.
+
+---
+
+### Story 10.9 — End-of-Day Highlight Reel + Cliffhanger
+**As a spectator**, I want a 20-second montage at the end of each game day with a
+cliffhanger for tomorrow so the experience has shape.
+
+**Tasks:**
+- Extend the day-change overlay (Story 8.6) into a full highlight reel sequence.
+- At day-boundary, compute `top_moments[5]` from the day's events using the same
+  scoring as Story 10.1's protagonist score, but applied retrospectively over the
+  full day. Each moment captures: timestamp, location, participants, event text.
+- Render the reel as a 20-second sequence:
+  - Title card: *"Day {N} — Recap"* (2s, large fade)
+  - For each of the top 5 moments: 3.5s card showing participant portraits, a
+    short caption derived from the event (LLM-generated one-liner OR the raw
+    event text reformatted via Story 8.3's `narrativise()`), location name
+  - Final cliffhanger card: 1 LLM call generates *"Tomorrow on Gurgaon: {2 short
+    teasers}"* based on unresolved plot threads (Story 10.4) and pending shared
+    plans (Story 9.5)
+- Music: optional `sting_dayboundary.mp3` extended loop while reel plays, fade
+  out on close.
+- Skip button (Esc or click) — but the reel auto-dismisses after the cliffhanger
+  card holds for 4 seconds.
+- Append the cliffhanger text to `world/daily_log_day_{N}.txt` for archival.
+
+**Done when:** At Day 1 → Day 2 transition, a 20-second reel plays showing 5
+moments with portraits and captions, followed by a coherent cliffhanger card
+that names actual unresolved threads. Skipping works. The cliffhanger persists
+in the daily log.
+
+---
+
+### Story 10.10 — Daily Gossip Headlines
+**As a spectator**, I want playful tabloid-style headlines about the day's events
+so the show has comic relief and a distinct voice.
+
+**Tasks:**
+- Add `engine/headlines.py` with `generate_headlines(day_events, agent_souls) ->
+  list[str]` returning 2–3 short headline strings.
+- Triggered once per game day at 18:00 (early evening). One LLM call per day.
+- Prompt: *"You write the gossip column for a fictional Gurgaon neighborhood
+  newsletter. Given today's notable events, write 2–3 cheeky tabloid-style
+  headlines (max 12 words each). Be playful, slightly dramatic, never mean.
+  Examples: 'Local Founder Spotted Leaving Cyber Hub Alone — Again' / 'Drama at
+  the Dhaba: Two Friends, One Awkward Silence' / 'Mystery Solved: Why Vikram
+  Skipped His Morning Walk'. Avoid using any agent's full name more than once
+  across the set."*
+- Store headlines in `world/state.json` under `daily_headlines: {day_N: [...]}`.
+- Add `GET /api/headlines/today` endpoint.
+- In `viewer.html`, add a horizontal scrolling ticker (24px tall, top of viewport,
+  beneath the overview bar) that cycles through today's headlines with a 6-second
+  hold per headline and 400ms slide transition.
+- Once a new day starts (and the reel finishes, Story 10.9), the ticker swaps to
+  the new day's headlines.
+
+**Done when:** By 18:00 on Day 1, the ticker shows 2–3 distinct headlines that
+plausibly reference actual events from the day. Headlines have personality (not
+dry summaries). Ticker scrolls smoothly without jitter. New day produces new
+headlines without restart.
+
+---
+
 ## Summary — Story Count by Phase
 
 | Phase | Stories | Priority |
@@ -496,7 +1095,17 @@ Stories in this epic are all `viewer.html`-only changes unless noted. No backend
 | Epic 5: Persistence | 3 | Must have |
 | Epic 6: Web Viewer | 2 | Should have |
 | Epic 7: Polish | 3 | Nice to have |
-| Epic 8: Spectator Experience | 6 | Nice to have |
-| **Total** | **30** | |
+| Epic 8: Spectator Experience | 8 | Nice to have |
+| Epic 9: Emergent Behavior & Story Depth | 8 | Should have |
+| Epic 10: Make It a Show, Not a Simulator | 10 | Should have |
+| **Total** | **50** | |
 
-Build order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8. Never skip ahead.
+Build order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10. Never skip ahead.
+
+Within Epic 9: build 9.1 first (unblocks all others by giving agents conversation memory),
+then 9.2 (yesterday's reflection — needed for cross-day differentiation). 9.3, 9.4, 9.5,
+9.6, 9.7, 9.8 can then be built in any order or in parallel.
+
+Within Epic 10: build 10.1 (Director Mode), 10.2 (Narrator), and 10.5 (auto-pacing) first
+— they are the highest-impact moves and unlock the rest. 10.3 (scene staging) depends on
+10.1. 10.4, 10.6, 10.7, 10.8, 10.9, 10.10 can then be parallelised in any order.

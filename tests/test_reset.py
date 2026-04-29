@@ -268,6 +268,36 @@ def test_09_reset_count_days_from_state():
         assert state_path.exists(), "Abort should not delete state.json"
 
 
+def test_11_reset_deletes_daily_log_files():
+    """daily_log_day_*.txt files are LLM-generated runtime output and must be wiped."""
+    with tempfile.TemporaryDirectory() as td:
+        td_path = Path(td)
+        agents_dir = td_path / "agents"
+        _make_full_agent_tree(agents_dir)
+
+        world_dir = td_path / "world"
+        world_dir.mkdir(parents=True, exist_ok=True)
+        state_path = world_dir / "state.json"
+        state_path.write_text(json.dumps({"day": 3, "agents": {}}), encoding="utf-8")
+
+        # Authored content that must be preserved
+        map_path = world_dir / "map.json"
+        map_path.write_text('{"locations": []}', encoding="utf-8")
+
+        # Runtime output that must be deleted
+        log1 = world_dir / "daily_log_day_1.txt"
+        log2 = world_dir / "daily_log_day_2.txt"
+        log1.write_text("Day 1 summary\n", encoding="utf-8")
+        log2.write_text("Day 2 summary\n", encoding="utf-8")
+
+        with redirect_stdout(io.StringIO()):
+            reset_world(confirm=False, agents_dir=agents_dir, state_path=state_path)
+
+        assert not log1.exists(), "daily_log_day_1.txt should be deleted"
+        assert not log2.exists(), "daily_log_day_2.txt should be deleted"
+        assert map_path.exists(), "map.json must be preserved (authored content)"
+
+
 def test_10_reset_with_confirm_false_skips_input():
     """confirm=False must not invoke input()."""
     with tempfile.TemporaryDirectory() as td:
@@ -308,6 +338,7 @@ TESTS = [
     ("8.  reset_world handles missing files gracefully",               test_08_reset_handles_missing_files_gracefully),
     ("9.  reset_world prompt mentions day count from state.json",      test_09_reset_count_days_from_state),
     ("10. reset_world(confirm=False) skips input()",                   test_10_reset_with_confirm_false_skips_input),
+    ("11. reset_world deletes daily_log_day_*.txt files",              test_11_reset_deletes_daily_log_files),
 ]
 
 

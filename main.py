@@ -982,7 +982,13 @@ def reset_world(
 ) -> None:
     """Wipe simulation state and per-agent runtime files; re-seed goals.md.
 
+    Principle: reset removes everything generated at runtime by the simulation,
+    and preserves anything authored by a developer. Authored files (soul.md,
+    portraits, map.json) are never touched.
+
     - Deletes `state.json` (if present).
+    - Deletes any `world/daily_log_day_*.txt` (LLM-generated daily summaries
+      from Story 7.2 — runtime output, not authored content).
     - For each of the 10 agents: deletes `memory.md` and `diary.md` (if present),
       and rewrites `goals.md` from the `# Default Goals` section of `soul.md`.
     - Never touches `soul.md`.
@@ -1019,6 +1025,13 @@ def reset_world(
             state_path.unlink()
         except OSError as exc:
             print(f"[reset] Could not delete {state_path}: {exc}")
+
+    # Delete daily summary logs (Story 7.2 runtime output)
+    for log_path in state_path.parent.glob("daily_log_day_*.txt"):
+        try:
+            log_path.unlink()
+        except OSError as exc:
+            print(f"[reset] Could not delete {log_path}: {exc}")
 
     # Reset each agent
     for name in ALL_AGENT_NAMES:

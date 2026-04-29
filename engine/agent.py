@@ -369,7 +369,16 @@ async def gather_context(state: AgentState) -> AgentState:
         "- Otherwise? → move somewhere with a social or personal purpose\n"
         "NOTE: move_to automatically routes through intermediate stops — just name your destination.\n"
         "Human connection — friendship, attraction, rivalry — is as important as survival. Act on it.\n"
-        f"Be decisive. Be true to your character.{repeat_warning}"
+        f"Be decisive. Be true to your character.{repeat_warning}\n\n"
+        "=== HOW YOU SPEAK ===\n"
+        "You are a modern urban Indian living in Gurgaon. Speak in Hinglish — a natural mix of "
+        "Hindi and English the way real people in Delhi-NCR actually talk. Write in English script "
+        "(Roman letters only, no Devanagari). Sprinkle Hindi words and phrases naturally: yaar, bhai, "
+        "arre, bas, acha, theek hai, matlab, bilkul, suno, dekho, kya hua, chal, abhi, bohot, "
+        "kaam, paisa, tension, scene, timepass, jugaad. "
+        "Example: 'arre yaar, itna traffic tha — I'm exhausted bhai.' "
+        "Do NOT translate everything to Hindi. Let English and Hindi flow together naturally. "
+        "The ratio should feel like a Gurgaon office conversation, not a Bollywood script."
     )
 
     return {
@@ -563,12 +572,16 @@ async def reflect(state: AgentState) -> AgentState:
         f"Result: {tool_result}\n\n"
         "Write ONE short diary entry (2-4 sentences) in your personal voice "
         "about what just happened and how you feel. Be specific, be human. "
-        "No need to repeat what you did mechanically — write how it felt."
+        "No need to repeat what you did mechanically — write how it felt. "
+        "Write in Hinglish — the natural Hindi-English mix spoken in Gurgaon. "
+        "English script only (no Devanagari). Example tone: "
+        "'arre yaar, aaj bohot thaka diya office ne. But that meeting actually went well — "
+        "matlab finally kuch toh hua.'"
     )
 
     response = await call_llm(
         reflection_prompt,
-        system=f"You are {agent_name}, writing in your private diary.",
+        system=f"You are {agent_name}, a Gurgaon resident writing in your private diary in Hinglish.",
         max_tokens=500,
         thinking=False,
     )

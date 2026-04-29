@@ -47,7 +47,7 @@ Web viewer available at `http://localhost:8000` once `server.py` or `main.py` is
 Three layers that are strictly separated:
 
 **1. Engine** (`engine/`) — all simulation logic, no rendering
-- `world.py` — `WorldState` singleton: owns `world/state.json`, thread-safe via asyncio Lock. Single source of truth for all agent positions, needs, inventories, inboxes, and sim time.
+- `world.py` — `WorldState` singleton: owns `world/state.json`, thread-safe via asyncio Lock. Single source of truth for all agent positions, needs, inventories, inboxes, sim time, and rolling conversation log (`add_conversation()` keeps last 300 messages).
 - `agent.py` — `AgentRunner` per agent: LangGraph graph with nodes `gather_context → llm_decide → execute_tool → reflect`. Agents run concurrently each tick via `asyncio.gather`.
 - `tools.py` — all tool functions: `(agent_name, **kwargs) → str`. Tools either mutate `WorldState` or read/write agent files. No LLM calls inside tools. `move_to` runs full BFS and walks every hop in one call — agents can be sent to any location, not just adjacent ones; `look_around` shows all reachable locations so the LLM picks freely.
 - `llm.py` — `LLMConfig` singleton + `call_llm(prompt, tools=None)`. Abstracts Ollama and Gemini behind one interface via `litellm`. Toggle provider at runtime via `LLMConfig.set_primary("ollama"|"gemini")`.
@@ -55,7 +55,7 @@ Three layers that are strictly separated:
 
 **2. Renderer** (`main.py`) — Arcade window, reads `WorldState` every frame, never writes to it directly. All rendering code lives here. Keyboard/click handlers call engine methods or `LLMConfig.set_primary()`.
 
-**3. Web server** (`server.py`) — FastAPI app runs in a background thread. Exposes `GET /api/state`, `GET /api/agent/{name}/diary`, `GET /api/agent/{name}/avatar`, `GET /api/relationships`, `POST /api/llm/{provider}`. Serves `viewer.html`. No simulation logic here — reads `WorldState` and proxies to `LLMConfig`.
+**3. Web server** (`server.py`) — FastAPI app runs in a background thread. Exposes `GET /api/state`, `GET /api/agent/{name}/diary`, `GET /api/agent/{name}/avatar`, `GET /api/relationships`, `GET /api/conversations` (optional `?a=&b=` filter), `POST /api/llm/{provider}`. Serves `viewer.html`. No simulation logic here — reads `WorldState` and proxies to `LLMConfig`.
 
 ---
 
