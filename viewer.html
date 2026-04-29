@@ -227,6 +227,27 @@ html, body {
   font-weight: 700; font-size: 13px; color: #fff;
   flex-shrink: 0;
   margin-top: 2px;
+  cursor: pointer;
+}
+
+#avatar-zoom {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.82);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+#avatar-zoom.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+#avatar-zoom img {
+  width: 240px; height: 240px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.75), 0 0 0 3px rgba(255,255,255,0.12);
 }
 
 .agent-body { flex: 1; min-width: 0; }
@@ -539,9 +560,12 @@ html, body {
 
 </div>
 
+<!-- ── Avatar zoom overlay (global, outside inspector) ── -->
+<div id="avatar-zoom"><img src="" alt=""></div>
+
 <!-- ── Inspector ── -->
 <div id="inspector">
-  <div id="inspector-backdrop"></div>
+<div id="inspector-backdrop"></div>
   <div id="inspector-panel">
     <div class="inspector-head">
       <div id="ins-avatar">A</div>
@@ -668,6 +692,7 @@ let locAgentCount = {};   // loc id → number of agents there (updated each tic
 let inspectorAgent = null;
 let animT = 0;
 let BOX_W = 140, BOX_H = 90;  // adaptive box dims, updated by updateBoxDims()
+let avatarImages = {};         // name → HTMLImageElement (may still be loading)
 
 // ── Canvas sizing ──────────────────────────────────────────────────────────
 
@@ -809,6 +834,13 @@ function buildRoster() {
   const roster = document.getElementById('roster');
   const overview = document.getElementById('overview');
 
+  // Preload portrait images — silently falls back to initials if 404
+  for (const name of AGENT_NAMES) {
+    const img = new Image();
+    img.src = '/api/agent/' + name + '/avatar';
+    avatarImages[name] = img;
+  }
+
   for (const name of AGENT_NAMES) {
     const color = AGENT_COLOR[name] || '#888';
 
@@ -817,7 +849,11 @@ function buildRoster() {
     card.className = 'agent-card';
     card.dataset.name = name;
     card.innerHTML =
-      `<div class="avatar" style="background:${color}">${name[0].toUpperCase()}</div>` +
+      `<div class="avatar" style="background:${color};overflow:hidden;padding:0">` +
+        `<img src="/api/agent/${name}/avatar" ` +
+             `style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block" ` +
+             `onerror="this.style.display='none';this.parentElement.textContent='${name[0].toUpperCase()}'">` +
+      `</div>` +
       `<div class="agent-body">` +
         `<div class="agent-name">${name}</div>` +
         `<div class="activity-badge" id="ab-${name}" style="color:#636882;border-color:rgba(99,104,130,0.25);background:rgba(99,104,130,0.08)">` +
@@ -836,6 +872,9 @@ function buildRoster() {
       `</div>`;
     card.addEventListener('click', () => openInspector(name));
     roster.appendChild(card);
+    const av = card.querySelector('.avatar');
+    av.addEventListener('mouseenter', () => showZoom(name, av));
+    av.addEventListener('mouseleave', hideZoom);
 
     // Overview chip
     if (overview.children.length > 0) {
@@ -846,8 +885,10 @@ function buildRoster() {
     chip.className = 'ov-agent';
     chip.dataset.name = name;
     chip.innerHTML =
-      `<div class="ov-dot" style="background:${color}" id="ov-dot-${name}">` +
-        `${name[0].toUpperCase()}` +
+      `<div class="ov-dot" style="background:${color};overflow:hidden;padding:0" id="ov-dot-${name}">` +
+        `<img src="/api/agent/${name}/avatar" ` +
+             `style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block" ` +
+             `onerror="this.style.display='none';this.parentElement.textContent='${name[0].toUpperCase()}'">` +
         `<span class="ov-activity-icon" id="ov-icon-${name}">⚡</span>` +
       `</div>` +
       `<div class="ov-info">` +
@@ -856,6 +897,9 @@ function buildRoster() {
       `</div>`;
     chip.addEventListener('click', () => openInspector(name));
     overview.appendChild(chip);
+    const dot = chip.querySelector('.ov-dot');
+    dot.addEventListener('mouseenter', () => showZoom(name, dot));
+    dot.addEventListener('mouseleave', hideZoom);
   }
 }
 
@@ -1110,11 +1154,19 @@ function draw(ts) {
       ctx.fillStyle=color; ctx.fill();
       ctx.shadowBlur=0;
 
-      // Initial
-      ctx.fillStyle='rgba(255,255,255,0.93)';
-      ctx.font='bold 12px Inter, system-ui';
-      ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText(name[0].toUpperCase(), x, y);
+      // Portrait or initial fallback
+      const img = avatarImages[name];
+      if (img && img.complete && img.naturalWidth > 0) {
+        ctx.save();
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.clip();
+        ctx.drawImage(img, x-r, y-r, r*2, r*2);
+        ctx.restore();
+      } else {
+        ctx.fillStyle='rgba(255,255,255,0.93)';
+        ctx.font='bold 12px Inter, system-ui';
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(name[0].toUpperCase(), x, y);
+      }
 
       // Name tag
       ctx.font='500 9px Inter, system-ui'; ctx.fillStyle='#c8cae0';
@@ -1169,7 +1221,11 @@ async function openInspector(name) {
   if (card) card.classList.add('active');
 
   const av = document.getElementById('ins-avatar');
-  av.textContent = name[0].toUpperCase(); av.style.background = color;
+  av.style.background = color; av.style.overflow = 'hidden'; av.style.padding = '0';
+  av.innerHTML = `<img src="/api/agent/${name}/avatar" ` +
+    `style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block" ` +
+    `onerror="this.style.display='none';this.parentElement.textContent='${name[0].toUpperCase()}'">`;
+
   document.getElementById('ins-name').textContent = name;
   document.getElementById('inspector').classList.add('visible');
   refreshInspectorLive();
@@ -1234,6 +1290,72 @@ function closeInspector() {
 document.getElementById('inspector-close').addEventListener('click', closeInspector);
 document.getElementById('inspector-backdrop').addEventListener('click', closeInspector);
 document.addEventListener('keydown', e => { if(e.key==='Escape') closeInspector(); });
+
+// ── Avatar zoom ────────────────────────────────────────────────────────────
+
+const zoomEl  = document.getElementById('avatar-zoom');
+const zoomImg = zoomEl.querySelector('img');
+let zoomTimer = null;
+
+function showZoom(name, anchorEl) {
+  const src = '/api/agent/' + name + '/avatar';
+  zoomImg.src = src;
+  zoomImg.onerror = () => { zoomEl.classList.remove('visible'); };
+  positionZoom(anchorEl);
+  zoomEl.classList.add('visible');
+}
+
+function positionZoom(anchorEl) {
+  if (!anchorEl) return;
+  const r = anchorEl.getBoundingClientRect();
+  const cx = r.left + r.width / 2;
+  const cy = r.top  + r.height / 2;
+  const size = 240;
+  let left = cx - size / 2;
+  let top  = cy - size - 16;           // prefer above
+  if (top < 8) top = cy + r.height + 16; // flip below if no room
+  left = Math.max(8, Math.min(left, window.innerWidth  - size - 8));
+  top  = Math.max(8, Math.min(top,  window.innerHeight - size - 8));
+  zoomEl.style.left = left + 'px';
+  zoomEl.style.top  = top  + 'px';
+}
+
+function hideZoom() { zoomEl.classList.remove('visible'); }
+
+// Wire up #ins-avatar hover (re-wired each time inspector opens)
+document.getElementById('ins-avatar').addEventListener('mouseenter', function() {
+  if (inspectorAgent) showZoom(inspectorAgent, this);
+});
+document.getElementById('ins-avatar').addEventListener('mouseleave', hideZoom);
+
+// Canvas: show zoom when hovering over a sprite
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  const scx = canvas.width / rect.width, scy = canvas.height / rect.height;
+  const cx = (e.clientX - rect.left) * scx, cy = (e.clientY - rect.top) * scy;
+  let hit = null;
+  for (const name of Object.keys(sprites)) {
+    const sp = sprites[name];
+    const dx = cx - sp.displayX, dy = cy - sp.displayY;
+    if (dx*dx + dy*dy <= (16+4)*(16+4)) { hit = name; break; }
+  }
+  if (hit) {
+    // Use a fake anchor positioned at the sprite's screen coords
+    const spriteScreenX = sprites[hit].displayX / scx + rect.left;
+    const spriteScreenY = sprites[hit].displayY / scy + rect.top;
+    const fakeAnchor = { getBoundingClientRect: () => ({
+      left: spriteScreenX - 16, top: spriteScreenY - 16,
+      width: 32, height: 32
+    })};
+    if (!zoomEl.classList.contains('visible') || zoomImg.dataset.for !== hit) {
+      zoomImg.dataset.for = hit;
+      showZoom(hit, fakeAnchor);
+    }
+  } else {
+    if (zoomImg.dataset.for) { zoomImg.dataset.for = ''; hideZoom(); }
+  }
+});
+canvas.addEventListener('mouseleave', hideZoom);
 
 canvas.addEventListener('click', e => {
   const rect=canvas.getBoundingClientRect();

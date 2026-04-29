@@ -25,7 +25,7 @@ Each character is powered by a local LLM (Ollama) or Google Gemini. They read th
 
 ## Setup
 
-**Requirements:** Python 3.12, [Ollama](https://ollama.com) running locally with `qwen3:27b` pulled.
+**Requirements:** Python 3.12, [Ollama](https://ollama.com) running locally with `gemma4:e4b` pulled.
 
 ```bash
 # 1. Create virtual environment
@@ -49,6 +49,12 @@ cp .env.example .env
 # Start the simulation (Arcade window + web viewer)
 python main.py
 
+# Start in fullscreen
+python main.py --fullscreen
+
+# Start at a specific in-game time (e.g. 8:00am)
+python main.py --time 480
+
 # Web viewer only (no Arcade window)
 python server.py
 
@@ -68,9 +74,11 @@ Web viewer: open `http://localhost:8000` in any browser. Works from other device
 |---|---|
 | `Space` | Pause / resume |
 | `←` / `→` | Slow down / speed up time |
+| `F11` | Toggle fullscreen (Arcade window) |
 | `L` | Toggle LLM between Ollama and Gemini |
-| Click an agent | Read their last 3 diary entries |
+| Click an agent | Open inspector — diary, needs, last action |
 | `Escape` | Close inspector panel |
+| Hover an avatar | Show enlarged portrait (web viewer) |
 
 ---
 
@@ -123,6 +131,9 @@ Each agent lives in `agents/{name}/`:
 | `memory.md` | Long-term beliefs, relationships | The agent (LLM) |
 | `diary.md` | Daily journal — append only | The agent (LLM) |
 | `goals.md` | Current priorities | The agent (LLM) |
+| `../{name}.png` | Portrait image (optional) | You (developer) |
+
+Portrait images live at `agents/{name}.png` (jpg/jpeg/webp also work). The web viewer serves them via `/api/agent/{name}/avatar` and displays them on the map, in the sidebar, the overview bar, and the inspector panel. Hover any avatar to see an enlarged version. Drop a file in and it appears immediately — no restart needed.
 
 ---
 

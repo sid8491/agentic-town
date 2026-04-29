@@ -217,6 +217,18 @@ def get_agent_diary(name: str) -> dict:
 # ---------------------------------------------------------------------------
 
 
+@app.get("/api/agent/{name}/avatar")
+def get_agent_avatar(name: str):
+    """Return the agent's portrait image if one exists under agents/{name}.png."""
+    if name not in ALL_AGENT_NAMES:
+        raise HTTPException(status_code=404, detail={"error": f"Unknown agent: {name}"})
+    for ext in ("png", "jpg", "jpeg", "webp"):
+        path = pathlib.Path("agents") / f"{name}.{ext}"
+        if path.exists():
+            return FileResponse(str(path))
+    raise HTTPException(status_code=404, detail={"error": "No avatar found"})
+
+
 @app.get("/api/relationships")
 def get_relationships() -> dict:
     """

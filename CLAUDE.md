@@ -49,13 +49,13 @@ Three layers that are strictly separated:
 **1. Engine** (`engine/`) — all simulation logic, no rendering
 - `world.py` — `WorldState` singleton: owns `world/state.json`, thread-safe via asyncio Lock. Single source of truth for all agent positions, needs, inventories, inboxes, and sim time.
 - `agent.py` — `AgentRunner` per agent: LangGraph graph with nodes `gather_context → llm_decide → execute_tool → reflect`. Agents run concurrently each tick via `asyncio.gather`.
-- `tools.py` — all tool functions: `(agent_name, **kwargs) → str`. Tools either mutate `WorldState` or read/write agent files. No LLM calls inside tools.
+- `tools.py` — all tool functions: `(agent_name, **kwargs) → str`. Tools either mutate `WorldState` or read/write agent files. No LLM calls inside tools. `move_to` runs full BFS and walks every hop in one call — agents can be sent to any location, not just adjacent ones; `look_around` shows all reachable locations so the LLM picks freely.
 - `llm.py` — `LLMConfig` singleton + `call_llm(prompt, tools=None)`. Abstracts Ollama and Gemini behind one interface via `litellm`. Toggle provider at runtime via `LLMConfig.set_primary("ollama"|"gemini")`.
 - `needs.py` — `decay_needs(agent_name, minutes_elapsed)`: hunger +8%/hr, energy -5%/hr, mood event-driven.
 
 **2. Renderer** (`main.py`) — Arcade window, reads `WorldState` every frame, never writes to it directly. All rendering code lives here. Keyboard/click handlers call engine methods or `LLMConfig.set_primary()`.
 
-**3. Web server** (`server.py`) — FastAPI app runs in a background thread. Exposes `GET /api/state`, `GET /api/agent/{name}/diary`, `POST /api/llm/{provider}`. Serves `viewer.html`. No simulation logic here — reads `WorldState` and proxies to `LLMConfig`.
+**3. Web server** (`server.py`) — FastAPI app runs in a background thread. Exposes `GET /api/state`, `GET /api/agent/{name}/diary`, `GET /api/agent/{name}/avatar`, `GET /api/relationships`, `POST /api/llm/{provider}`. Serves `viewer.html`. No simulation logic here — reads `WorldState` and proxies to `LLMConfig`.
 
 ---
 
@@ -69,6 +69,8 @@ Each agent lives in `agents/{name}/` with four files:
 | `memory.md` | Agent (LLM) | Yes — agent rewrites after significant events |
 | `diary.md` | Agent (LLM) | Append-only — one entry per game day |
 | `goals.md` | Agent (LLM) | Yes — agent rewrites each morning |
+
+Portrait images live alongside the agent directories as `agents/{name}.png` (jpg/jpeg/webp also supported). Drop a file there and the web viewer picks it up immediately via `GET /api/agent/{name}/avatar` — no restart needed.
 
 The 10 agents: `arjun`, `priya`, `rahul`, `kavya`, `suresh`, `neha`, `vikram`, `deepa`, `rohan`, `anita`.
 
