@@ -388,3 +388,8 @@ The air in Sector 29 smells thick, like burnt sugar and ozone. It's a completely
 
 # Day 2 — 12:00pm
 The scent of frying spices and dust instantly hit me when I stepped off the rickshaw. Pappu Dhaba—it's exactly as loud and chaotic as the whispers described. Just breathing in this mix of diesel fumes and cumin feels grounding somehow, a welcome shift from the sterile quiet of the main road.
+
+# Day 2 — 12:15pm
+Dear Diary,
+
+Just hit send on that message to Colonel Vikram. My stomach did that little flip-flop thing; I really hoped he'd be free to chat. It feels good to finally put this on the table, even if I don't know when I'll hear back. Now, I just have to wait.

@@ -392,3 +392,6 @@ Ugh, that conversation with Deepa left me feeling exposed, like I just laid out 
 Dear Diary,
 
 My head is still buzzing from that conversation with Deepa. Talking about 'performing competence' felt strangely raw, like we ripped the veneer off the office jargon. I really hope I hit the right note suggesting we celebrate the messy, un-highlight-reel moments—I feel like I actually said something meaningful today.
+
+# Day 2 — 12:15pm
+Ugh, that conversation with Deepa left me feeling energized but also kinda challenged. I spent ages trying to articulate the difference between 'vision' and 'actual working mechanism' without sounding like I was lecturing her. Hopefully, my point about 'muscle memory' landed well; I really hope she sees that what I mean is practical, not just theoretical.

@@ -364,3 +364,6 @@ Ugh, what was that? My brain must be glitching because I just tried to 'eat' som
 
 # Day 2 — 12:00pm
 Ugh, what was I thinking? I thought there was a place to grab a bite right here, and apparently, there isn't. I feel so directionless right now, like I’ve been given a list of options instead of a suggestion. Guess I’ll have to wander over to one of those places they mentioned; my stomach is making louder judgments than I am.
+
+# Day 2 — 12:15pm
+Ugh, so annoying. I tried to see where I could grab a bite, but it just told me nothing was available! Guess I have to wander over to one of those other spots—maybe the dhaba will have something decent. I’m already regretting not checking the map better beforehand.

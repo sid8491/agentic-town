@@ -370,6 +370,121 @@ out and about and the clock returns to 1x.
 
 ---
 
+---
+
+## Epic 8: Spectator Experience
+
+Stories in this epic are all `viewer.html`-only changes unless noted. No backend changes required for 8.1–8.5. Build in order — 8.4 depends on the conversation detection introduced in 8.3.
+
+---
+
+### Story 8.1 — Floating Action Labels on Map Sprites
+**As a spectator**, I want to see what each agent is doing directly on the map so I don't have to click anyone to understand the scene.
+
+**Tasks:**
+- Below each sprite on the canvas, draw a small pill label: `[icon] [short action text]`
+- Text is the same `act.label` already computed by `detectActivity()` (e.g., "Eating", "Working", "Chatting")
+- Label fades to 30% opacity after 8 real seconds of no state change (agent idle), returns to full opacity on next action change
+- Label truncated to ~18 characters max to avoid overlap
+- Font: 9px Inter, background: semi-transparent dark pill (like the existing `pill` CSS class), text color matches agent color
+- Keep name tag above sprite; label goes below
+
+**Done when:** All 10 agents show a readable activity label below their sprite. Label updates within 2 seconds of action change. No label overlaps the location box name text.
+
+---
+
+### Story 8.2 — Needs Crisis Visual Alerts
+**As a spectator**, I want a visual warning when an agent is about to collapse from hunger or exhaustion so I can follow the tension without opening the inspector.
+
+**Tasks:**
+- After drawing each sprite circle, check `ag.hunger` and `ag.energy` from state
+- If `hunger > 75`: draw a pulsing orange halo around the sprite (`ctx.shadowColor`, `ctx.shadowBlur` animated via `animT`)
+- If `energy < 25`: draw a pulsing blue-white halo (different color from hunger to distinguish)
+- If both: orange takes priority (hunger is more urgent)
+- Pulse period: ~2 real seconds (use `Math.sin(animT / 1000)` to drive blur radius between 8–18px)
+- No halo when agent is in crisis and sleeping — they're already handling it
+
+**Done when:** An agent with hunger > 75 visibly pulses orange on the map. Two different crises (hunger vs energy) show different halo colors. Halo disappears once need is resolved.
+
+---
+
+### Story 8.3 — Narrative Event Feed
+**As a spectator**, I want the event feed to read like a gossip column rather than a raw log so the drama feels real.
+
+**Tasks:**
+- Replace raw event text rendering with a `narrativise(ev)` function that reformats each entry:
+  - If text matches `"{name}: moved to {loc}"` → *"{Name} heads to {loc display name}"*
+  - If text matches talk/chat/gossip → prefix with 💬 and style the entry with the `--blue` accent
+  - If text matches eat/food → prefix with 🍛
+  - If text matches sleep → prefix with 💤, mute the color
+  - If text matches work/earn → prefix with 💼
+  - All other events → keep as-is but capitalize first letter
+- Add a thin left-border color strip per agent (already have agent color — apply it as a 3px left border on the `event-item` div)
+- Tag high-drama events (talk + two agents at same location) with a small 🔥 badge in the top-right corner of the event pill
+- Timestamp shown as game time (already in `ev.time`) — format as `HH:MM` without seconds
+
+**Done when:** Event feed reads like short news items. A "talk" event between two agents shows the 🔥 tag. Feed is noticeably more readable than before.
+
+---
+
+### Story 8.4 — Live Speech Bubbles for Conversations
+**As a spectator**, I want to see active conversations rendered on the map between agent sprites so the social dynamics feel spatially real.
+
+**Tasks:**
+- Each poll cycle, detect pairs of agents at the same location where both have `last_action` containing "talk", "chat", "gossip", or "conversat"
+- For each such pair, draw a speech bubble arc between their two sprite positions on the canvas:
+  - A rounded rectangle anchored midway between the two sprites
+  - Content: first 40 characters of either agent's last_action text (whichever is longer), truncated with `…`
+  - Background: `rgba(30,30,50,0.88)`, border: `rgba(208,191,255,0.5)` (soft purple), font: 9px Inter
+  - Small triangle pointer toward the initiating agent
+- Bubble fades out after 6 real seconds if the agents stop talking
+- Maximum 3 bubbles shown simultaneously (most recent pairs win) to avoid clutter
+- Do not draw bubbles for sleeping agents
+
+**Done when:** When Neha and Arjun are both at a location and talking, a speech bubble appears between their sprites showing a fragment of their conversation. Bubble disappears when they part ways.
+
+---
+
+### Story 8.5 — "What's Happening Now" Spotlight Strip
+**As a spectator**, I want a live editorial summary of the most interesting thing happening right now so I have a focal point at any moment.
+
+**Tasks:**
+- Add a slim horizontal strip (28px tall) between the overview bar and the map area in `viewer.html`
+- Every poll cycle, compute a "spotlight sentence" from current state using this priority ladder:
+  1. If any agent has both `hunger > 80` AND is not at a food location → *"⚠️ {Name} is starving and hasn't found food yet"*
+  2. If 3+ agents are at the same social/food location → *"🎉 {Names} are all gathered at {location}"*
+  3. If a talk event appears in the last 3 events involving 2 named agents → *"💬 {Name} and {Name} are having a conversation at {location}"*
+  4. If ≥7 agents are sleeping → *"🌙 The town is quiet — {N} of 10 are asleep"*
+  5. Fallback → *"📍 {most-active-location} is the busiest spot right now ({N} agents)"*
+- Strip scrolls the sentence in via a CSS slide-up transition when it changes
+- Background: `var(--surface)`, subtle left accent bar in `var(--accent)` color
+- Strip is purely client-side computed — no new API endpoint needed
+
+**Done when:** The spotlight strip always shows a meaningful sentence. It updates within 2 seconds of a state change. The sentence changes when the most interesting situation changes.
+
+---
+
+### Story 8.6 — Day-Change Recap Overlay
+**As a spectator**, I want a brief dramatic recap when a new game day begins so I feel the passage of time and can catch up on what I missed.
+
+**Tasks:**
+- Track `lastDay` in viewer JS state (initialized from first `/api/state` response)
+- When `stateData.day > lastDay`, trigger recap overlay:
+  - Full-screen semi-transparent overlay (`rgba(12,13,20,0.88)`)
+  - Large centered card showing:
+    - `"Day {N} — Complete"` headline
+    - Most-visited location (computed from events: count `moved to` mentions per location)
+    - Most active agent (agent with most events in last day's event history)
+    - Event count for the day
+    - One randomly selected event from the day as a pull-quote
+  - Dismiss automatically after 6 real seconds, or on any click/keypress
+- All data derived purely from the existing `/api/state` event list — no new backend endpoint
+- Overlay uses a CSS fade-in/out transition
+
+**Done when:** When Day 1 → Day 2 transitions, the overlay appears for 6 seconds with a populated recap card. It dismisses cleanly and doesn't block the next poll cycle.
+
+---
+
 ## Summary — Story Count by Phase
 
 | Phase | Stories | Priority |
@@ -381,6 +496,7 @@ out and about and the clock returns to 1x.
 | Epic 5: Persistence | 3 | Must have |
 | Epic 6: Web Viewer | 2 | Should have |
 | Epic 7: Polish | 3 | Nice to have |
-| **Total** | **24** | |
+| Epic 8: Spectator Experience | 6 | Nice to have |
+| **Total** | **30** | |
 
-Build order: 1 → 2 → 3 → 4 → 5 → 6 → 7. Never skip ahead.
+Build order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8. Never skip ahead.

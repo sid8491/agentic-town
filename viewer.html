@@ -346,8 +346,16 @@ html, body {
   gap: 10px;
   padding: 7px 14px;
   transition: background 0.12s;
+  border-left: 3px solid transparent; /* base — overridden per item */
 }
 .event-item:hover { background: var(--card); }
+.event-item.event-drama {
+  background: rgba(255, 140, 66, 0.06);
+}
+.drama-tag {
+  font-size: 10px;
+  margin: 0 4px;
+}
 
 .event-pip {
   width: 7px; height: 7px;
@@ -651,6 +659,49 @@ function detectActivity(action) {
   return { icon:'⚡', label: snippet, color:'#636882' };
 }
 
+// ── Narrative event feed ───────────────────────────────────────────────────
+// Converts a raw event object { text, time } into { html, drama }
+
+function capitalise(s) {
+  if (!s) return s;
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function narrativise(ev) {
+  const text = ev.text || '';
+  const lower = text.toLowerCase();
+  let drama = false;
+
+  // Detect agent name prefix "arjun: ..." or "arjun ..."
+  const agentMatch = text.match(/^([a-z]+)[:\s]/i);
+  const agName = agentMatch ? agentMatch[1] : null;
+
+  // Talk / chat / conversation → 💬, check for two agent names = drama
+  if (/talk|chat|gossip|conversat|discuss|meeting with|speaks? (to|with)|tells?|asks?/i.test(lower)) {
+    const ALL_AGENTS = ['anita','arjun','deepa','kavya','neha','priya','rahul','rohan','suresh','vikram'];
+    const mentioned = ALL_AGENTS.filter(n => lower.includes(n) && n !== (agName||'').toLowerCase());
+    drama = mentioned.length > 0;
+    return { html: '💬 ' + capitalise(text), drama };
+  }
+  // Eat / food
+  if (/eat|food|meal|lunch|dinner|breakfast|dal|roti|chai|dhaba|snack/i.test(lower))
+    return { html: '🍛 ' + capitalise(text), drama: false };
+  // Sleep
+  if (/sleep|sleeping|bed|rest/i.test(lower))
+    return { html: '💤 ' + capitalise(text), drama: false };
+  // Work
+  if (/work|earn|office|laptop|coding|meeting|project/i.test(lower))
+    return { html: '💼 ' + capitalise(text), drama: false };
+  // Move / travel
+  if (/moved? to|heading|goes? to|travel|commut|metro/i.test(lower))
+    return { html: '📍 ' + capitalise(text), drama: false };
+  // Shop / buy
+  if (/shop|buy|groceri|market|purchase/i.test(lower))
+    return { html: '🛒 ' + capitalise(text), drama: false };
+  // Fallback — just capitalise
+  return { html: capitalise(text), drama: false };
+}
+
 // ── Agent metadata ─────────────────────────────────────────────────────────
 
 const AGENT_NAMES = ['anita','arjun','deepa','kavya','neha','priya','rahul','rohan','suresh','vikram'];
@@ -942,6 +993,16 @@ function onStateUpdate() {
     const tx = c.x + dx, ty = c.y + dy;
     updateSpriteTarget(name, lid, tx, ty);
 
+    // Track action change time for idle-fade (Story 8.1)
+    const sp = sprites[name];
+    if (sp) {
+      const prevAction = sp.lastAction || '';
+      if (ag.last_action !== prevAction) {
+        sp.lastAction = ag.last_action;
+        sp.lastActionTs = Date.now();
+      }
+    }
+
     // Activity detection
     const act = detectActivity(ag.last_action);
 
@@ -986,16 +1047,19 @@ function onStateUpdate() {
     const m = text.match(/^([a-z]+)[:\s]/i);
     const agName = m ? m[1].toLowerCase() : null;
     const color = (agName && AGENT_COLOR[agName]) ? AGENT_COLOR[agName] : '#636882';
+    const { html: narr, drama } = narrativise(ev);
+
     const div = document.createElement('div');
-    div.className = 'event-item';
+    div.className = 'event-item' + (drama ? ' event-drama' : '');
+    div.style.borderLeft = `3px solid ${color}`;
     div.innerHTML =
-      `<div class="event-pip" style="background:${color}"></div>` +
-      `<div class="event-body">` +
+      `<div class="event-body" style="padding-left:8px">` +
         `<div class="event-head">` +
           `<span class="event-agent" style="color:${color}">${esc(agName || 'system')}</span>` +
-          `<span class="event-time">${esc(ev.time || '')}</span>` +
+          (drama ? `<span class="drama-tag">🔥</span>` : '') +
+          `<span class="event-time">${esc((ev.time || '').replace(/:\d\d$/, ''))}</span>` +
         `</div>` +
-        `<div class="event-text">${esc(text)}</div>` +
+        `<div class="event-text">${esc(narr)}</div>` +
       `</div>`;
     evList.appendChild(div);
   }
@@ -1142,6 +1206,30 @@ function draw(ts) {
         ctx.strokeStyle=color; ctx.lineWidth=1.5; ctx.globalAlpha=0.35; ctx.stroke(); ctx.globalAlpha=1;
       }
 
+      // Crisis halo (drawn under sprite so it glows outward) — Story 8.2
+      const hunger = ag.hunger ?? 0;
+      const energy = ag.energy ?? 100;
+      const inHungerCrisis = hunger > 75;
+      const inEnergyCrisis = energy < 25;
+      const inCrisis = (inHungerCrisis || inEnergyCrisis) && !(ag.last_action||'').toLowerCase().includes('sleep');
+
+      if (inCrisis) {
+        const haloColor = inHungerCrisis ? '#ff8c42' : '#74c0fc';  // orange for hunger, blue for energy
+        const pulse = Math.sin(animT / 500);                        // oscillates -1 to 1
+        const haloR  = r + 8 + pulse * 4;                          // radius pulses 12–20px beyond sprite
+        const haloAlpha = 0.35 + pulse * 0.15;                     // alpha pulses 0.20–0.50
+
+        ctx.save();
+        ctx.beginPath(); ctx.arc(x, y, haloR, 0, Math.PI * 2);
+        ctx.strokeStyle = haloColor;
+        ctx.lineWidth = 3;
+        ctx.globalAlpha = haloAlpha;
+        ctx.shadowColor = haloColor;
+        ctx.shadowBlur = 18;
+        ctx.stroke();
+        ctx.restore();
+      }
+
       ctx.shadowColor=color; ctx.shadowBlur=12;
 
       // Mood ring
@@ -1175,7 +1263,13 @@ function draw(ts) {
 
       // Activity bubble — colored, larger, readable
       const action = (ag.last_action || '').trim();
+
+      // Idle-fade: bubble fades to 30% after 8 real seconds with no action change (Story 8.1)
+      const msSinceAction = Date.now() - (sp.lastActionTs || Date.now());
+      const bubbleAlpha = msSinceAction > 8000 ? 0.3 : 1.0;
+
       if (action && action !== 'waking up' && action !== 'sleeping') {
+        ctx.globalAlpha = bubbleAlpha;
         const bubbleText = act.icon + ' ' + act.label;
         ctx.font = '600 10px Inter, system-ui';
         const tw = ctx.measureText(bubbleText).width + 14;
@@ -1191,11 +1285,14 @@ function draw(ts) {
         ctx.fillStyle = act.color;
         ctx.textAlign='center'; ctx.textBaseline='middle';
         ctx.fillText(bubbleText, x, by+th/2);
+        ctx.globalAlpha = 1.0;
       } else if (action === 'sleeping') {
         // Sleeping — just show the icon large
+        ctx.globalAlpha = bubbleAlpha;
         ctx.font = '14px system-ui';
         ctx.textAlign='center'; ctx.textBaseline='middle';
         ctx.fillText('💤', x, y - r - 16);
+        ctx.globalAlpha = 1.0;
       }
     }
   }

@@ -368,3 +368,6 @@ God, I just spent ages trying to sound casual while talking to Priya about the c
 
 # Day 2 — 12:00pm
 Ugh, I seriously need a change of scenery. Talking to Priya just reminded me of that. I almost sounded too eager, I hope she didn't pick up on that, but the thought of a dhaba with her sounds like absolute heaven right now. Maybe I just need to ditch this stale air of the office anyway.
+
+# Day 2 — 12:15pm
+Ugh, talking to Priya felt weirdly heavy. I really hope she didn't hear me reading too much into her mood, but I just needed to check in. My chest still feels tight from needing to ask her that, feeling almost clumsy trying to sound casual about it.

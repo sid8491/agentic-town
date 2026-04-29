@@ -366,3 +366,6 @@ Talking to Priya today felt… oddly electric. When I brought up the 'simulation
 
 # Day 2 — 12:00pm
 My hands are still buzzing a little from the conversation with Priya. I felt a genuine shift today, moving past the polite nods and project updates. It was surprisingly easy to drop the professional mask and ask something actually real. I hope she didn't find it too forward.
+
+# Day 2 — 12:15pm
+God, my fingers feel slightly cramped from texting. I really hoped my question about Gurgaon would land well; it felt a little cliché, but I needed something to break the small talk routine. Hopefully, it sparks more than just a one-word reply.

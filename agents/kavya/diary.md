@@ -368,3 +368,6 @@ Ugh, sending that message felt like a giant exhale I didn't even know I was hold
 
 # Day 2 — 12:00pm
 Ugh, finally sent that message to Anita. I'm buzzing with nervous excitement; I hope the lunch idea doesn't sound too casual, but honestly, I'm starving and I just need to chat with her! Thinking about seeing her sketches, and then maybe showing her some messy mood boards instead of a polished portfolio, feels like such a relief. Fingers crossed it all goes smoothly! ✨
+
+# Day 2 — 12:15pm
+My fingers are still tingling a little from that exchange with Anita; it was such a breath of fresh air. I felt like I actually said something honest, something that cut past the usual performance we put on. Now, just thinking about her question about pure enjoyment feels wonderfully uncomplicated. I really need to take a moment and think of something real, something just for me.

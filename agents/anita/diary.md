@@ -396,3 +396,6 @@ Feeling so energized after talking to Kavya! Her excitement about the Lucknow pl
 
 # Day 2 — 12:00pm
 My chest feels a little lighter after talking to Kavya. It’s strange how just voicing the overwhelm makes it feel less huge, less like I'm carrying the world on my shoulders. I really need to take her advice and just focus on *one* thing, even if it's just a good cup of tea and zero deadlines.
+
+# Day 2 — 12:15pm
+Ugh, that lunch talk just came through. Seeing Kavya's little smile in my head as I typed it out made me feel so much better—like a little burst of sunshine. I really hope she's free to look at those mood boards; I'm genuinely excited to see what she's put together. Now, I just need to focus on work until I can distract myself with some proper food.

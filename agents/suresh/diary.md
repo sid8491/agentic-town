@@ -375,3 +375,6 @@ Ugh, I really hope Vikram is okay. Seeing him so quiet was like a little knot fo
 
 # Day 2 — 12:00pm
 Ugh, I really don't know what I was thinking. Watching Vikram today, it was obvious something was up, and I just blurted it out. I hope I didn't sound too nosy or like I was interrogating him; it felt a little vulnerable, putting it out there like that. I just really hope he actually *is* okay, and that I haven't made things more awkward.
+
+# Day 2 — 12:15pm
+Another late-night conversation, just me and Vikram, and the weight of the world sort of spilled out between us. I really hope I sounded genuine when I said I was here to listen; it felt important to just offer that space. Now, just the quiet echo of my phone screen glow in the dark feels strangely peaceful after all that.

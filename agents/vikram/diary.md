@@ -370,3 +370,6 @@ Ugh. Trying to work out what's going on with Rohan just hit a dead end. It’s s
 
 # Day 2 — 12:00pm
 Another little exchange with Suresh. I felt a strange mix of relief and exhaustion right after sending that. Pretending I'm fine while everything feels a bit tilted inside is draining. I just hope he doesn't pry too much; I really don't have the energy for a deep dive right now.
+
+# Day 2 — 12:15pm
+My throat feels a little scratchy from that call with Suresh. It’s nice, honestly, to just talk about feeling 'run down' out loud to someone who actually listens. I hope he knows I meant it, and that I’m okay, even if I sound exhausted.
