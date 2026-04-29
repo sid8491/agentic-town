@@ -229,6 +229,26 @@ def get_agent_avatar(name: str):
     raise HTTPException(status_code=404, detail={"error": "No avatar found"})
 
 
+@app.get("/api/conversations")
+def get_conversations(a: str = None, b: str = None) -> dict:
+    """
+    Return the rolling conversation log, optionally filtered by agent pair.
+
+    Query params:
+      ?a=arjun            — all messages involving arjun
+      ?a=arjun&b=priya    — only messages between arjun and priya (either direction)
+    """
+    world = _require_world()
+    convos: list = world._state.get("conversations", [])
+    if a and b:
+        convos = [c for c in convos if
+                  (c["from"] == a and c["to"] == b) or
+                  (c["from"] == b and c["to"] == a)]
+    elif a:
+        convos = [c for c in convos if c["from"] == a or c["to"] == a]
+    return {"conversations": convos[-100:]}
+
+
 @app.get("/api/relationships")
 def get_relationships() -> dict:
     """

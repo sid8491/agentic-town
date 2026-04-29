@@ -303,6 +303,7 @@ async def talk_to(agent_name: str, target: str, message: str) -> str:
             "day": time_info["day"],
         },
     )
+    await world.add_conversation(agent_name, target, message)
     return f"Message sent to {target}."
 
 

@@ -360,6 +360,8 @@ async def gather_context(state: AgentState) -> AgentState:
         "- Critically hungry (hunger >70%)? → use eat_out if at dhaba/cyber_hub/sector29, "
         "  or move_to dhaba (you can move anywhere — routing is automatic)\n"
         "- Exhausted (energy <30%)? → move_to apartment and sleep\n"
+        "- Have unread messages (see MESSAGES RECEIVED above)? → reply with talk_to — "
+        "  acknowledge what they said, respond in character, keep the conversation going\n"
         "- Someone you know or like is nearby? → talk_to them — be warm, curious, maybe flirt\n"
         "- At work during work hours (no one interesting nearby)? → work to earn money\n"
         "- Craving company? → move_to dhaba, sector29, cyber_hub, or park to find people\n"
@@ -474,9 +476,12 @@ def _action_label(tool_name: str, tool_args: dict) -> str:
     if tool_name == "move_to":
         return f"moving to {tool_args.get('location', 'somewhere')}..."
     if tool_name == "talk_to":
-        return f"talking to {tool_args.get('target', 'someone')}..."
+        target = tool_args.get('target', 'someone')
+        msg = tool_args.get('message', '')
+        snippet = msg[:80] + ('…' if len(msg) > 80 else '')
+        return f"talking to {target}: {snippet}" if snippet else f"talking to {target}…"
     if tool_name == "ask_about":
-        return f"asking {tool_args.get('target', 'someone')}..."
+        return f"asking {tool_args.get('target', 'someone')}…"
     if tool_name == "give_item":
         return f"giving {tool_args.get('item', 'something')}..."
     if tool_name == "buy":
@@ -510,9 +515,20 @@ async def execute_tool_node(state: AgentState) -> AgentState:
         logger.warning("[%s] tool %s bad args %s: %s", agent_name, tool_name, tool_args, exc)
 
     # Record event in world history (truncated for readability)
-    await tools.world.add_event(
-        f"{agent_name} → {tool_name}: {tool_result[:60]}"
-    )
+    if tool_name == "talk_to":
+        target = tool_args.get("target", "")
+        msg = tool_args.get("message", tool_result)
+        snippet = msg[:80] + ("…" if len(msg) > 80 else "")
+        await tools.world.add_event(f"{agent_name} says to {target}: {snippet}")
+    elif tool_name == "ask_about":
+        target = tool_args.get("target", "")
+        topic = tool_args.get("topic", tool_result)
+        snippet = topic[:80] + ("…" if len(topic) > 80 else "")
+        await tools.world.add_event(f"{agent_name} asks {target}: {snippet}")
+    else:
+        await tools.world.add_event(
+            f"{agent_name} → {tool_name}: {tool_result[:60]}"
+        )
 
     # Update last-action label for the renderer (thought bubble)
     await tools.world.set_agent_last_action(agent_name, _action_label(tool_name, tool_args))

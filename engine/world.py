@@ -287,6 +287,23 @@ class WorldState:
         async with self._lock:
             self._state["agents"][name]["inbox"].append(message)
 
+    async def add_conversation(self, sender: str, recipient: str, message: str) -> None:
+        """Persist a talk_to message in the rolling conversation log (last 300)."""
+        async with self._lock:
+            if "conversations" not in self._state:
+                self._state["conversations"] = []
+            ts = f"{self.time_to_str(self._state['sim_time'])} Day {self._state['day']}"
+            self._state["conversations"].append({
+                "from": sender,
+                "to": recipient,
+                "text": message,
+                "time": ts,
+                "sim_time": self._state["sim_time"],
+                "day": self._state["day"],
+            })
+            if len(self._state["conversations"]) > 300:
+                self._state["conversations"] = self._state["conversations"][-300:]
+
     async def clear_inbox(self, name: str) -> list:
         """Return fresh messages in *name*'s inbox, then clear it.
 
