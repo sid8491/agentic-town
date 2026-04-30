@@ -296,6 +296,72 @@ def test_09_diary_caps_at_5():
         )
 
 
+def test_11_state_includes_pacing_label():
+    """/api/state surfaces world._state['_pacing_label'] as 'pacing_label'."""
+    client, ws, td = _client_with_fresh_world()
+    try:
+        # default: empty string
+        r = client.get("/api/state")
+        assert r.status_code == 200
+        body = r.json()
+        assert "pacing_label" in body, f"pacing_label missing: {list(body.keys())}"
+        assert body["pacing_label"] == "", f"expected empty default, got {body['pacing_label']!r}"
+
+        ws._state["_pacing_label"] = "⏩ quiet stretch"
+        r2 = client.get("/api/state")
+        assert r2.json()["pacing_label"] == "⏩ quiet stretch"
+    finally:
+        td.cleanup()
+        server._world = None
+
+
+def test_12_scheduled_events_endpoint_shape():
+    """/api/scheduled_events/active returns {"events": [...]} filtered by day/hour."""
+    client, ws, td = _client_with_fresh_world()
+    try:
+        ws._state["day"] = 3
+        ws._state["sim_time"] = 13 * 60  # 1:00pm
+        ws._scheduled_events = [
+            # Day 3, 13:00-14:00 — currently active
+            {"day": 3, "start_hour": 13, "end_hour": 14, "type": "meetup",
+             "location": "cyber_hub", "description": "Startup meetup",
+             "affected_agents": "all"},
+            # Day 3, 15:00-18:00 — starts in 2 hours, should be included
+            {"day": 3, "start_hour": 15, "end_hour": 18, "type": "festival_prep",
+             "location": "dhaba", "description": "Prep at dhaba",
+             "affected_agents": "all"},
+            # Day 3, 20:00-22:00 — too far in future, excluded
+            {"day": 3, "start_hour": 20, "end_hour": 22, "type": "festival_prep",
+             "location": "dhaba", "description": "Late prep",
+             "affected_agents": "all"},
+            # Day 4 — wrong day, excluded
+            {"day": 4, "start_hour": 9, "end_hour": 18, "type": "monsoon",
+             "description": "Rain", "affected_agents": "all"},
+        ]
+        r = client.get("/api/scheduled_events/active")
+        assert r.status_code == 200, f"got {r.status_code}"
+        body = r.json()
+        assert "events" in body, f"events missing: {body}"
+        types = sorted(ev["type"] for ev in body["events"])
+        assert types == ["festival_prep", "meetup"], f"unexpected events: {types}"
+    finally:
+        td.cleanup()
+        server._world = None
+
+
+def test_13_scheduled_events_empty_when_no_world_data():
+    """When _scheduled_events is empty, endpoint returns {'events': []}."""
+    client, ws, td = _client_with_fresh_world()
+    try:
+        ws._scheduled_events = []
+        r = client.get("/api/scheduled_events/active")
+        assert r.status_code == 200
+        assert r.json() == {"events": []}
+    finally:
+        td.cleanup()
+        server._world = None
+
+
 def test_10_root_serves_viewer_when_present():
     """GET / returns 200 with viewer.html content when the file exists."""
     sandbox = tempfile.NamedTemporaryFile(mode="w", suffix=".html",
@@ -344,6 +410,9 @@ TESTS = [
     ("6.1 |  8. Diary parses entries (most recent first)",       test_08_diary_parses_entries),
     ("6.1 |  9. Diary caps at 5 (8 -> 8,7,6,5,4)",               test_09_diary_caps_at_5),
     ("6.1 | 10. GET / serves viewer.html when present",          test_10_root_serves_viewer_when_present),
+    ("R2  | 11. /api/state includes pacing_label",                test_11_state_includes_pacing_label),
+    ("R2  | 12. /api/scheduled_events/active filtering",          test_12_scheduled_events_endpoint_shape),
+    ("R2  | 13. /api/scheduled_events/active empty when none",    test_13_scheduled_events_empty_when_no_world_data),
 ]
 
 

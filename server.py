@@ -133,9 +133,33 @@ def get_state() -> dict:
         "paused": t["paused"],
         "speed": world._state.get("speed", 1.0),
         "llm_primary": world._state.get("llm_primary", "ollama"),
+        "pacing_label": world._state.get("_pacing_label", ""),
         "agents": agents_out,
         "events": last_30,
     }
+
+
+@app.get("/api/scheduled_events/active")
+def get_active_events() -> dict:
+    """Return scheduled events active or starting in the next 2 game hours.
+
+    Filters by current day; matches both currently in-window events and
+    upcoming ones whose start_hour is at most 2 hours away.
+    """
+    world = _require_world()
+    day = world._state["day"]
+    sim_time = world._state["sim_time"]
+    hour = sim_time // 60
+    events = world._scheduled_events or []
+    active: list[dict] = []
+    for ev in events:
+        if ev.get("day") != day:
+            continue
+        start = ev.get("start_hour", 0)
+        end = ev.get("end_hour", 24)
+        if start <= hour < end or 0 <= start - hour <= 2:
+            active.append(ev)
+    return {"events": active}
 
 
 # ---------------------------------------------------------------------------
