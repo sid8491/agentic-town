@@ -761,12 +761,36 @@ does not: **tell them where to look**, **tell them why it matters**, **skip the
 boring parts**.
 
 This epic turns the simulation viewer into a show. Stories 10.1–10.5 are the core
-moves. 10.6–10.10 are cheap dressing that punches above its weight.
+moves. 10.6–10.10 are cheap dressing that punches above its weight. Story 10.11
+folds in the Epic 9 visual indicators (₹! financial-stress badge, scheduled-event
+surfacing) that were deferred during Epic 9.
 
 Build 10.1 (Director Mode) and 10.2 (Narrator) first — they're the highest-impact
 moves and everything else layers on top. 10.5 (auto-pacing) should land early too
 because dead-air is the single biggest reason viewers drop. The rest can be
 parallelised.
+
+### How to edit `viewer.html`
+
+`viewer.html` is a **single self-contained HTML file** with three regions:
+
+| Lines | Contents |
+|------|----------|
+| 1–168 | HTML shell + JS bootloader that decodes the bundle at runtime |
+| 171 | `__bundler/manifest` — JSON dict of UUID → `{data: base64, mime, compressed}`. Holds **dependencies only**: fonts, React, ReactDOM, Babel-standalone, agent portraits. **You almost never touch this.** |
+| 179 | `__bundler/template` — JSON-escaped string of the actual HTML+CSS+JS. **This is where the UI code lives.** |
+
+To modify the UI, edit the JSON-escaped string on line 179: `json.loads()` it, change
+the markup/script, then `json.dumps()` it back and replace line 179. Asset references
+in the template use UUIDs (e.g., `src="def6a65e-..."`) which the bootloader rewrites
+to `blob:` URLs at runtime — leave those UUIDs alone.
+
+There is no build toolchain in the repo. No npm, no bundler. Just decode → edit →
+re-encode. A 20-line Python helper is sufficient. Reusable helper scripts for
+viewer edits should live in `scripts/viewer_edit.py` (not yet created — first
+Epic 10 implementer should add it).
+
+---
 
 ---
 
@@ -1084,6 +1108,48 @@ headlines without restart.
 
 ---
 
+### Story 10.11 — Epic 9 Visual Indicators (Deferred Items)
+**As a spectator**, I want the Epic 9 state changes (financial stress, scheduled
+events) to be visible on the map, since they currently affect agent *behavior*
+without leaving any visual trace.
+
+These items were drafted as part of Stories 9.4 and 9.8 but deferred during Epic 9
+because the implementers misjudged `viewer.html` as un-editable. With the file
+structure now documented in this epic's preamble, they're cheap to add. Group them
+into one PR alongside the first Epic 10 viewer change (likely 10.1 Director Mode)
+to amortise the decode/re-encode round-trip.
+
+**Tasks:**
+- **₹! financial-stress badge (from Story 9.4):** for each agent sprite in the map
+  render loop, if `agent.financial_stress === true`, draw a small `₹!` glyph on a
+  semi-transparent red pill (12px, 9px Inter font) immediately to the right of the
+  sprite circle, just above any existing crisis halo from Story 8.2. The data
+  already flows through `/api/state`. No backend change needed.
+- **Scheduled-event surfacing in the spotlight strip (from Story 9.8):** extend the
+  existing spotlight strip (Story 8.5) priority ladder with a new top-priority case:
+  *"if a scheduled event from `world/scheduled_events.json` is active or starting
+  within 2 game hours and matches `affected_agents` for any visible agent → show:
+  '🌧️ Monsoon: most agents staying inside' / '☕ Startup meetup at Cyber Hub at
+  1pm — Arjun, Priya, Anita might show up' / '🎉 Festival prep at Pappu Dhaba this
+  evening'."*
+  - Add `GET /api/scheduled_events/active?day=X` to `server.py` — proxies
+    `WorldState._scheduled_events` filtered by current day. Returns
+    `{events: [...]}` with the same schema as the file.
+  - In the viewer template, the spotlight strip JS calls this endpoint each poll
+    cycle (or on day change) and uses the highest-priority active event when
+    available.
+- **Memory-update event tag (from Story 9.7):** the `memory_updated` event is
+  already added to the world event log by `consolidate_memory()`. In the
+  narrativised event feed (Story 8.3), add a 🧠 prefix and the line *"{Name}
+  reflected on the past few days."* No new endpoint needed.
+
+**Done when:** A financially stressed agent shows a ₹! badge next to their sprite.
+The spotlight strip shows the active scheduled event when one is in effect or
+imminent. The event feed shows a 🧠 line whenever an agent consolidates memory.
+All three changes are made in one decode/re-encode pass on `viewer.html`.
+
+---
+
 ## Summary — Story Count by Phase
 
 | Phase | Stories | Priority |
@@ -1097,8 +1163,8 @@ headlines without restart.
 | Epic 7: Polish | 3 | Nice to have |
 | Epic 8: Spectator Experience | 8 | Nice to have |
 | Epic 9: Emergent Behavior & Story Depth | 8 | Should have |
-| Epic 10: Make It a Show, Not a Simulator | 10 | Should have |
-| **Total** | **50** | |
+| Epic 10: Make It a Show, Not a Simulator | 11 | Should have |
+| **Total** | **51** | |
 
 Build order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10. Never skip ahead.
 
@@ -1108,4 +1174,6 @@ then 9.2 (yesterday's reflection — needed for cross-day differentiation). 9.3,
 
 Within Epic 10: build 10.1 (Director Mode), 10.2 (Narrator), and 10.5 (auto-pacing) first
 — they are the highest-impact moves and unlock the rest. 10.3 (scene staging) depends on
-10.1. 10.4, 10.6, 10.7, 10.8, 10.9, 10.10 can then be parallelised in any order.
+10.1. 10.4, 10.6, 10.7, 10.8, 10.9, 10.10, 10.11 can then be parallelised in any order.
+Land 10.11 alongside the first viewer-touching story (likely 10.1) to amortise the
+decode/re-encode round-trip — don't make it a standalone PR.

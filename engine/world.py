@@ -11,8 +11,114 @@ import json
 import logging
 import os
 import pathlib
+import time
 
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Story 10.5 — Drama-driven auto-pacing
+# ---------------------------------------------------------------------------
+
+# Lookback window (in ticks) for counting talk_to / conflict events.
+_DRAMA_EVENT_WINDOW_TICKS = 4
+# Game-minute threshold for "imminent" shared plans.
+_DRAMA_PLAN_HORIZON_MIN = 30
+# Real-time dwell required at score <=2 before fast-forwarding to 4x.
+# Real seconds (monotonic), NOT sim_time: we want fast-forward to kick in
+# only after a sustained quiet stretch in *observer* time, regardless of
+# whatever speed the sim is currently running at.
+_DRAMA_QUIET_DWELL_SECONDS = 60.0
+
+
+def compute_drama_score(world_state: dict, now_monotonic: float | None = None) -> float:
+    """Compute an unbounded drama score for the current world snapshot.
+
+    Components (additive):
+      * +5 per `talk_to` event in the last 4 ticks
+      * +8 per `conflict:` event in the last 4 ticks (Story 9.3)
+      * +10 per pending/confirmed shared plan starting in <30 game minutes
+      * +3 per agent with mood < 30 or > 75
+      * +2 per agent currently in motion (last_action starts with "moving")
+    """
+    score = 0.0
+
+    events = world_state.get("events", [])
+    agents = world_state.get("agents", {})
+    # Approximate "last 4 ticks" by scanning the tail of the events list:
+    # each tick yields up to ~len(agents) events (one tool call per agent).
+    n_agents = max(len(agents), 1)
+    tail = events[-(_DRAMA_EVENT_WINDOW_TICKS * n_agents):]
+    for ev in tail:
+        text = ev.get("text", "")
+        if " says to " in text:
+            score += 5
+        if text.startswith("conflict:"):
+            score += 8
+
+    plans = world_state.get("shared_plans", [])
+    sim_time = world_state.get("sim_time", 0)
+    day = world_state.get("day", 0)
+    current_abs = day * 1440 + sim_time
+    for plan in plans:
+        if plan.get("status") not in ("pending", "confirmed"):
+            continue
+        target_time = plan.get("target_time", 0)
+        delta = target_time - current_abs
+        if 0 <= delta < _DRAMA_PLAN_HORIZON_MIN:
+            score += 10
+
+    for agent in agents.values():
+        mood = agent.get("mood", 50)
+        if mood < 30 or mood > 75:
+            score += 3
+        last_action = (agent.get("last_action") or "").lower()
+        if last_action.startswith("moving"):
+            score += 2
+
+    return score
+
+
+def pick_speed(
+    score: float,
+    sleeping_count: int,
+    locked: bool,
+    low_score_since: float | None,
+    now_monotonic: float | None = None,
+) -> tuple[float, str | None]:
+    """Choose the auto-pacing speed for the next tick.
+
+    Returns ``(speed, label)`` where ``label`` is None if no pacing label
+    should be displayed.
+
+    Precedence: manual lock > night auto-speed > drama brackets.
+      * locked              → 1.0, None  (caller usually skips this entirely)
+      * sleeping_count >=7  → 4.0, None
+      * score >= 15         → 1.0, None  ("live")
+      * score 8-14          → 1.0, None  (default)
+      * score 3-7           → 2.0, "⏩ quiet stretch"
+      * score 0-2 sustained → 4.0, "⏩⏩ skipping ahead" (after dwell)
+      * score 0-2 fresh     → 1.0, None  (waiting on dwell)
+    """
+    if locked:
+        return 1.0, None
+
+    if sleeping_count >= 7:
+        return 4.0, None
+
+    if score >= 15:
+        return 1.0, None
+    if score >= 8:
+        return 1.0, None
+    if score >= 3:
+        return 2.0, "⏩ quiet stretch"
+    if (
+        low_score_since is not None
+        and now_monotonic is not None
+        and (now_monotonic - low_score_since) >= _DRAMA_QUIET_DWELL_SECONDS
+    ):
+        return 4.0, "⏩⏩ skipping ahead"
+    return 1.0, None
 
 
 class WorldState:
@@ -720,6 +826,10 @@ class SimulationLoop:
         self._running = False
         self._task: asyncio.Task | None = None
         self._runners: dict = {}   # populated lazily on first run
+        # Story 10.5 — wall-clock timestamp when drama_score first dropped to <=2.
+        # Reset to None as soon as score climbs above 2. monotonic() is preferred
+        # over sim_time so the dwell measures real-world observer dullness.
+        self._low_score_since: float | None = None
 
         # Wire all engine modules to the shared WorldState instance so that
         # tool calls, needs decay, and agent decisions all mutate the same
@@ -789,22 +899,54 @@ class SimulationLoop:
         # 4. Save world state
         await self.world.save_async()
 
-        # 5. Auto-speed: fast-forward through quiet night periods
+        # 5. Auto-pacing (Story 10.5): drama-aware speed + night override.
+        await self._apply_auto_pacing()
+
+    async def _apply_auto_pacing(self) -> None:
+        """Compute drama score and set world.speed accordingly.
+
+        Honours the manual-lock flag set by the keyboard speed handlers.
+        """
+        # Manual override always wins.
+        if self.world._state.get("_speed_locked"):
+            self.world._state.pop("_pacing_label", None)
+            return
+
         sleeping_count = sum(
             1 for name in self.AGENTS
             if "sleep" in self.world.get_agent_last_action(name).lower()
         )
+
+        now = time.monotonic()
+        score = compute_drama_score(self.world._state, now_monotonic=now)
+
+        # Track sustained-quiet dwell.
+        if score <= 2:
+            if self._low_score_since is None:
+                self._low_score_since = now
+        else:
+            self._low_score_since = None
+
+        new_speed, label = pick_speed(
+            score=score,
+            sleeping_count=sleeping_count,
+            locked=False,
+            low_score_since=self._low_score_since,
+            now_monotonic=now,
+        )
+
         current_speed = self.world._state.get("speed", 1.0)
-        if sleeping_count >= 7 and current_speed < 4.0:
-            await self.world.set_speed(4.0)
+        if abs(new_speed - current_speed) > 0.01:
+            await self.world.set_speed(new_speed)
             logger.info(
-                "[loop] auto-speed UP: %d/10 sleeping → 4x", sleeping_count
+                "[loop] auto-pace: drama=%.1f sleeping=%d -> %.1fx (%s)",
+                score, sleeping_count, new_speed, label or "—",
             )
-        elif sleeping_count < 5 and current_speed >= 4.0:
-            await self.world.set_speed(1.0)
-            logger.info(
-                "[loop] auto-speed DOWN: only %d sleeping → 1x", sleeping_count
-            )
+
+        if label is None:
+            self.world._state.pop("_pacing_label", None)
+        else:
+            self.world._state["_pacing_label"] = label
 
     async def _generate_daily_summary(
         self,
@@ -1071,6 +1213,9 @@ class SimulationLoop:
         self._running = True
         logger.info("[loop] simulation started")
         autosave = asyncio.create_task(self._autosave_loop())
+        # Story 10.2 — live narrator runs alongside the tick loop.
+        from engine.narrator import narrator_loop
+        narrator = asyncio.create_task(narrator_loop(self.world))
         try:
             while self._running:
                 paused = self.world._state.get("paused", False)
@@ -1085,6 +1230,7 @@ class SimulationLoop:
                 await asyncio.sleep(interval)
         finally:
             autosave.cancel()
+            narrator.cancel()
 
         logger.info("[loop] simulation stopped")
 

@@ -880,14 +880,18 @@ class GurgaonWindow(arcade.Window):
             idx = next((i for i, s in enumerate(SPEED_LEVELS) if abs(s - cur) < 0.01), 2)
             new = SPEED_LEVELS[max(0, idx - 1)]
             self.world._state["speed"] = new
-            logger.info("[window] speed -> %.2gx", new)
+            # Story 10.5 — manual override locks out drama-driven auto-pacing.
+            self.world._state["_speed_locked"] = True
+            logger.info("[window] speed -> %.2gx (locked)", new)
 
         elif key == arcade.key.RIGHT:
             cur = self.world._state.get("speed", 1.0)
             idx = next((i for i, s in enumerate(SPEED_LEVELS) if abs(s - cur) < 0.01), 2)
             new = SPEED_LEVELS[min(len(SPEED_LEVELS) - 1, idx + 1)]
             self.world._state["speed"] = new
-            logger.info("[window] speed -> %.2gx", new)
+            # Story 10.5 — manual override locks out drama-driven auto-pacing.
+            self.world._state["_speed_locked"] = True
+            logger.info("[window] speed -> %.2gx (locked)", new)
 
         elif key == arcade.key.F11:
             self.set_fullscreen(not self.fullscreen)

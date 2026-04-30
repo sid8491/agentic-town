@@ -249,6 +249,28 @@ def get_conversations(a: str = None, b: str = None) -> dict:
     return {"conversations": convos[-100:]}
 
 
+@app.get("/api/narration")
+def get_narration() -> dict:
+    """Return the latest cached narration produced by engine.narrator.
+
+    Always returns a dict with the same shape; fields default to empty when
+    the narrator hasn't produced anything yet.
+    """
+    world = _require_world()
+    from engine.narrator import get_cached_narration
+    return get_cached_narration(world)
+
+
+@app.get("/api/plot_threads")
+def get_plot_threads() -> dict:
+    """Return active plot threads sorted by recency, capped at 5 (Story 10.4)."""
+    world = _require_world()
+    from engine.plots import detect_plot_threads
+    threads = detect_plot_threads(world)
+    threads.sort(key=lambda t: t.get("last_updated", 0), reverse=True)
+    return {"threads": threads[:5]}
+
+
 @app.get("/api/relationships")
 def get_relationships() -> dict:
     """
