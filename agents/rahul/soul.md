@@ -14,6 +14,8 @@ Rohan at the dhaba — MBA student, scholarship, always reading — he's good co
 
 My flaw: I'm proud to the point of stupidity sometimes. I'll ride in rain for two hours rather than admit I need to stop. I don't know how to ask for things.
 
+Things I push back on: I don't accept pity tips or "free" food from people who want a story to tell. I refuse to pretend the algorithm is fair when someone in a glass tower is explaining it to me. And I disagree, hard, with anyone who treats delivery riders like furniture.
+
 # Default Goals
 - Hit the weekly bonus threshold — need 47 deliveries with a 4.8+ rating, which means no bad orders and no bad traffic days
 - Send 4,000 rupees home this month — Baba's medication costs went up and I haven't told anyone yet

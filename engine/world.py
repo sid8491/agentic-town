@@ -31,27 +31,37 @@ class WorldState:
         self,
         state_path: str = "world/state.json",
         map_path: str = "world/map.json",
+        scheduled_events_path: str = "world/scheduled_events.json",
     ) -> None:
         self._state_path = state_path
         self._map_path = map_path
+        # --- Story 9.8 BEGIN ---
+        self._scheduled_events_path = scheduled_events_path
+        self._scheduled_events: list[dict] = []
+        # --- Story 9.8 END ---
         self._state: dict = {}
         self._map: dict = {}
         # Pre-build a location lookup dict after load() is called.
         self._loc_index: dict[str, dict] = {}
         self._lock = asyncio.Lock()
 
-    # Default starting positions / coins for a fresh world (Epic 5)
+    # Default starting positions / coins / monthly_rent for a fresh world.
+    # Rents per archetype (Story 9.4): office_worker 60, vendor 25,
+    # retired 40, student 20, entrepreneur 50, homemaker 0, night_owl 35.
+    # Starting balances tuned to create baseline economic inequality:
+    # Rohan/Rahul/Deepa/Anita start tight (~1–1.5x rent);
+    # Vikram/Priya start comfortable (~3–4x rent).
     _FRESH_AGENTS: dict[str, dict] = {
-        "arjun":  {"location": "apartment",   "coins": 150},
-        "priya":  {"location": "cyber_city",  "coins": 300},
-        "rahul":  {"location": "metro",       "coins": 80},
-        "kavya":  {"location": "apartment",   "coins": 120},
-        "suresh": {"location": "sector29",    "coins": 200},
-        "neha":   {"location": "cyber_hub",   "coins": 180},
-        "vikram": {"location": "park",        "coins": 160},
-        "deepa":  {"location": "apartment",   "coins": 130},
-        "rohan":  {"location": "dhaba",       "coins": 40},
-        "anita":  {"location": "sector29",    "coins": 250},
+        "arjun":  {"location": "apartment",   "coins": 150, "monthly_rent": 60, "last_consolidation_day": 0},
+        "priya":  {"location": "cyber_city",  "coins": 240, "monthly_rent": 60, "last_consolidation_day": 0},
+        "rahul":  {"location": "metro",       "coins": 50,  "monthly_rent": 35, "last_consolidation_day": 0},
+        "kavya":  {"location": "apartment",   "coins": 60,  "monthly_rent": 20, "last_consolidation_day": 0},
+        "suresh": {"location": "sector29",    "coins": 100, "monthly_rent": 25, "last_consolidation_day": 0},
+        "neha":   {"location": "cyber_hub",   "coins": 180, "monthly_rent": 60, "last_consolidation_day": 0},
+        "vikram": {"location": "park",        "coins": 160, "monthly_rent": 40, "last_consolidation_day": 0},
+        "deepa":  {"location": "apartment",   "coins": 0,   "monthly_rent": 0,  "last_consolidation_day": 0},
+        "rohan":  {"location": "dhaba",       "coins": 50,  "monthly_rent": 35, "last_consolidation_day": 0},
+        "anita":  {"location": "sector29",    "coins": 60,  "monthly_rent": 50, "last_consolidation_day": 0},
     }
 
     # ------------------------------------------------------------------
@@ -63,6 +73,120 @@ class WorldState:
         with open(self._map_path, "r", encoding="utf-8") as f:
             self._map = json.load(f)
         self._loc_index = {loc["id"]: loc for loc in self._map["locations"]}
+        # --- Story 9.8 BEGIN: load authored scheduled events alongside map ---
+        self._load_scheduled_events()
+        # --- Story 9.8 END ---
+
+    # --- Story 9.8 BEGIN: scheduled external events --------------------
+    # Outdoor location types — used by tools.move_to to apply a small mood
+    # penalty on monsoon days. "transit" + "social" + "leisure" cover the
+    # locations that feel exposed to weather (metro, sector29, cyber_hub, park).
+    _OUTDOOR_LOCATION_TYPES = {"transit", "social", "leisure"}
+
+    def _load_scheduled_events(self) -> None:
+        """Load world/scheduled_events.json if present.
+
+        Authored content (like map.json) — survives --reset. Missing or
+        malformed file is treated as "no scheduled events" rather than fatal.
+        """
+        try:
+            with open(self._scheduled_events_path, "r", encoding="utf-8") as f:
+                payload = json.load(f)
+            events = payload.get("events", [])
+            if isinstance(events, list):
+                self._scheduled_events = events
+            else:
+                self._scheduled_events = []
+        except FileNotFoundError:
+            self._scheduled_events = []
+        except (OSError, json.JSONDecodeError) as exc:
+            logger.warning(
+                "[world] could not load scheduled events: %s", exc
+            )
+            self._scheduled_events = []
+
+    def _event_matches_agent(
+        self,
+        event: dict,
+        agent_name: str,
+        archetype: str,
+    ) -> bool:
+        """Return True if *event*'s affected_agents spec matches this agent."""
+        spec = event.get("affected_agents")
+        if spec is None:
+            return False
+        if isinstance(spec, str):
+            if spec == "all":
+                return True
+            if spec.startswith("archetype:"):
+                allowed = {a.strip() for a in spec[len("archetype:"):].split(",") if a.strip()}
+                return archetype in allowed
+            # Fallback: bare string is a single agent name
+            return spec == agent_name
+        if isinstance(spec, list):
+            return agent_name in spec
+        return False
+
+    def get_active_events_for(
+        self,
+        agent_name: str,
+        archetype: str,
+        current_day: int,
+        current_sim_time: int,
+    ) -> list[dict]:
+        """Return scheduled events currently in effect for this agent.
+
+        An event is active when:
+          * event["day"] == current_day, AND
+          * (current_sim_time // 60) ∈ [start_hour, end_hour), AND
+          * affected_agents matches by "all" / "archetype:..." / list of names.
+        """
+        if not self._scheduled_events:
+            return []
+        current_hour = (current_sim_time % 1440) // 60
+        active: list[dict] = []
+        for event in self._scheduled_events:
+            if event.get("day") != current_day:
+                continue
+            start = event.get("start_hour", 0)
+            end = event.get("end_hour", 24)
+            if not (start <= current_hour < end):
+                continue
+            if not self._event_matches_agent(event, agent_name, archetype):
+                continue
+            active.append(event)
+        return active
+
+    def get_active_monsoon(
+        self, current_day: int, current_sim_time: int
+    ) -> dict | None:
+        """Return the active monsoon event (matching everyone) if any.
+
+        Used by tools.move_to to detect that outdoor moves should incur a mood
+        penalty. We match using "all" semantics — pass any archetype since the
+        seeded monsoon event has affected_agents="all".
+        """
+        if not self._scheduled_events:
+            return None
+        current_hour = (current_sim_time % 1440) // 60
+        for event in self._scheduled_events:
+            if event.get("type") != "monsoon":
+                continue
+            if event.get("day") != current_day:
+                continue
+            start = event.get("start_hour", 0)
+            end = event.get("end_hour", 24)
+            if start <= current_hour < end:
+                return event
+        return None
+
+    def is_outdoor_location(self, location_id: str) -> bool:
+        """Return True if *location_id*'s map type is in the outdoor set."""
+        loc = self._loc_index.get(location_id)
+        if loc is None:
+            return False
+        return loc.get("type") in self._OUTDOOR_LOCATION_TYPES
+    # --- Story 9.8 END --------------------------------------------------
 
     def load(self) -> None:
         """Load state and map JSON files into memory."""
@@ -83,6 +207,13 @@ class WorldState:
                 "inbox":            [],
                 "last_action":      "waking up",
                 "last_action_time": 360,
+                "yesterday_reflection": "",
+                "monthly_rent":            defaults["monthly_rent"],
+                "financial_stress":        False,
+                "financial_stress_until_day": 0,
+                # --- Story 9.7 BEGIN ---
+                "last_consolidation_day":  defaults.get("last_consolidation_day", 0),
+                # --- Story 9.7 END ---
             }
             for name, defaults in self._FRESH_AGENTS.items()
         }
@@ -95,6 +226,9 @@ class WorldState:
             "events":      [],
             "daily_events": [],
             "agents":      agents,
+            # --- Story 9.5: shared plans ---
+            "shared_plans":  [],
+            "next_plan_id":  1,
         }
 
     def load_or_init(self) -> None:
@@ -282,6 +416,12 @@ class WorldState:
             agent["hunger"] = max(0.0, min(100.0, agent["hunger"] + hunger_delta))
             agent["energy"] = max(0.0, min(100.0, agent["energy"] + energy_delta))
 
+    async def adjust_mood(self, name: str, delta: float) -> None:
+        """Apply *delta* to the agent's mood, clamping the result to [0, 100]."""
+        async with self._lock:
+            agent = self._state["agents"][name]
+            agent["mood"] = max(0.0, min(100.0, agent.get("mood", 50.0) + delta))
+
     async def add_to_inbox(self, name: str, message: dict) -> None:
         """Append *message* to the agent's inbox list."""
         async with self._lock:
@@ -303,6 +443,26 @@ class WorldState:
             })
             if len(self._state["conversations"]) > 300:
                 self._state["conversations"] = self._state["conversations"][-300:]
+
+    def get_conversation_history(
+        self, agent_a: str, agent_b: str, limit: int = 10
+    ) -> list[dict]:
+        """Return the last *limit* messages between *agent_a* and *agent_b*.
+
+        Order: oldest first (chronological), so the agent reads the thread
+        top-to-bottom. Both directions of the pair are included.
+
+        Synchronous read — does not acquire the lock. Safe because callers
+        only inspect the returned list; mutations all go through
+        ``add_conversation()`` which is locked.
+        """
+        convos = self._state.get("conversations", [])
+        pair = [
+            c for c in convos
+            if (c["from"] == agent_a and c["to"] == agent_b)
+            or (c["from"] == agent_b and c["to"] == agent_a)
+        ]
+        return pair[-limit:]
 
     async def clear_inbox(self, name: str) -> list:
         """Return fresh messages in *name*'s inbox, then clear it.
@@ -332,6 +492,75 @@ class WorldState:
         async with self._lock:
             timestamp = f"{self.time_to_str(self._state['sim_time'])} Day {self._state['day']}"
             self._state["events"].append({"time": timestamp, "text": event})
+
+    # ------------------------------------------------------------------
+    # Shared plans (Story 9.5)
+    # ------------------------------------------------------------------
+    # Plan shape:
+    #   {
+    #     "id":           int,                  # monotonic counter
+    #     "participants": [proposer, target],
+    #     "location":     "dhaba",
+    #     "target_time":  abs_minutes,          # day*1440 + sim_time
+    #     "activity":     "lunch",              # free-form short label
+    #     "status":       "pending"|"confirmed"|"declined"|"completed"|"failed",
+    #     "decline_reason": str (optional),
+    #     "created_at":   abs_minutes,
+    #   }
+
+    def _abs_minutes(self) -> int:
+        """Current sim time as absolute minutes since Day 0 / 12am."""
+        return self._state["day"] * 1440 + self._state["sim_time"]
+
+    async def add_shared_plan(self, plan: dict) -> dict:
+        """Append a new shared plan, assigning it a fresh id. Returns the stored plan."""
+        async with self._lock:
+            plans = self._state.setdefault("shared_plans", [])
+            pid = self._state.get("next_plan_id", 1)
+            self._state["next_plan_id"] = pid + 1
+            stored = dict(plan)
+            stored["id"] = pid
+            stored.setdefault("status", "pending")
+            stored.setdefault("created_at", self._abs_minutes())
+            plans.append(stored)
+            return stored
+
+    def get_shared_plans(self) -> list[dict]:
+        """Return the raw shared_plans list (read-only view)."""
+        return self._state.get("shared_plans", [])
+
+    def get_pending_plans(self) -> list[dict]:
+        """All plans currently in 'pending' status."""
+        return [p for p in self.get_shared_plans() if p.get("status") == "pending"]
+
+    def get_plan(self, plan_id: int) -> dict | None:
+        """Return the plan with the given id, or None."""
+        for p in self.get_shared_plans():
+            if p.get("id") == plan_id:
+                return p
+        return None
+
+    def get_plans_for(self, agent_name: str, statuses: tuple[str, ...] = ("pending", "confirmed")) -> list[dict]:
+        """All plans involving *agent_name* matching *statuses*."""
+        return [
+            p for p in self.get_shared_plans()
+            if agent_name in p.get("participants", []) and p.get("status") in statuses
+        ]
+
+    def get_confirmed_plans_for(self, agent_name: str) -> list[dict]:
+        """Convenience: confirmed plans involving *agent_name*."""
+        return self.get_plans_for(agent_name, statuses=("confirmed",))
+
+    async def update_plan_status(self, plan_id: int, status: str, **extra) -> bool:
+        """Set the status (and any extra fields) on a plan. Returns True if found."""
+        async with self._lock:
+            for p in self._state.get("shared_plans", []):
+                if p.get("id") == plan_id:
+                    p["status"] = status
+                    for k, v in extra.items():
+                        p[k] = v
+                    return True
+            return False
 
     # ------------------------------------------------------------------
     # Map queries
@@ -374,6 +603,72 @@ class WorldState:
         """Set the primary LLM provider (e.g. 'ollama', 'gemini')."""
         async with self._lock:
             self._state["llm_primary"] = provider
+
+    # ------------------------------------------------------------------
+    # Yesterday's reflection (Story 9.2)
+    # ------------------------------------------------------------------
+
+    async def set_yesterday_reflection(self, name: str, text: str) -> None:
+        """Persist a 2-3 sentence reflection on the day that just ended.
+
+        Overwrites any previous value — only the most recent day's reflection
+        is kept on the agent dict. Saved automatically with state.json.
+        """
+        async with self._lock:
+            self._state["agents"][name]["yesterday_reflection"] = text
+
+    def get_yesterday_reflection(self, name: str) -> str:
+        """Return the agent's most recent night reflection, or empty string."""
+        return self._state["agents"][name].get("yesterday_reflection", "")
+
+    # --- Story 9.7 BEGIN: memory consolidation bookkeeping ---------------
+    async def set_last_consolidation_day(self, name: str, day: int) -> None:
+        """Record the day on which *name*'s memory.md was last consolidated."""
+        async with self._lock:
+            self._state["agents"][name]["last_consolidation_day"] = int(day)
+
+    def get_last_consolidation_day(self, name: str) -> int:
+        """Return the day of the agent's last memory consolidation (0 if never)."""
+        return int(self._state["agents"][name].get("last_consolidation_day", 0))
+    # --- Story 9.7 END ---------------------------------------------------
+
+    # ------------------------------------------------------------------
+    # Rent cycle / financial stress (Story 9.4)
+    # ------------------------------------------------------------------
+
+    async def apply_rent_cycle(self, current_day: int) -> dict:
+        """Deduct each agent's monthly_rent from coins and update financial_stress.
+
+        For every agent:
+          * Subtract ``monthly_rent`` (default 0) from ``coins``.
+          * If the resulting balance is negative, set ``financial_stress = True``
+            and ``financial_stress_until_day = current_day + 4``.
+          * If ``financial_stress`` is already True but the until-day has passed,
+            clear the flag.
+
+        Returns a dict mapping agent_name -> {"rent": int, "balance": int,
+        "stressed": bool} for diagnostics / logging.
+        """
+        result: dict[str, dict] = {}
+        async with self._lock:
+            for name, agent in self._state["agents"].items():
+                rent = int(agent.get("monthly_rent", 0))
+                if rent > 0:
+                    agent["coins"] = int(agent.get("coins", 0)) - rent
+                if agent["coins"] < 0:
+                    agent["financial_stress"] = True
+                    agent["financial_stress_until_day"] = current_day + 4
+                else:
+                    until = int(agent.get("financial_stress_until_day", 0))
+                    if agent.get("financial_stress", False) and current_day >= until:
+                        agent["financial_stress"] = False
+                        agent["financial_stress_until_day"] = 0
+                result[name] = {
+                    "rent": rent,
+                    "balance": agent["coins"],
+                    "stressed": bool(agent.get("financial_stress", False)),
+                }
+        return result
 
     # ------------------------------------------------------------------
     # Daily summary (Story 7.2)
@@ -468,6 +763,13 @@ class SimulationLoop:
         new_day = self.world._state["day"]
         if new_day != old_day:
             asyncio.create_task(self._generate_daily_summary(old_day))
+            asyncio.create_task(self._run_night_reflections(old_day))
+            # --- Story 9.7 BEGIN: memory consolidation after reflection ---
+            asyncio.create_task(self._run_memory_consolidations(old_day))
+            # --- Story 9.7 END --------------------------------------------
+            # Story 9.4 — collect rent every 4 game days at midnight rollover.
+            if new_day > 1 and new_day % 4 == 1:
+                asyncio.create_task(self._run_rent_cycle(new_day))
 
         # 2. Decay all agent needs
         from engine.needs import decay_all_agents
@@ -477,6 +779,12 @@ class SimulationLoop:
         await asyncio.gather(*[
             self._run_agent_safe(name) for name in self.AGENTS
         ])
+
+        # 3b. Story 9.5 — resolve any shared plans whose target_time has elapsed
+        try:
+            await self._resolve_shared_plans()
+        except Exception as exc:
+            logger.warning("[loop] plan resolution failed: %s", exc)
 
         # 4. Save world state
         await self.world.save_async()
@@ -549,6 +857,203 @@ class SimulationLoop:
 
         # Signal the Arcade renderer to display the modal
         self.world.set_daily_summary(summary, completed_day)
+
+    async def _run_night_reflections(self, completed_day: int) -> None:
+        """Spawn night_reflection for all 10 agents in parallel (Story 9.2)."""
+        from engine.agent import night_reflection
+        try:
+            await asyncio.gather(*[
+                night_reflection(name, completed_day) for name in self.AGENTS
+            ], return_exceptions=True)
+            logger.info("[loop] night reflections completed for Day %d", completed_day)
+        except Exception as exc:
+            logger.warning("[loop] night reflections failed: %s", exc)
+
+    # --- Story 9.7 BEGIN: memory consolidation orchestration -------------
+    async def _run_memory_consolidations(self, completed_day: int) -> None:
+        """Run consolidate_memory for any agent ≥3 days past last consolidation.
+
+        Skips agents whose last_consolidation_day is too recent. Updates the
+        bookkeeping field after each successful run so the next gate works.
+        """
+        from engine.agent import consolidate_memory
+
+        async def _maybe_consolidate(name: str) -> None:
+            last = self.world.get_last_consolidation_day(name)
+            if completed_day - last < 3:
+                return
+            try:
+                await consolidate_memory(name, completed_day)
+                await self.world.set_last_consolidation_day(name, completed_day)
+            except Exception as exc:
+                logger.warning(
+                    "[loop] consolidate_memory(%s) failed: %s", name, exc
+                )
+
+        try:
+            await asyncio.gather(*[
+                _maybe_consolidate(name) for name in self.AGENTS
+            ], return_exceptions=True)
+            logger.info(
+                "[loop] memory consolidations completed for Day %d", completed_day
+            )
+        except Exception as exc:
+            logger.warning("[loop] memory consolidations failed: %s", exc)
+    # --- Story 9.7 END ---------------------------------------------------
+
+    async def _run_rent_cycle(self, current_day: int) -> None:
+        """Apply the 4-day rent cycle and log resulting balances (Story 9.4)."""
+        try:
+            results = await self.world.apply_rent_cycle(current_day)
+            stressed = [n for n, r in results.items() if r["stressed"]]
+            await self.world.add_event(
+                f"Rent collected (Day {current_day}). "
+                f"{len(stressed)} agent(s) under financial stress."
+                + (f" Stressed: {', '.join(sorted(stressed))}" if stressed else "")
+            )
+            logger.info(
+                "[loop] rent cycle Day %d — stressed: %s", current_day, stressed
+            )
+        except Exception as exc:
+            logger.warning("[loop] rent cycle failed: %s", exc)
+
+    # ------------------------------------------------------------------
+    # Story 9.5 — Shared plan resolution
+    # ------------------------------------------------------------------
+
+    # Locations whose services include any food offering — a successful
+    # rendezvous here also restores hunger.
+    _FOOD_SERVICES = {"eat", "eat_cheap", "street_food", "buy_food"}
+
+    def _location_offers_food(self, location_id: str) -> bool:
+        for svc in self._FOOD_SERVICES:
+            if self.world.location_has_service(location_id, svc):
+                return True
+        return False
+
+    async def _resolve_shared_plans(self) -> None:
+        """Mark elapsed plans complete or failed and apply mood/hunger effects.
+
+        A plan is "elapsed" once the current absolute minute is >= target_time.
+        Only plans in status 'pending' or 'confirmed' are considered.
+        """
+        current_abs = self.world._abs_minutes()
+        plans = list(self.world.get_shared_plans())
+        for plan in plans:
+            status = plan.get("status")
+            if status not in ("pending", "confirmed"):
+                continue
+            target_time = plan.get("target_time", 0)
+            if current_abs < target_time:
+                continue
+
+            participants = plan.get("participants", [])
+            if len(participants) < 2:
+                # Malformed plan — drop it.
+                await self.world.update_plan_status(
+                    plan["id"], "failed", failure_reason="malformed"
+                )
+                continue
+            a, b = participants[0], participants[1]
+            location = plan.get("location")
+            try:
+                a_loc = self.world.get_agent_location(a)
+                b_loc = self.world.get_agent_location(b)
+            except KeyError:
+                await self.world.update_plan_status(
+                    plan["id"], "failed", failure_reason="missing_agent"
+                )
+                continue
+
+            both_present = (a_loc == location and b_loc == location)
+
+            if both_present:
+                # Success: +8 mood each, +50% hunger restore at food spots
+                await self.world.update_plan_status(plan["id"], "completed")
+                await self.world.adjust_mood(a, 8)
+                await self.world.adjust_mood(b, 8)
+                if self._location_offers_food(location):
+                    # +50% hunger means hunger goes DOWN by 50 points
+                    await self.world.update_needs(a, hunger_delta=-50, energy_delta=0)
+                    await self.world.update_needs(b, hunger_delta=-50, energy_delta=0)
+                activity = plan.get("activity", "meet")
+                await self.world.add_event(
+                    f"{a.capitalize()} and {b.capitalize()} had {activity} at "
+                    f"{location}, as planned."
+                )
+                logger.info(
+                    "[loop] plan %s completed: %s & %s at %s",
+                    plan["id"], a, b, location,
+                )
+            else:
+                # Failure: at least one didn't show up.
+                present = [p for p, loc in ((a, a_loc), (b, b_loc)) if loc == location]
+                absent = [p for p, loc in ((a, a_loc), (b, b_loc)) if loc != location]
+                await self.world.update_plan_status(
+                    plan["id"], "failed",
+                    present=present, absent=absent,
+                )
+                # Present agents: -10 mood + memory entry
+                for shower in present:
+                    await self.world.adjust_mood(shower, -10)
+                    other = absent[0] if absent else (b if shower == a else a)
+                    try:
+                        await self._append_memory(
+                            shower,
+                            f"- {other.capitalize()} didn't show up at {location} today. "
+                            "Need to figure out what that means."
+                        )
+                    except Exception as exc:
+                        logger.warning(
+                            "[loop] could not append memory for %s: %s", shower, exc
+                        )
+                # Absent agents: queue a soft reminder for next gather_context.
+                for missed in absent:
+                    other = present[0] if present else (b if missed == a else a)
+                    try:
+                        await self.world.add_to_inbox(missed, {
+                            "from": "_system",
+                            "type": "missed_plan",
+                            "text": (
+                                f"You missed your plan with {other} at {location}. "
+                                "They waited."
+                            ),
+                            "other": other,
+                            "location": location,
+                            "plan_id": plan["id"],
+                            "time": self.world.time_to_str(self.world._state["sim_time"]),
+                            "sim_time": self.world._state["sim_time"],
+                            "day": self.world._state["day"],
+                        })
+                    except Exception as exc:
+                        logger.warning(
+                            "[loop] could not deliver missed-plan reminder to %s: %s",
+                            missed, exc,
+                        )
+                await self.world.add_event(
+                    f"plan failed: {a} & {b} did not meet at {location} "
+                    f"(present={present}, absent={absent})"
+                )
+                logger.info(
+                    "[loop] plan %s failed: present=%s absent=%s",
+                    plan["id"], present, absent,
+                )
+
+    async def _append_memory(self, agent_name: str, line: str) -> None:
+        """Append *line* (already prefixed if desired) to the agent's memory.md."""
+        path = os.path.join("agents", agent_name, "memory.md")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        # Synchronous file IO — these writes are short and infrequent.
+        try:
+            existing = ""
+            if os.path.exists(path):
+                with open(path, "r", encoding="utf-8") as f:
+                    existing = f.read()
+            sep = "" if existing.endswith("\n") or not existing else "\n"
+            with open(path, "a", encoding="utf-8") as f:
+                f.write(sep + line + "\n")
+        except Exception as exc:
+            logger.warning("[loop] memory append failed (%s): %s", agent_name, exc)
 
     async def _autosave_loop(self) -> None:
         """Save world state every 5 real seconds, independent of tick timing."""

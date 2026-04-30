@@ -21,6 +21,7 @@ Direct execution (requires Ollama running with qwen3:27b):
 from __future__ import annotations
 
 import logging
+import os
 from typing import Optional, TypedDict
 
 from langgraph.graph import END, StateGraph
@@ -221,6 +222,72 @@ def _schedule_guidance(agent_name: str, sim_time: int) -> str:
     return ""
 
 
+# --- Story 9.6 BEGIN: personality-weighted decision ladder ----------------
+
+_ARCHETYPE_DIRECTIVES: dict[str, str] = {
+    "office_worker": (
+        "You instinctively prefer working through problems over socializing about them. "
+        "When tired, you'd rather be alone than in a crowd."
+    ),
+    "vendor": (
+        "You read your surroundings before acting. Notice who's around. "
+        "You initiate small interactions easily."
+    ),
+    "retired": (
+        "You move at your own pace. You don't chase anyone. "
+        "You prefer being asked over asking."
+    ),
+    "homemaker": (
+        "Your default radius is family/household. You step outside that radius "
+        "rarely and deliberately."
+    ),
+    "student": (
+        "You're reactive and emotional. You text first, think later. "
+        "Big mood swings are normal."
+    ),
+    "night_owl": (
+        "Daytime drains you. Evenings energize you. You avoid morning crowds."
+    ),
+    "entrepreneur": (
+        "You're constantly evaluating people for usefulness or signal. "
+        "You initiate strategically, not warmly."
+    ),
+}
+
+_MOOD_LOW_OVERRIDE = (
+    "You're depleted. Doing the reach-out is harder than usual but might matter more. "
+    "Or — protect yourself. Both are valid."
+)
+
+_MOOD_HIGH_OVERRIDE = (
+    "You're flowing. Take the harder action you've been postponing."
+)
+
+
+def personality_modifier(agent_name: str, mood: float, archetype: str) -> str:
+    """Return a short prompt fragment describing how this agent typically acts.
+
+    Combines an archetype-specific directive with a mood-based override so two
+    agents in the same situation lean toward different choices.
+    """
+    base = _ARCHETYPE_DIRECTIVES.get(archetype, "").strip()
+    parts: list[str] = []
+    if base:
+        parts.append(base)
+    try:
+        mood_f = float(mood)
+    except (TypeError, ValueError):
+        mood_f = 50.0
+    if mood_f < 30:
+        parts.append(_MOOD_LOW_OVERRIDE)
+    elif mood_f > 75:
+        parts.append(_MOOD_HIGH_OVERRIDE)
+    return " ".join(parts).strip()
+
+
+# --- Story 9.6 END --------------------------------------------------------
+
+
 # ---------------------------------------------------------------------------
 # State definition
 # ---------------------------------------------------------------------------
@@ -307,6 +374,32 @@ async def gather_context(state: AgentState) -> AgentState:
     else:
         formatted_inbox = "No new messages."
 
+    # Per-pair conversation history for unread senders (Story 9.1).
+    # For each unique sender in the inbox (max 3), pull the last 10 messages
+    # between this agent and that sender so the LLM can see the thread it's
+    # replying into — and notice when the loop is going nowhere.
+    history_blocks: list[str] = []
+    seen_senders: set[str] = set()
+    for msg in inbox_messages:
+        sender = msg.get("from")
+        if not sender or sender in seen_senders or sender == agent_name:
+            continue
+        seen_senders.add(sender)
+        if len(seen_senders) > 3:
+            break
+        history = world.get_conversation_history(agent_name, sender, limit=10)
+        if not history:
+            continue
+        lines = [
+            f"  [{c.get('time', '?')}] {c['from']}: {c['text']}"
+            for c in history
+        ]
+        history_blocks.append(
+            f"=== RECENT EXCHANGES WITH {sender.upper()} ===\n"
+            + "\n".join(lines)
+        )
+    history_section = ("\n\n".join(history_blocks) + "\n\n") if history_blocks else ""
+
     # Format memory snippets for the prompt
     memory_text = memory_snippets if memory_snippets and "Nothing found" not in memory_snippets else "Nothing specific."
 
@@ -341,6 +434,137 @@ async def gather_context(state: AgentState) -> AgentState:
         if schedule_str else ""
     )
 
+    # --- Story 9.8 BEGIN: scheduled external events ---------------------
+    today_section = ""
+    try:
+        _archetype_for_events = _AGENT_ARCHETYPE.get(agent_name, "")
+        _active_events = world.get_active_events_for(
+            agent_name,
+            _archetype_for_events,
+            time_info["day"],
+            time_info["sim_time"],
+        )
+    except Exception:
+        _active_events = []
+    if _active_events:
+        _today_lines = []
+        for _ev in _active_events:
+            _loc = _ev.get("location") or "across the city"
+            _today_lines.append(
+                f"- {_ev.get('type', 'event')} at {_loc}: {_ev.get('description', '')}"
+            )
+        today_section = (
+            "=== TODAY ===\n" + "\n".join(_today_lines) + "\n\n"
+        )
+    # --- Story 9.8 END --------------------------------------------------
+
+    # Yesterday's reflection (Story 9.2) — injected just above the decision
+    # ladder so the LLM sees its own most recent self-critique before choosing.
+    try:
+        yesterday_text = world.get_yesterday_reflection(agent_name)
+    except Exception:
+        yesterday_text = ""
+    reflection_section = (
+        "=== YESTERDAY YOU WROTE ===\n"
+        f"{yesterday_text}\n\n"
+        if yesterday_text else ""
+    )
+
+    # --- Story 9.6 BEGIN: personality block ----------------------------
+    try:
+        _agent_dict_for_mood = world.get_agent(agent_name)
+        _mood_val = float(_agent_dict_for_mood.get("mood", 50))
+    except Exception:
+        _mood_val = 50.0
+    _archetype_for_personality = _AGENT_ARCHETYPE.get(agent_name, "")
+    _personality_text = personality_modifier(
+        agent_name, _mood_val, _archetype_for_personality
+    )
+    personality_section = (
+        "=== HOW YOU TYPICALLY ACT ===\n"
+        f"{_personality_text}\n\n"
+        if _personality_text else ""
+    )
+    # --- Story 9.6 END --------------------------------------------------
+
+    # --- Story 9.4 BEGIN: financial stress block ------------------------
+    # Self-contained span — keep edits to this block isolated so parallel work
+    # in another worktree does not conflict. Placed above the decision ladder.
+    try:
+        _agent_dict = world.get_agent(agent_name)
+        _is_stressed = bool(_agent_dict.get("financial_stress", False))
+    except Exception:
+        _is_stressed = False
+    financial_section = (
+        "=== FINANCIAL STRESS ===\n"
+        "You are behind on rent. Consider working extra, eating cheap "
+        "(eat at home, skip eat_out), or asking someone you trust for help.\n\n"
+        if _is_stressed else ""
+    )
+    # --- Story 9.4 END --------------------------------------------------
+
+    # --- Story 9.5: upcoming shared plans -------------------------------
+    # Show this agent's pending + confirmed plans so the LLM can act on them
+    # (move toward the meet location, confirm a pending invite, etc.) and so
+    # the prioritisation directive in the decision ladder has context.
+    plans_section = ""
+    minutes_to_next: Optional[int] = None
+    try:
+        my_plans = world.get_plans_for(
+            agent_name, statuses=("pending", "confirmed")
+        )
+    except Exception:
+        my_plans = []
+    if my_plans:
+        cur_abs = world._state["day"] * 1440 + world._state["sim_time"]
+        lines: list[str] = []
+        for p in my_plans:
+            other = next(
+                (x for x in p.get("participants", []) if x != agent_name),
+                "?",
+            )
+            target_abs = p.get("target_time", 0)
+            delta = target_abs - cur_abs
+            when_str = world.time_to_str(target_abs % 1440)
+            if p.get("status") == "confirmed" and 0 <= delta and (
+                minutes_to_next is None or delta < minutes_to_next
+            ):
+                minutes_to_next = delta
+            rel = (
+                f"in {delta} min" if delta >= 0 else f"{-delta} min ago"
+            )
+            lines.append(
+                f"- plan #{p.get('id')} [{p.get('status')}] with {other} — "
+                f"{p.get('activity', 'meet')} at {p.get('location', '?')} "
+                f"@ {when_str} ({rel})"
+            )
+        plans_section = (
+            "=== UPCOMING PLANS ===\n"
+            + "\n".join(lines)
+            + "\n\n"
+        )
+
+    # Missed-plan reminder (soft nudge for the absent agent — Story 9.5).
+    missed_lines = [
+        msg.get("text", "") for msg in inbox_messages
+        if msg.get("type") == "missed_plan"
+    ]
+    missed_section = (
+        "=== YOU MISSED A PLAN ===\n"
+        + "\n".join(f"- {line}" for line in missed_lines)
+        + "\n\n"
+        if missed_lines else ""
+    )
+
+    # Priority hint for the decision ladder when a confirmed plan is imminent.
+    plan_priority_hint = ""
+    if minutes_to_next is not None and minutes_to_next <= 30:
+        plan_priority_hint = (
+            "- You have a confirmed plan in the next 30 min. UNLESS hunger>85 or "
+            "energy<20, prioritise moving toward the plan location now.\n"
+        )
+    # --- end Story 9.5 --------------------------------------------------
+
     # Build the LLM prompt
     llm_prompt = (
         "=== WHO YOU ARE ===\n"
@@ -352,16 +576,41 @@ async def gather_context(state: AgentState) -> AgentState:
         f"{surroundings}\n\n"
         "=== MESSAGES RECEIVED ===\n"
         f"{formatted_inbox}\n\n"
+        f"{history_section}"
         "=== RELEVANT MEMORIES ===\n"
         f"{memory_text}\n\n"
+        f"{today_section}"
         f"{schedule_section}"
+        f"{reflection_section}"
+        f"{financial_section}"
+        f"{plans_section}"
+        f"{missed_section}"
+        f"{personality_section}"
         "=== WHAT DO YOU DO? ===\n"
         "Choose exactly one tool. Use this logic:\n"
+        "- If yesterday's reflection names a behavior to change, pick an action that "
+        "honors it — even if it's harder than the default.\n"
+        # --- Story 9.5 (shared plans) ------------------------------------
+        f"{plan_priority_hint}"
+        "- If a chat thread is circling without commitment, use `propose_plan` "
+        "(target, location, time, activity) to turn it into a concrete meeting. "
+        "If you have a pending plan_proposal in your inbox, decide now: "
+        "`confirm_plan(plan_id)` or `decline_plan(plan_id, reason)`.\n"
+        # --- end Story 9.5 ----------------------------------------------
+        # --- Story 9.3 (refuse / disagree) -------------------------------
+        "- You are allowed to refuse. If a request conflicts with your goals or values, "
+        "use `refuse` — agreeing to everything is not in character. If you genuinely "
+        "disagree about something that matters, use `disagree` rather than pretending "
+        "to agree.\n"
+        # --- end Story 9.3 -----------------------------------------------
         "- Critically hungry (hunger >70%)? → use eat_out if at dhaba/cyber_hub/sector29, "
         "  or move_to dhaba (you can move anywhere — routing is automatic)\n"
         "- Exhausted (energy <30%)? → move_to apartment and sleep\n"
-        "- Have unread messages (see MESSAGES RECEIVED above)? → reply with talk_to — "
-        "  acknowledge what they said, respond in character, keep the conversation going\n"
+        "- Have unread messages? Read the RECENT EXCHANGES block first. If the thread has "
+        "  3+ exchanges with no concrete plan (time + place + activity), STOP messaging — "
+        "  either propose something specific now, or do something else and let it breathe. "
+        "  If the thread is fresh, reply with talk_to but say something NEW — never repeat "
+        "  the gist of your last 3 messages to that person.\n"
         "- Someone you know or like is nearby? → talk_to them — be warm, curious, maybe flirt\n"
         "- At work during work hours (no one interesting nearby)? → work to earn money\n"
         "- Craving company? → move_to dhaba, sector29, cyber_hub, or park to find people\n"
@@ -598,6 +847,251 @@ async def reflect(state: AgentState) -> AgentState:
         **state,
         "diary_entry": diary_text,
     }
+
+
+# ---------------------------------------------------------------------------
+# Night reflection (Story 9.2)
+# ---------------------------------------------------------------------------
+
+
+def _todays_diary_entries(agent_name: str, day: int) -> str:
+    """Return the agent's diary entries tagged with `# Day {day} —` as a string."""
+    path = f"agents/{agent_name}/diary.md"
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            content = f.read()
+    except FileNotFoundError:
+        return ""
+
+    marker = f"# Day {day} —"
+    blocks: list[str] = []
+    current: list[str] = []
+    in_block = False
+    for line in content.splitlines():
+        if line.startswith("# Day "):
+            if in_block and current:
+                blocks.append("\n".join(current))
+            current = []
+            in_block = line.startswith(marker)
+            if in_block:
+                current.append(line)
+        elif in_block:
+            current.append(line)
+    if in_block and current:
+        blocks.append("\n".join(current))
+    return "\n\n".join(blocks).strip()
+
+
+def _todays_events_for(agent_name: str, day: int) -> str:
+    """Return event lines from the rolling event log for *day* mentioning *agent_name*."""
+    events = world._state.get("events", []) if hasattr(world, "_state") else []
+    day_marker = f"Day {day}"
+    matched = [
+        f"- [{e.get('time', '?')}] {e.get('text', '')}"
+        for e in events
+        if day_marker in e.get("time", "") and agent_name in e.get("text", "")
+    ]
+    return "\n".join(matched[-30:])
+
+
+async def night_reflection(agent_name: str, completed_day: int) -> str:
+    """Generate and persist a 2-3 sentence reflection for the day that just ended.
+
+    Called once per agent at the day-boundary tick. Stores the result on
+    ``world._state["agents"][name]["yesterday_reflection"]`` (overwrite each day).
+    Returns the reflection text (empty string on hard failure).
+    """
+    try:
+        soul = await read_file(agent_name, "soul.md")
+    except Exception:
+        soul = ""
+    soul_summary = soul[:400] if soul else ""
+
+    diary_today = _todays_diary_entries(agent_name, completed_day)
+    events_today = _todays_events_for(agent_name, completed_day)
+
+    prompt = (
+        f"You are {agent_name}. Day {completed_day} just ended.\n\n"
+        f"=== WHO YOU ARE ===\n{soul_summary}\n\n"
+        f"=== YOUR DIARY TODAY ===\n{diary_today or '(no entries)'}\n\n"
+        f"=== EVENTS INVOLVING YOU TODAY ===\n{events_today or '(no events)'}\n\n"
+        "Write 2-3 sentences. What surprised you today? What pattern in your "
+        "own behavior do you notice? What's one concrete thing you want to do "
+        "differently tomorrow? Write in Hinglish (English script), first person, "
+        "no preamble."
+    )
+
+    try:
+        response = await call_llm(
+            prompt,
+            system=f"You are {agent_name}, reflecting privately at the end of the day.",
+            max_tokens=300,
+            thinking=False,
+        )
+        text = (response.text or "").strip()
+    except Exception as exc:
+        logger.warning("[%s] night_reflection LLM failed: %s", agent_name, exc)
+        text = ""
+
+    if not text:
+        text = f"Day {completed_day} ended. Tomorrow, talk to someone new instead of repeating today."
+
+    await world.set_yesterday_reflection(agent_name, text)
+    logger.info("[%s] night reflection: %s", agent_name, text[:80])
+    return text
+
+
+# ---------------------------------------------------------------------------
+# Memory consolidation (Story 9.7)
+# ---------------------------------------------------------------------------
+# --- Story 9.7 BEGIN -------------------------------------------------------
+
+import re as _re
+
+_DAY_HEADER_RE = _re.compile(r"^# Day (\d+)\b")
+
+
+def _recent_diary_entries(agent_name: str, days: int, current_day: int) -> str:
+    """Return diary entries from the last *days* days (inclusive of current_day).
+
+    Diary headers look like ``# Day N — 6:00am``. Entries whose day falls in
+    ``[current_day - days + 1, current_day]`` are returned, joined with blank
+    lines. Returns an empty string if the diary is missing or empty.
+    """
+    path = f"agents/{agent_name}/diary.md"
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            content = f.read()
+    except FileNotFoundError:
+        return ""
+
+    earliest = max(1, current_day - days + 1)
+    blocks: list[str] = []
+    current: list[str] = []
+    in_block = False
+    for line in content.splitlines():
+        match = _DAY_HEADER_RE.match(line)
+        if match:
+            if in_block and current:
+                blocks.append("\n".join(current))
+            current = []
+            day_n = int(match.group(1))
+            in_block = earliest <= day_n <= current_day
+            if in_block:
+                current.append(line)
+        elif in_block:
+            current.append(line)
+    if in_block and current:
+        blocks.append("\n".join(current))
+    return "\n\n".join(blocks).strip()
+
+
+def _recent_events_for(agent_name: str, days: int, current_day: int) -> str:
+    """Return event lines from the last *days* days mentioning *agent_name*.
+
+    Events have a ``time`` like ``"6:00am Day 1"``. We parse the day from that
+    string and keep only events in ``[current_day - days + 1, current_day]``
+    that contain the agent's name in their text.
+    """
+    events = world._state.get("events", []) if hasattr(world, "_state") else []
+    earliest = max(1, current_day - days + 1)
+    matched: list[str] = []
+    for e in events:
+        text = e.get("text", "")
+        if agent_name not in text:
+            continue
+        time_str = e.get("time", "")
+        # parse "Day N" out of e.g. "6:00am Day 3"
+        m = _re.search(r"Day (\d+)", time_str)
+        if not m:
+            continue
+        day_n = int(m.group(1))
+        if earliest <= day_n <= current_day:
+            matched.append(f"- [{time_str}] {text}")
+    # Cap to avoid runaway prompt bloat for active agents.
+    return "\n".join(matched[-60:])
+
+
+async def consolidate_memory(agent_name: str, completed_day: int) -> str:
+    """Refresh ``agents/{name}/memory.md`` from recent diary + events.
+
+    Makes one LLM call summarising the last 3 days against the agent's
+    existing memory and the agent's soul (read-only context). Writes the
+    result back to memory.md, replacing the file. Logs a ``memory_updated``
+    event so observers can see when an agent's understanding shifted.
+
+    Returns the new memory text (empty string on hard failure — file untouched).
+    """
+    path = f"agents/{agent_name}/memory.md"
+
+    try:
+        soul = await read_file(agent_name, "soul.md")
+    except Exception:
+        soul = ""
+    soul_summary = soul[:400] if soul else ""
+
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            current_memory = f.read()
+    except FileNotFoundError:
+        current_memory = ""
+
+    diary_recent = _recent_diary_entries(agent_name, 3, completed_day)
+    events_recent = _recent_events_for(agent_name, 3, completed_day)
+
+    prompt = (
+        f"You are {agent_name}. Day {completed_day} just ended. You are reviewing "
+        "your recent past and updating your long-term memory.\n\n"
+        f"=== WHO YOU ARE ===\n{soul_summary}\n\n"
+        f"=== YOUR CURRENT MEMORY.MD ===\n{current_memory or '(empty)'}\n\n"
+        f"=== YOUR DIARY — LAST 3 DAYS ===\n{diary_recent or '(no entries)'}\n\n"
+        f"=== EVENTS INVOLVING YOU — LAST 3 DAYS ===\n{events_recent or '(no events)'}\n\n"
+        "Update your memory.md. Add new observations about yourself or others. "
+        "Sharpen or correct existing entries that turned out wrong. Keep entries "
+        "terse — one to two lines each. Do not delete the seed relationships, "
+        "but you can refine them. Output the FULL new memory.md content only — "
+        "no preamble, no code fences, no commentary."
+    )
+
+    try:
+        response = await call_llm(
+            prompt,
+            system=(
+                f"You are {agent_name}, reviewing your own memory.md and "
+                "rewriting it based on what you've actually learned."
+            ),
+            max_tokens=1200,
+            thinking=False,
+        )
+        text = (response.text or "").strip()
+    except Exception as exc:
+        logger.warning("[%s] consolidate_memory LLM failed: %s", agent_name, exc)
+        return ""
+
+    if not text:
+        logger.warning("[%s] consolidate_memory: empty LLM response", agent_name)
+        return ""
+
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(text if text.endswith("\n") else text + "\n")
+    except Exception as exc:
+        logger.warning("[%s] consolidate_memory write failed: %s", agent_name, exc)
+        return ""
+
+    try:
+        await world.add_event(
+            f"{agent_name} updated their memory after Day {completed_day}."
+        )
+    except Exception as exc:
+        logger.warning("[%s] consolidate_memory event log failed: %s", agent_name, exc)
+
+    logger.info("[%s] memory consolidated (Day %d)", agent_name, completed_day)
+    return text
+
+
+# --- Story 9.7 END ---------------------------------------------------------
 
 
 # ---------------------------------------------------------------------------

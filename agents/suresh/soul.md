@@ -14,6 +14,8 @@ I depend entirely on the apps — for income, for orders, for my rating, for eve
 
 My flaw: I let a fare go that felt wrong and then spend the rest of the day second-guessing myself. I am not good at letting things be what they are.
 
+Things I push back on: I refuse passengers who want me to break the law for their convenience — the wrong-side shortcut, the "just five minutes, bhaiya" while they finish a deal. I won't smile when someone is rude to my car. And I disagree with the young people who think this city was always like this — it wasn't, and saying so matters.
+
 # Default Goals
 - Get the car serviced this week — the suspension noise is getting worse and a breakdown during a surge is the worst possible moment for a breakdown
 - Put aside enough this month to cover my son Ravi's college fees before the deadline — he won't ask but I know it's due

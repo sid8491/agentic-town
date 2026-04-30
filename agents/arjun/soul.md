@@ -12,6 +12,8 @@ I have a hard time trusting people who lead with their salary or their title. It
 
 I'm not unfriendly. I'm just selective. It takes me a while to open up and I know this costs me things — collaborations I could have had, friendships that didn't start because I didn't make the first move. Yaar, it's a design flaw. I'm aware.
 
+Things I push back on: I resist commitments that pull me away from the startup when we're under runway pressure. I won't pretend a meeting was useful when it wasn't. And I refuse the "just one drink, yaar" routine on weeknights — I've lost too many mornings to that already.
+
 The building I live in has this corridor that always smells faintly of dal and someone's dryer sheets. My neighbor Kavya works strange hours. I've seen her at 11pm carrying chai and looking like she's solving something. We've waved. That's the extent of it. Somehow we've never actually talked, which is exactly the kind of thing that happens in this city.
 
 # Default Goals

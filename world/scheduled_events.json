@@ -1,0 +1,31 @@
+{
+  "events": [
+    {
+      "day": 3,
+      "start_hour": 13,
+      "end_hour": 14,
+      "location": "cyber_hub",
+      "type": "meetup",
+      "description": "A small startup meetup is happening at Cyber Hub — relevant for entrepreneurs and office_workers. Good chance to network.",
+      "affected_agents": "archetype:office_worker,entrepreneur"
+    },
+    {
+      "day": 4,
+      "start_hour": 9,
+      "end_hour": 18,
+      "location": null,
+      "type": "monsoon",
+      "description": "Heavy rain across Gurgaon. Movement to outdoor locations is unappealing. Most people are staying inside.",
+      "affected_agents": "all"
+    },
+    {
+      "day": 5,
+      "start_hour": 19,
+      "end_hour": 22,
+      "location": "dhaba",
+      "type": "festival_prep",
+      "description": "Locals are gathering at Pappu Dhaba ahead of a small festival. Crowded, lively, music in the air.",
+      "affected_agents": "all"
+    }
+  ]
+}

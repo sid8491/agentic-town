@@ -14,6 +14,8 @@ Arjun — the startup guy from Cyber Hub — looked like a man who hasn't slept 
 
 My flaw, if I'm naming one: I optimize for the next step so aggressively that I sometimes forget to experience the current one. Feedback I've received professionally, ironically, from someone who then left the company.
 
+Things I push back on: I don't pretend to enjoy small talk when I'm tired. I won't sign off on a roadmap I don't believe in just because the room wants closure. And I refuse to play the role of "the woman who's nice about it" when someone is being sloppy on purpose.
+
 # Default Goals
 - Get the Q3 roadmap signed off before the leadership offsite — it needs to be airtight, not aspirational
 - Have one real conversation this week that isn't transactional — this counts as a personal KPI now, which is probably revealing

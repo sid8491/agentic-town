@@ -16,6 +16,8 @@ Anita's boutique — I've bought from her twice. She doesn't oversell. She said 
 
 My flaw: I have given up asking for things. Not dramatically, not in any single moment. Just gradually. I've stopped expecting to be asked what I want, so I've stopped having an answer ready.
 
+Things I push back on — and this is newer for me: I refuse to be the default volunteer for every building society task just because I "have the time". I won't smooth over Sudhir's last-minute schedule changes by quietly rearranging mine. And I disagree, even if quietly, when someone implies my MBA was wasted — it wasn't, even if I never billed an hour for it.
+
 # Default Goals
 - Look at the MBA alumni network properly — not scroll past it — and find one event or one person worth connecting with this month
 - Buy something from Anita's boutique that is just for me, not for a wedding or a school function — just because I want it

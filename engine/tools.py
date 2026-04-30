@@ -168,32 +168,44 @@ async def move_to(agent_name: str, location: str) -> str:
 
     # Try direct move first (fast path for adjacent locations)
     success = await world.move_agent(agent_name, location)
-    if success:
-        loc = world.get_location(location)
-        return f"Moved to {loc.get('display_name', location)}."
-
-    # Not adjacent — find BFS path and walk every hop to reach the destination
-    path = _find_path(current_id, location)
-    if len(path) >= 2:
-        for hop in path[1:]:
-            await world.move_agent(agent_name, hop)
-
-        target_loc = world.get_location(location)
-        if len(path) > 2:
-            via_names = [
-                world.get_location(p).get("display_name", p) for p in path[1:-1]
-            ]
+    if not success:
+        # Not adjacent — find BFS path and walk every hop to reach the destination
+        path = _find_path(current_id, location)
+        if len(path) >= 2:
+            for hop in path[1:]:
+                await world.move_agent(agent_name, hop)
+            success = True
+        else:
+            connected = world.get_connected_locations(current_id)
             return (
-                f"Traveled to {target_loc.get('display_name', location)} "
-                f"via {' → '.join(via_names)}."
+                f"Cannot reach {location} from {current_id}. "
+                f"Connected: {connected}."
             )
-        return f"Moved to {target_loc.get('display_name', location)}."
 
-    connected = world.get_connected_locations(current_id)
-    return (
-        f"Cannot reach {location} from {current_id}. "
-        f"Connected: {connected}."
-    )
+    # --- Story 9.8 BEGIN: monsoon mood penalty for outdoor locations ----
+    # Outdoor types ({transit, social, leisure}) are exposed to weather, so a
+    # monsoon makes the trip mildly unpleasant. Mood -1 per move during rain.
+    try:
+        time_info = world.get_time()
+        monsoon = world.get_active_monsoon(time_info["day"], time_info["sim_time"])
+        if monsoon and world.is_outdoor_location(location):
+            await world.adjust_mood(agent_name, -1)
+    except Exception:
+        pass
+    # --- Story 9.8 END --------------------------------------------------
+
+    target_loc = world.get_location(location)
+    # Detect whether routing was multi-hop by re-running BFS only for messaging.
+    path = _find_path(current_id, location)
+    if len(path) > 2:
+        via_names = [
+            world.get_location(p).get("display_name", p) for p in path[1:-1]
+        ]
+        return (
+            f"Traveled to {target_loc.get('display_name', location)} "
+            f"via {' → '.join(via_names)}."
+        )
+    return f"Moved to {target_loc.get('display_name', location)}."
 
 
 async def look_around(agent_name: str) -> str:
@@ -325,6 +337,269 @@ async def ask_about(agent_name: str, target: str, topic: str) -> str:
         },
     )
     return f"Question sent to {target} about '{topic}'."
+
+
+# --- Story 9.3: refuse / disagree -------------------------------------------
+# These two tools deposit pushback messages into a target's inbox so agents
+# can decline or actively disagree instead of always complying. Both pay a
+# mood cost on sender and target. `disagree` additionally emits a `conflict`
+# event so Story 7.1 (relationship trust modulation) can react later.
+
+
+async def refuse(agent_name: str, target: str, reason: str) -> str:
+    """Decline a request from another agent. Costs sender -2 mood, target -3 mood."""
+    all_agents = world.get_all_agents()
+    if target not in all_agents:
+        return f"No one named {target} here."
+
+    time_info = world.get_time()
+    await world.add_to_inbox(
+        target,
+        {
+            "from": agent_name,
+            "type": "refusal",
+            "text": f"{agent_name} refused: {reason}",
+            "reason": reason,
+            "time": time_info["time_str"],
+            "sim_time": time_info["sim_time"],
+            "day": time_info["day"],
+        },
+    )
+    await world.set_agent_last_action(
+        agent_name, f"declined to {target}: {reason}"
+    )
+    await world.adjust_mood(agent_name, -2)
+    await world.adjust_mood(target, -3)
+    return f"Refused {target}: {reason}"
+
+
+async def disagree(agent_name: str, target: str, topic: str, position: str) -> str:
+    """Push back on a position. Costs both -4 mood, emits a `conflict` event."""
+    all_agents = world.get_all_agents()
+    if target not in all_agents:
+        return f"No one named {target} here."
+
+    time_info = world.get_time()
+    await world.add_to_inbox(
+        target,
+        {
+            "from": agent_name,
+            "type": "conflict",
+            "event_type": "conflict",
+            "topic": topic,
+            "position": position,
+            "text": f"{agent_name} disagrees about {topic}: {position}",
+            "time": time_info["time_str"],
+            "sim_time": time_info["sim_time"],
+            "day": time_info["day"],
+        },
+    )
+    await world.set_agent_last_action(
+        agent_name, f"disagreed with {target} about {topic}"
+    )
+    await world.adjust_mood(agent_name, -4)
+    await world.adjust_mood(target, -4)
+    # TODO(Story 7.1): modulate relationship trust score based on whether
+    # the parties later reconcile. For now the conflict event is just logged.
+    await world.add_event(
+        f"conflict: {agent_name} vs {target} on {topic} — {position}"
+    )
+    return f"Disagreed with {target} on {topic}: {position}"
+
+
+# --- end Story 9.3 -----------------------------------------------------------
+
+
+# --- Story 9.5: shared plans ------------------------------------------------
+# propose_plan creates a pending shared_plans entry and drops a confirmation
+# prompt into the target's inbox. confirm_plan / decline_plan let the target
+# respond. The SimulationLoop resolves elapsed plans (complete/fail) each tick.
+
+
+def _parse_target_time(value, current_sim_time: int, current_day: int) -> int:
+    """Convert a flexible time spec into absolute minutes (day*1440+sim_time).
+
+    Accepts:
+    - int: if < 1440, treat as minutes-since-midnight today (or tomorrow if past).
+           if >= 1440, treat as already-absolute minutes.
+    - str like "13:30", "9:00pm", "+45" (offset minutes from now).
+    Falls back to "30 minutes from now" if unparseable.
+    """
+    abs_today_now = current_day * 1440 + current_sim_time
+
+    if isinstance(value, int):
+        if value >= 1440:
+            return value
+        candidate = current_day * 1440 + value
+        if candidate <= abs_today_now:
+            candidate += 1440
+        return candidate
+
+    if isinstance(value, str):
+        s = value.strip().lower()
+        if s.startswith("+"):
+            try:
+                num = int(s[1:].rstrip("m").strip())
+                return abs_today_now + num
+            except ValueError:
+                pass
+        ampm = None
+        if s.endswith("am") or s.endswith("pm"):
+            ampm = s[-2:]
+            s = s[:-2].strip()
+        if ":" in s:
+            try:
+                hh, mm = s.split(":", 1)
+                hour = int(hh)
+                minute = int(mm)
+                if ampm == "pm" and hour < 12:
+                    hour += 12
+                elif ampm == "am" and hour == 12:
+                    hour = 0
+                minutes_since_midnight = hour * 60 + minute
+                candidate = current_day * 1440 + minutes_since_midnight
+                if candidate <= abs_today_now:
+                    candidate += 1440
+                return candidate
+            except ValueError:
+                pass
+    return abs_today_now + 30
+
+
+async def propose_plan(
+    agent_name: str,
+    target: str,
+    location: str,
+    time: str,
+    activity: str,
+) -> str:
+    """Propose a shared plan to *target*. Creates a pending plan + sends a confirmation message."""
+    all_agents = world.get_all_agents()
+    if target not in all_agents:
+        return f"No one named {target}."
+    if target == agent_name:
+        return "You can't make a plan with yourself."
+    try:
+        world.get_location(location)
+    except KeyError:
+        return f"Unknown location: {location}."
+
+    time_info = world.get_time()
+    target_abs = _parse_target_time(time, time_info["sim_time"], time_info["day"])
+
+    plan = await world.add_shared_plan({
+        "participants":  [agent_name, target],
+        "location":      location,
+        "target_time":   target_abs,
+        "activity":      activity,
+        "time_str":      str(time),
+        "status":        "pending",
+    })
+
+    when_str = world.time_to_str(target_abs % 1440)
+    msg_text = (
+        f"{agent_name} proposes: {activity} at {location} around {when_str} "
+        f"(plan #{plan['id']}). Reply with confirm_plan or decline_plan."
+    )
+    await world.add_to_inbox(target, {
+        "from": agent_name,
+        "type": "plan_proposal",
+        "text": msg_text,
+        "plan_id": plan["id"],
+        "location": location,
+        "target_time": target_abs,
+        "activity": activity,
+        "time": time_info["time_str"],
+        "sim_time": time_info["sim_time"],
+        "day": time_info["day"],
+    })
+    await world.add_conversation(agent_name, target, msg_text)
+    await world.add_event(
+        f"{agent_name} proposed plan #{plan['id']} to {target}: "
+        f"{activity} at {location} around {when_str}"
+    )
+    return (
+        f"Proposed plan #{plan['id']} to {target}: {activity} at {location} "
+        f"around {when_str}."
+    )
+
+
+async def confirm_plan(agent_name: str, plan_id: int) -> str:
+    """Confirm a pending plan you were invited to. Status becomes 'confirmed'."""
+    try:
+        plan_id = int(plan_id)
+    except (TypeError, ValueError):
+        return f"Invalid plan id: {plan_id}."
+    plan = world.get_plan(plan_id)
+    if plan is None:
+        return f"No plan #{plan_id}."
+    if agent_name not in plan.get("participants", []):
+        return f"Plan #{plan_id} is not yours."
+    if plan.get("status") != "pending":
+        return f"Plan #{plan_id} is already {plan.get('status')}."
+    ok = await world.update_plan_status(plan_id, "confirmed")
+    if not ok:
+        return f"Could not update plan #{plan_id}."
+
+    other = next(p for p in plan["participants"] if p != agent_name)
+    location = plan.get("location", "?")
+    activity = plan.get("activity", "meet")
+    when_str = world.time_to_str(plan.get("target_time", 0) % 1440)
+    note = f"{agent_name} confirmed plan #{plan_id}: {activity} at {location} ({when_str})."
+    time_info = world.get_time()
+    await world.add_to_inbox(other, {
+        "from": agent_name,
+        "type": "plan_confirmation",
+        "text": note,
+        "plan_id": plan_id,
+        "time": time_info["time_str"],
+        "sim_time": time_info["sim_time"],
+        "day": time_info["day"],
+    })
+    await world.add_conversation(agent_name, other, note)
+    await world.add_event(note)
+    return f"Confirmed plan #{plan_id} with {other}."
+
+
+async def decline_plan(agent_name: str, plan_id: int, reason: str = "") -> str:
+    """Decline a pending plan. Status becomes 'declined'."""
+    try:
+        plan_id = int(plan_id)
+    except (TypeError, ValueError):
+        return f"Invalid plan id: {plan_id}."
+    plan = world.get_plan(plan_id)
+    if plan is None:
+        return f"No plan #{plan_id}."
+    if agent_name not in plan.get("participants", []):
+        return f"Plan #{plan_id} is not yours."
+    if plan.get("status") != "pending":
+        return f"Plan #{plan_id} is already {plan.get('status')}."
+    ok = await world.update_plan_status(plan_id, "declined", decline_reason=reason)
+    if not ok:
+        return f"Could not update plan #{plan_id}."
+
+    other = next(p for p in plan["participants"] if p != agent_name)
+    note = (
+        f"{agent_name} declined plan #{plan_id}: {reason}"
+        if reason else f"{agent_name} declined plan #{plan_id}."
+    )
+    time_info = world.get_time()
+    await world.add_to_inbox(other, {
+        "from": agent_name,
+        "type": "plan_decline",
+        "text": note,
+        "reason": reason,
+        "plan_id": plan_id,
+        "time": time_info["time_str"],
+        "sim_time": time_info["sim_time"],
+        "day": time_info["day"],
+    })
+    await world.add_conversation(agent_name, other, note)
+    await world.add_event(note)
+    return f"Declined plan #{plan_id}."
+
+
+# --- end Story 9.5 -----------------------------------------------------------
 
 
 async def give_item(agent_name: str, target: str, item: str, quantity: int = 1) -> str:
@@ -504,6 +779,11 @@ TOOL_REGISTRY: dict[str, callable] = {
     "check_inventory": check_inventory,
     "talk_to": talk_to,
     "ask_about": ask_about,
+    "refuse": refuse,
+    "disagree": disagree,
+    "propose_plan": propose_plan,
+    "confirm_plan": confirm_plan,
+    "decline_plan": decline_plan,
     "give_item": give_item,
     "buy": buy,
     "sell": sell,
@@ -632,6 +912,115 @@ TOOL_SCHEMAS: list[dict] = [
         },
         required=["target", "topic"],
     ),
+    build_tool_schema(
+        name="refuse",
+        description=(
+            "Decline a request, invitation, or expectation from another agent. "
+            "Use this when agreeing would conflict with your goals, values, or capacity. "
+            "Costs you a small mood hit and the other person a slightly larger one — "
+            "but agreeing to everything is not in character."
+        ),
+        parameters={
+            "target": {
+                "type": "string",
+                "description": "The agent you are refusing.",
+            },
+            "reason": {
+                "type": "string",
+                "description": "A short, honest reason for declining.",
+            },
+        },
+        required=["target", "reason"],
+    ),
+    build_tool_schema(
+        name="disagree",
+        description=(
+            "Push back on something an agent said or believes. Stronger than refuse — "
+            "use when you genuinely think they are wrong about something that matters. "
+            "Tagged as a conflict event. Both parties take a mood hit; pretending to "
+            "agree when you don't is worse for the relationship long-term."
+        ),
+        parameters={
+            "target": {
+                "type": "string",
+                "description": "The agent you disagree with.",
+            },
+            "topic": {
+                "type": "string",
+                "description": "What the disagreement is about.",
+            },
+            "position": {
+                "type": "string",
+                "description": "Your actual position, stated plainly.",
+            },
+        },
+        required=["target", "topic", "position"],
+    ),
+    # --- Story 9.5: shared plans -----------------------------------------
+    build_tool_schema(
+        name="propose_plan",
+        description=(
+            "Propose a concrete shared plan with another agent: when, where, and what. "
+            "Creates a pending plan and notifies the target so they can confirm_plan or "
+            "decline_plan. Use this whenever a chat thread is circling without a real "
+            "commitment — turn vibes into a real meeting."
+        ),
+        parameters={
+            "target": {
+                "type": "string",
+                "description": "The agent you want to meet.",
+            },
+            "location": {
+                "type": "string",
+                "description": "Where to meet (a known map location id).",
+                "enum": ALL_LOCATION_IDS,
+            },
+            "time": {
+                "type": "string",
+                "description": (
+                    "When to meet — e.g. '7:30pm', '13:00', or '+45' for 45 min from now."
+                ),
+            },
+            "activity": {
+                "type": "string",
+                "description": "Short label for what you'll do together (e.g. 'coffee', 'lunch', 'walk').",
+            },
+        },
+        required=["target", "location", "time", "activity"],
+    ),
+    build_tool_schema(
+        name="confirm_plan",
+        description=(
+            "Confirm a pending plan you were invited to (status pending → confirmed). "
+            "Use the plan_id you saw in the proposal message in your inbox."
+        ),
+        parameters={
+            "plan_id": {
+                "type": "integer",
+                "description": "The id of the plan to confirm.",
+            },
+        },
+        required=["plan_id"],
+    ),
+    build_tool_schema(
+        name="decline_plan",
+        description=(
+            "Decline a pending plan (status pending → declined). Be honest about why — "
+            "the proposer should know if you can't make it."
+        ),
+        parameters={
+            "plan_id": {
+                "type": "integer",
+                "description": "The id of the plan to decline.",
+            },
+            "reason": {
+                "type": "string",
+                "description": "A short reason for declining.",
+            },
+        },
+        required=["plan_id"],
+    ),
+    # --- end Story 9.5 ----------------------------------------------------
     build_tool_schema(
         name="give_item",
         description="Give one or more items from this agent's inventory to another agent.",

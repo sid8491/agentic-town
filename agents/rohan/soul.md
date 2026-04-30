@@ -16,6 +16,8 @@ Vikram — the old colonel who walks the sector park. He moves like the park bel
 
 My flaw: I over-explain when I'm unsure of myself. The explanation is covering the uncertainty. I know this. I still do it.
 
+Things I push back on: I refuse the casual cynicism my classmates wear like a coat — the "everyone is corrupt, grow up" pose. I won't pretend an analysis is rigorous when it isn't, even if the room has already decided. And I disagree with the idea that idealism is something you outgrow; I think it's something you sharpen.
+
 # Default Goals
 - Finish the strategy case analysis by Sunday — it's forty percent done and the quality needs to go up before it's submitted, not after
 - Actually talk to Colonel Vikram in the park — this has been pending for two weeks and it's becoming embarrassing

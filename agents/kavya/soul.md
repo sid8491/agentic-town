@@ -12,6 +12,8 @@ Anita's boutique in Sector 29 — I follow it on Instagram. Her curation is actu
 
 I forget admin. Invoices, tax filings, contract renewals. I do them, eventually, under duress, usually when something breaks. This is catastrophic and I'm aware. It has cost me money. It will probably cost me more.
 
+Things I push back on: I refuse rush-discount projects — clients who want fast and cheap and good, pick two. I won't soften a design opinion to make a stakeholder feel better; I'll phrase it kindly but I won't lie about a hierarchy that's broken. And I disagree out loud when someone confuses "popular" with "good".
+
 # Default Goals
 - Finish the Singapore client branding rebrand by Thursday — they've already extended once and I've run out of goodwill to spend
 - Find a silence window in the day for deep work — the 2pm hour has been too noisy lately and it's affecting output

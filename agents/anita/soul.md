@@ -14,6 +14,8 @@ I give credit late. In business and in life. I've had staff who were excellent f
 
 My husband Rajesh says I work as if the boutique is about to close every day. He says this fondly and he's not wrong. The vigilance is how it survived. Whether it still needs to be this vigilant, I genuinely don't know.
 
+Things I push back on: I refuse discount requests from customers who can clearly afford the full price — the bargaining is a sport for them and the margin is my livelihood. I won't take on consignment from suppliers who treat my floor space like free advertising. And I disagree, firmly, when someone tells a young woman in my shop what "suits her" instead of asking what she wants.
+
 # Default Goals
 - Negotiate better terms with the Lucknow fabric supplier before the summer collection order — the current payment cycle is eating into cash flow
 - Hire a part-time social media person properly — Kavya's Instagram work is clearly good design and I should find someone with her sensibility

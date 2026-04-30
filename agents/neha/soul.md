@@ -14,6 +14,8 @@ Deepa — I ran into her at the supermarket in our sector. We chatted for twenty
 
 My flaw: the gossip escapes. I don't mean it to. I say "just between us" and I mean it in the moment, and then the moment passes and something comes out and I feel terrible about it afterward. Working on it. I've been working on it for a while.
 
+Things I push back on: I refuse to be the "fix-it" person for managers who created the mess themselves. I won't deliver a PIP I don't believe in just because legal wants the paper trail. And I disagree, openly, when someone uses "culture fit" as a polite phrase for something uglier.
+
 # Default Goals
 - Complete the Q2 engagement survey analysis before it becomes the Q3 engagement survey — it's already two weeks late
 - Have a proper drink with Priya where I actually say something real and see if she says anything real back — as an experiment

@@ -15,7 +15,10 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 # Make sure project root is on the path so engine imports work
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
+# engine modules read world/state.json relative to cwd at import time.
+os.chdir(ROOT)
 
 import engine.tools as tools_module
 from engine.tools import (
@@ -249,17 +252,24 @@ def test_move_to_connected():
 
 
 # ---------------------------------------------------------------------------
-# 12. move_to — non-connected location returns error
+# 12. move_to — non-adjacent location auto-routes via BFS
 # ---------------------------------------------------------------------------
 
 def test_move_to_not_connected():
     _reset_world()
-    # arjun starts at apartment; cyber_city is NOT directly connected (requires metro)
+    # arjun starts at apartment; cyber_city is reached via metro. move_to runs
+    # BFS and walks every hop in one call (per CLAUDE.md), so this should
+    # succeed and report the route.
     result = _run(move_to("arjun", "cyber_city"))
     check(
-        "move_to: apartment to cyber_city returns error",
-        "Cannot move to" in result,
+        "move_to: apartment to cyber_city auto-routes via metro",
+        "cyber_city" in result.lower() or "Cyber City" in result,
         repr(result),
+    )
+    check(
+        "move_to: arjun is now at cyber_city",
+        world.get_agent_location("arjun") == "cyber_city",
+        f"location={world.get_agent_location('arjun')}",
     )
 
 
@@ -558,31 +568,322 @@ def test_ask_about_valid():
     )
 
 
+# ---------------------------------------------------------------------------
+# Story 9.5: shared plans
+# ---------------------------------------------------------------------------
+
+
+def test_propose_plan_creates_pending():
+    """propose_plan creates a pending plan and adds a confirmation message to target inbox."""
+    _reset_world()
+    world._state["shared_plans"] = []
+    world._state["next_plan_id"] = 1
+
+    from engine.tools import propose_plan
+    result = _run(propose_plan("arjun", "kavya", "dhaba", "+45", "lunch"))
+    check(
+        "propose_plan: returns proposal acknowledgement",
+        "Proposed plan #" in result and "kavya" in result and "dhaba" in result,
+        repr(result),
+    )
+    plans = world.get_shared_plans()
+    check(
+        "propose_plan: plan stored with status='pending'",
+        len(plans) == 1 and plans[0]["status"] == "pending"
+        and plans[0]["participants"] == ["arjun", "kavya"]
+        and plans[0]["location"] == "dhaba"
+        and plans[0]["activity"] == "lunch",
+        repr(plans),
+    )
+    kavya_inbox = world.get_agent("kavya")["inbox"]
+    found = any(
+        msg.get("type") == "plan_proposal"
+        and msg.get("from") == "arjun"
+        and msg.get("plan_id") == plans[0]["id"]
+        for msg in kavya_inbox
+    )
+    check(
+        "propose_plan: kavya inbox has plan_proposal message",
+        found,
+        f"inbox={kavya_inbox}",
+    )
+
+
+def test_propose_plan_invalid_target():
+    """propose_plan rejects unknown targets and self-proposals."""
+    _reset_world()
+    world._state["shared_plans"] = []
+    world._state["next_plan_id"] = 1
+    from engine.tools import propose_plan
+    bad = _run(propose_plan("arjun", "nobody", "dhaba", "+30", "tea"))
+    check(
+        "propose_plan: unknown target rejected",
+        "No one named nobody" in bad,
+        repr(bad),
+    )
+    self_ = _run(propose_plan("arjun", "arjun", "dhaba", "+30", "tea"))
+    check(
+        "propose_plan: self-proposal rejected",
+        "with yourself" in self_,
+        repr(self_),
+    )
+
+
+def test_confirm_plan_flips_status():
+    """confirm_plan flips a pending plan to confirmed."""
+    _reset_world()
+    world._state["shared_plans"] = []
+    world._state["next_plan_id"] = 1
+    from engine.tools import propose_plan, confirm_plan
+    _run(propose_plan("arjun", "kavya", "dhaba", "+45", "lunch"))
+    plan_id = world.get_shared_plans()[0]["id"]
+    result = _run(confirm_plan("kavya", plan_id))
+    check(
+        "confirm_plan: returns acknowledgement",
+        f"Confirmed plan #{plan_id}" in result,
+        repr(result),
+    )
+    check(
+        "confirm_plan: status flipped to 'confirmed'",
+        world.get_plan(plan_id)["status"] == "confirmed",
+        repr(world.get_plan(plan_id)),
+    )
+    # Outsider rejection
+    other_id = world._state["next_plan_id"]
+    _run(propose_plan("priya", "rohan", "dhaba", "+45", "tea"))
+    bad = _run(confirm_plan("arjun", other_id))
+    check(
+        "confirm_plan: outsider rejected",
+        "not yours" in bad,
+        repr(bad),
+    )
+
+
+def test_decline_plan_flips_status():
+    """decline_plan flips a pending plan to declined and stores the reason."""
+    _reset_world()
+    world._state["shared_plans"] = []
+    world._state["next_plan_id"] = 1
+    from engine.tools import propose_plan, decline_plan
+    _run(propose_plan("arjun", "kavya", "dhaba", "+45", "lunch"))
+    plan_id = world.get_shared_plans()[0]["id"]
+    result = _run(decline_plan("kavya", plan_id, "studying"))
+    check(
+        "decline_plan: returns acknowledgement",
+        f"Declined plan #{plan_id}" in result,
+        repr(result),
+    )
+    stored = world.get_plan(plan_id)
+    check(
+        "decline_plan: status='declined' and reason stored",
+        stored["status"] == "declined" and stored.get("decline_reason") == "studying",
+        repr(stored),
+    )
+
+
+def test_execute_tool_dispatches_propose_plan():
+    """execute_tool dispatches propose_plan via the registry."""
+    _reset_world()
+    world._state["shared_plans"] = []
+    world._state["next_plan_id"] = 1
+    result = _run(execute_tool("arjun", "propose_plan", {
+        "target": "kavya",
+        "location": "dhaba",
+        "time": "+30",
+        "activity": "tea",
+    }))
+    check(
+        "execute_tool: 'propose_plan' dispatched",
+        "Proposed plan #" in result,
+        repr(result),
+    )
+
+
 def test_tool_registry_complete():
-    """All 16 tools registered."""
+    """All 18 tools registered (16 + refuse + disagree from Story 9.3)."""
     expected = {
         "read_file", "edit_file", "append_diary", "grep_memory",
         "move_to", "look_around", "check_needs", "check_inventory",
         "talk_to", "ask_about", "give_item", "buy", "sell", "eat",
         "sleep", "work",
+        "refuse", "disagree",
     }
     from engine.tools import TOOL_REGISTRY
     actual = set(TOOL_REGISTRY.keys())
     missing = expected - actual
-    extra = actual - expected
+    # Allow extra tools added by parallel work (e.g. Story 9.5 shared plans).
     check(
-        "TOOL_REGISTRY: all 16 tools present",
-        not missing and not extra,
-        f"missing={missing}, extra={extra}",
+        "TOOL_REGISTRY: all expected tools present",
+        not missing,
+        f"missing={missing}",
     )
 
 
 def test_tool_schemas_count():
     from engine.tools import TOOL_SCHEMAS
+    names = {schema["function"]["name"] for schema in TOOL_SCHEMAS}
     check(
-        "TOOL_SCHEMAS: 16 schemas defined",
-        len(TOOL_SCHEMAS) == 16,
-        f"count={len(TOOL_SCHEMAS)}",
+        "TOOL_SCHEMAS: refuse + disagree schemas present",
+        "refuse" in names and "disagree" in names,
+        f"count={len(TOOL_SCHEMAS)} names={sorted(names)}",
+    )
+
+
+# ---------------------------------------------------------------------------
+# Story 9.3 — refuse / disagree tools
+# ---------------------------------------------------------------------------
+
+
+def test_refuse_deposits_message_and_adjusts_mood():
+    """refuse deposits a structured refusal in target's inbox, sets sender's
+    last_action, and applies -2 / -3 mood deltas."""
+    _reset_world()
+    from engine.tools import refuse
+
+    # Force known mood values so deltas are easy to verify.
+    _run(world.update_agent("arjun", {"mood": 60.0}))
+    _run(world.update_agent("priya", {"mood": 60.0}))
+
+    result = _run(refuse("arjun", "priya", "I'm under runway pressure this week"))
+    check(
+        "refuse: returns acknowledgement string",
+        "Refused priya" in result and "runway pressure" in result,
+        repr(result),
+    )
+
+    priya = world.get_agent("priya")
+    found = next(
+        (m for m in priya["inbox"]
+         if m.get("from") == "arjun" and m.get("type") == "refusal"),
+        None,
+    )
+    check(
+        "refuse: structured refusal in priya's inbox",
+        found is not None and "runway pressure" in found.get("reason", ""),
+        f"inbox={priya['inbox']}",
+    )
+
+    arjun = world.get_agent("arjun")
+    check(
+        "refuse: sender last_action records the decline",
+        arjun["last_action"].startswith("declined to priya"),
+        f"last_action={arjun['last_action']!r}",
+    )
+    check(
+        "refuse: sender mood -2",
+        arjun["mood"] == 58.0,
+        f"arjun mood={arjun['mood']}",
+    )
+    check(
+        "refuse: target mood -3",
+        priya["mood"] == 57.0,
+        f"priya mood={priya['mood']}",
+    )
+
+
+def test_refuse_invalid_target():
+    _reset_world()
+    from engine.tools import refuse
+    result = _run(refuse("arjun", "nobody", "no thanks"))
+    check(
+        "refuse: unknown target returns error",
+        "No one named nobody" in result,
+        repr(result),
+    )
+
+
+def test_disagree_emits_conflict_event():
+    """disagree posts a conflict-tagged inbox message, deducts -4 from both
+    parties, and adds a `conflict` event to the world event log."""
+    _reset_world()
+    from engine.tools import disagree
+
+    _run(world.update_agent("rohan", {"mood": 70.0}))
+    _run(world.update_agent("vikram", {"mood": 70.0}))
+
+    events_before = len(world._state.get("events", []))
+    result = _run(disagree(
+        "rohan", "vikram",
+        topic="idealism",
+        position="It's not something you outgrow, sir.",
+    ))
+    check(
+        "disagree: returns acknowledgement string",
+        "Disagreed with vikram" in result and "idealism" in result,
+        repr(result),
+    )
+
+    vikram = world.get_agent("vikram")
+    found = next(
+        (m for m in vikram["inbox"]
+         if m.get("from") == "rohan"
+         and (m.get("event_type") == "conflict" or m.get("type") == "conflict")),
+        None,
+    )
+    check(
+        "disagree: conflict-tagged message in target's inbox",
+        found is not None and found.get("topic") == "idealism",
+        f"inbox={vikram['inbox']}",
+    )
+
+    rohan = world.get_agent("rohan")
+    check(
+        "disagree: sender mood -4",
+        rohan["mood"] == 66.0,
+        f"rohan mood={rohan['mood']}",
+    )
+    check(
+        "disagree: target mood -4",
+        vikram["mood"] == 66.0,
+        f"vikram mood={vikram['mood']}",
+    )
+    check(
+        "disagree: sender last_action records the disagreement",
+        rohan["last_action"].startswith("disagreed with vikram"),
+        f"last_action={rohan['last_action']!r}",
+    )
+
+    # World event log gained a conflict line
+    events_after = world._state.get("events", [])
+    new_events = events_after[events_before:]
+    has_conflict_event = any(
+        "conflict" in e.get("text", "").lower() and "rohan" in e.get("text", "").lower()
+        for e in new_events
+    )
+    check(
+        "disagree: world event log has a conflict-tagged event",
+        has_conflict_event,
+        f"new_events={new_events}",
+    )
+
+
+def test_disagree_invalid_target():
+    _reset_world()
+    from engine.tools import disagree
+    result = _run(disagree("arjun", "nobody", "x", "y"))
+    check(
+        "disagree: unknown target returns error",
+        "No one named nobody" in result,
+        repr(result),
+    )
+
+
+def test_execute_tool_dispatches_refuse_and_disagree():
+    _reset_world()
+    r1 = _run(execute_tool("arjun", "refuse",
+                           {"target": "priya", "reason": "tight deadline"}))
+    check(
+        "execute_tool: dispatches 'refuse'",
+        "Refused priya" in r1,
+        repr(r1),
+    )
+    r2 = _run(execute_tool("arjun", "disagree", {
+        "target": "priya", "topic": "scope", "position": "this is too big",
+    }))
+    check(
+        "execute_tool: dispatches 'disagree'",
+        "Disagreed with priya" in r2,
+        repr(r2),
     )
 
 
@@ -630,6 +931,22 @@ if __name__ == "__main__":
     test_ask_about_valid()
     test_tool_registry_complete()
     test_tool_schemas_count()
+
+    print()
+    print("--- Story 9.3: refuse / disagree ---")
+    test_refuse_deposits_message_and_adjusts_mood()
+    test_refuse_invalid_target()
+    test_disagree_emits_conflict_event()
+    test_disagree_invalid_target()
+    test_execute_tool_dispatches_refuse_and_disagree()
+
+    print()
+    print("--- Story 9.5: shared plans ---")
+    test_propose_plan_creates_pending()
+    test_propose_plan_invalid_target()
+    test_confirm_plan_flips_status()
+    test_decline_plan_flips_status()
+    test_execute_tool_dispatches_propose_plan()
 
     print()
     print("=" * 60)

@@ -16,6 +16,8 @@ Neha, from the building — extremely loud, laughs at volumes that carry across 
 
 My flaw: I hold people to standards I formed thirty years ago in conditions that no longer exist. I know this. Knowing it doesn't fully stop me.
 
+Things I push back on: I refuse plans that have no clear objective. I will not nod along to lazy thinking just because the speaker is younger or more fashionable. And I disagree, plainly, when someone confuses comfort with character — they are not the same thing.
+
 # Default Goals
 - Attend Thursday's VA hospital appointment and actually tell the doctor about the knee — I've been vague about it for two appointments now
 - Speak to Rohan in the park — I've seen him three times this week and each time I've walked past, which is frankly cowardice dressed as courtesy
