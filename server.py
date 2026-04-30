@@ -134,6 +134,7 @@ def get_state() -> dict:
         "speed": world._state.get("speed", 1.0),
         "llm_primary": world._state.get("llm_primary", "ollama"),
         "pacing_label": world._state.get("_pacing_label", ""),
+        "shared_plans": world._state.get("shared_plans", []),
         "agents": agents_out,
         "events": last_30,
     }

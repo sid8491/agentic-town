@@ -362,6 +362,29 @@ def test_13_scheduled_events_empty_when_no_world_data():
         server._world = None
 
 
+def test_14_state_includes_shared_plans():
+    """/api/state surfaces world._state['shared_plans'] as 'shared_plans'."""
+    client, ws, td = _client_with_fresh_world()
+    try:
+        r = client.get("/api/state")
+        assert r.status_code == 200
+        body = r.json()
+        assert "shared_plans" in body, f"shared_plans missing: {list(body.keys())}"
+        assert isinstance(body["shared_plans"], list), (
+            f"expected list, got {type(body['shared_plans']).__name__}"
+        )
+        ws._state["shared_plans"] = [
+            {"id": "p1", "participants": ["arjun", "priya"], "status": "pending"}
+        ]
+        r2 = client.get("/api/state")
+        plans = r2.json()["shared_plans"]
+        assert len(plans) == 1, f"expected 1 plan, got {len(plans)}"
+        assert plans[0]["id"] == "p1"
+    finally:
+        td.cleanup()
+        server._world = None
+
+
 def test_10_root_serves_viewer_when_present():
     """GET / returns 200 with viewer.html content when the file exists."""
     sandbox = tempfile.NamedTemporaryFile(mode="w", suffix=".html",
@@ -413,6 +436,7 @@ TESTS = [
     ("R2  | 11. /api/state includes pacing_label",                test_11_state_includes_pacing_label),
     ("R2  | 12. /api/scheduled_events/active filtering",          test_12_scheduled_events_endpoint_shape),
     ("R2  | 13. /api/scheduled_events/active empty when none",    test_13_scheduled_events_empty_when_no_world_data),
+    ("R3b | 14. /api/state includes shared_plans",                 test_14_state_includes_shared_plans),
 ]
 
 
