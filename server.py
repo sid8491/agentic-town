@@ -285,6 +285,33 @@ def get_narration() -> dict:
     return get_cached_narration(world)
 
 
+@app.get("/api/cliffhanger/{day}")
+def get_cliffhanger(day: int) -> dict:
+    """Return the cliffhanger for a completed day, or 404 if not generated."""
+    world = _require_world()
+    store = world._state.get("daily_cliffhangers") or {}
+    text = store.get(str(day))
+    if not text:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": f"No cliffhanger for day {day}"},
+        )
+    return {"day": day, "text": text}
+
+
+@app.get("/api/headlines/today")
+def get_headlines_today() -> dict:
+    """Return today's cached gossip headlines (Story 10.10).
+
+    Shape: ``{day: int, headlines: list[str]}``. The headlines list is empty
+    until the 18:00 generator has run for the current day (or if generation
+    failed and hasn't been retried yet).
+    """
+    world = _require_world()
+    from engine.headlines import get_today_headlines
+    return get_today_headlines(world)
+
+
 @app.get("/api/plot_threads")
 def get_plot_threads() -> dict:
     """Return active plot threads sorted by recency, capped at 5 (Story 10.4)."""

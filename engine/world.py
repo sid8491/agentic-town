@@ -335,6 +335,10 @@ class WorldState:
             # --- Story 9.5: shared plans ---
             "shared_plans":  [],
             "next_plan_id":  1,
+            # --- Story 10.9: end-of-day cliffhanger archive ---
+            "daily_cliffhangers": {},
+            # --- Story 10.10: daily gossip headlines ---
+            "daily_headlines": {},
         }
 
     def load_or_init(self) -> None:
@@ -869,14 +873,30 @@ class SimulationLoop:
 
         # 1. Advance game time (detect day rollover for daily summary)
         old_day = self.world._state["day"]
+        old_sim = self.world._state["sim_time"]
         self.world.advance_time(self.TICK_MINUTES)
         new_day = self.world._state["day"]
+        new_sim = self.world._state["sim_time"]
+
+        # --- Story 10.10: gossip headlines fire once when 18:00 is crossed ---
+        # Only fire on a same-day crossing; if the tick straddled midnight
+        # (rare at 18:00 since 18:00 << 24:00) old_day != new_day, in which
+        # case the daily-summary path covers the old day and we wait until
+        # the next day's 18:00. asyncio.create_task keeps the LLM call
+        # off the tick's critical path.
+        if new_day == old_day and old_sim < 1080 <= new_sim:
+            cache = self.world._state.get("daily_headlines", {}) or {}
+            if str(new_day) not in cache:
+                asyncio.create_task(self._run_daily_headlines(new_day))
+
         if new_day != old_day:
             asyncio.create_task(self._generate_daily_summary(old_day))
             asyncio.create_task(self._run_night_reflections(old_day))
             # --- Story 9.7 BEGIN: memory consolidation after reflection ---
             asyncio.create_task(self._run_memory_consolidations(old_day))
             # --- Story 9.7 END --------------------------------------------
+            # --- Story 10.9: end-of-day cliffhanger ---
+            asyncio.create_task(self._run_cliffhanger(old_day))
             # Story 9.4 — collect rent every 4 game days at midnight rollover.
             if new_day > 1 and new_day % 4 == 1:
                 asyncio.create_task(self._run_rent_cycle(new_day))
@@ -1042,6 +1062,26 @@ class SimulationLoop:
         except Exception as exc:
             logger.warning("[loop] memory consolidations failed: %s", exc)
     # --- Story 9.7 END ---------------------------------------------------
+
+    # --- Story 10.9 BEGIN: end-of-day cliffhanger orchestration ----------
+    async def _run_cliffhanger(self, completed_day: int) -> None:
+        """Generate and persist tomorrow's teaser for the day that just ended."""
+        from engine.cliffhanger import run_cliffhanger
+        try:
+            await run_cliffhanger(self.world, completed_day)
+        except Exception as exc:
+            logger.warning("[loop] cliffhanger failed: %s", exc)
+    # --- Story 10.9 END --------------------------------------------------
+
+    # --- Story 10.10 BEGIN: daily gossip headlines (18:00 trigger) -------
+    async def _run_daily_headlines(self, day: int) -> None:
+        """Generate and cache today's gossip headlines, swallowing failures."""
+        from engine.headlines import maybe_generate_and_cache
+        try:
+            await maybe_generate_and_cache(self.world, day)
+        except Exception as exc:
+            logger.warning("[loop] headlines failed: %s", exc)
+    # --- Story 10.10 END -------------------------------------------------
 
     async def _run_rent_cycle(self, current_day: int) -> None:
         """Apply the 4-day rent cycle and log resulting balances (Story 9.4)."""
