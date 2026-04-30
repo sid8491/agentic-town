@@ -92,11 +92,19 @@ class ViewerBundle:
             "ext_resources": self.ext_resources,
             "template": self.template,
         }[kind]
-        if current == self._original_objects[kind]:
+        # Preserve byte-identical original block ONLY when content matches AND
+        # the original was already safe (no literal </ that would close the
+        # surrounding <script> tag mid-JSON).
+        if (
+            current == self._original_objects[kind]
+            and "</" not in self._original_blocks[kind]
+        ):
             return self._original_blocks[kind]
         if kind == "template":
-            return json.dumps(current)
-        return json.dumps(current, separators=(",", ":"))
+            encoded = json.dumps(current)
+        else:
+            encoded = json.dumps(current, separators=(",", ":"))
+        return encoded.replace("</", "<\\/")
 
     def to_html(self) -> str:
         def replace(m: re.Match) -> str:

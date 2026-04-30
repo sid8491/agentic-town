@@ -6,3 +6,7 @@ __pycache__/
 *.pyo
 .pytest_cache/
 world/state.json
+world/daily_log_day_*.txt
+agents/*/diary.md
+agents/*/memory.md
+.playwright-mcp/
