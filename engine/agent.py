@@ -700,6 +700,15 @@ async def llm_decide(state: AgentState) -> AgentState:
             (response.text or "")[:80],
         )
 
+    # Normalise agent-name args: world.agents keys are lowercase but the LLM
+    # often emits "Rohan" / "Rahul". Without this, talk_to() returns "No one
+    # named Rohan here." silently and the conversation log never grows, even
+    # though the spotlight event is still emitted from tool_args.
+    if isinstance(tool_args, dict):
+        tgt = tool_args.get("target")
+        if isinstance(tgt, str):
+            tool_args["target"] = tgt.strip().lower()
+
     logger.info("[%s] decided: %s(%s)", agent_name, tool_name, tool_args)
 
     return {
