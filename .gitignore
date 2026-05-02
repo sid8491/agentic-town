@@ -10,3 +10,4 @@ world/daily_log_day_*.txt
 agents/*/diary.md
 agents/*/memory.md
 .playwright-mcp/
+docs/gurgaon_town_life_explained.pptx
