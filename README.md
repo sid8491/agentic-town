@@ -1,5 +1,7 @@
 # Gurgaon Town Life
 
+> **🌐 [sid8491.github.io/agentic-town](https://sid8491.github.io/agentic-town/)** — project site with architecture diagrams, the cast, and an onboarding guide.
+
 An autonomous multi-agent simulation set in modern Gurgaon, India. Ten AI characters with distinct personalities live, work, and interact in a persistent virtual town — completely on their own. No player control. Just watch the drama unfold.
 
 Each character is powered by a local LLM (Ollama) or Google Gemini. They read their own soul files, keep a private diary, form opinions about each other, and make decisions every few seconds based on hunger, energy, mood, and personal goals.
@@ -163,6 +165,8 @@ Switch at runtime by pressing `L` in the Arcade window or via `POST /api/llm/{pr
 
 ## Docs
 
+- 🌐 **[Project site](https://sid8491.github.io/agentic-town/)** — hosted overview, architecture diagrams, onboarding guide
 - [`docs/tech_document.md`](docs/tech_document.md) — full technical specification
 - [`docs/tech_stories.md`](docs/tech_stories.md) — build stories by phase
+- [`docs/index.html`](docs/index.html) — source for the project site
 - [`CLAUDE.md`](CLAUDE.md) — guidance for AI coding assistants
