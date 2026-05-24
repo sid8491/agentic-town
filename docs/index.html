@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gurgaon Town Life — autonomous multi-agent simulation</title>
+<meta name="description" content="Ten AI characters live, work, and gossip in modern Gurgaon. No player control. LangGraph + Ollama/Gemini, with desktop and web viewers." />
+<meta property="og:title" content="Gurgaon Town Life" />
+<meta property="og:description" content="Autonomous agentic-AI simulation set in modern Gurgaon. Ten personalities, persistent memory, emergent drama." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0c10;
+    --surface:#11151c;
+    --card:#161b25;
+    --card-hi:#1c2230;
+    --border:#232b39;
+    --border-hi:#324054;
+    --text:#e8ecf3;
+    --muted:#8a94a6;
+    --muted-2:#5a6478;
+    --accent:#00f5d4;
+    --accent-2:#b388ff;
+    --warn:#ff5470;
+    --gold:#ffcc66;
+    --max:1180px;
+    --radius:14px;
+    --radius-sm:8px;
+    --shadow:0 8px 30px rgba(0,0,0,.4);
+    --glow:0 0 0 1px rgba(0,245,212,.25), 0 8px 40px rgba(0,245,212,.12);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    font-size:16px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  code,pre,.mono{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  h1,h2,h3,h4{font-family:'Inter',sans-serif;font-weight:700;letter-spacing:-.02em;line-height:1.2;margin:0 0 .5em}
+  h1{font-size:clamp(2.4rem,5vw,4rem);font-weight:800;letter-spacing:-.03em}
+  h2{font-size:clamp(1.6rem,3vw,2.4rem);margin-top:0}
+  h3{font-size:1.2rem;font-weight:600}
+  p{margin:0 0 1em;color:var(--text)}
+  .muted{color:var(--muted)}
+  .container{max-width:var(--max);margin:0 auto;padding:0 24px}
+
+  /* Background ambience */
+  .bg-fx{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+  .bg-fx::before,.bg-fx::after{
+    content:"";position:absolute;border-radius:50%;filter:blur(120px);opacity:.35;
+  }
+  .bg-fx::before{width:600px;height:600px;background:#00f5d4;top:-200px;left:-100px;opacity:.18}
+  .bg-fx::after{width:700px;height:700px;background:#b388ff;top:200px;right:-200px;opacity:.14}
+  .grid-bg{
+    position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+    background-size:48px 48px;
+    mask-image:radial-gradient(ellipse at top,#000 30%,transparent 75%);
+  }
+
+  /* Nav */
+  nav.top{
+    position:sticky;top:0;z-index:50;
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+    background:rgba(10,12,16,.72);
+    border-bottom:1px solid var(--border);
+  }
+  nav.top .inner{max-width:var(--max);margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:24px}
+  nav.top .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:.95rem;letter-spacing:.02em}
+  nav.top .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent);animation:pulse 2.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.6;transform:scale(.9)}50%{opacity:1;transform:scale(1.1)}}
+  nav.top ul{list-style:none;margin:0;padding:0;display:flex;gap:22px}
+  nav.top ul a{color:var(--muted);font-size:.88rem;font-weight:500}
+  nav.top ul a:hover{color:var(--text);text-decoration:none}
+  nav.top .gh{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;background:var(--card);border:1px solid var(--border);color:var(--text);font-size:.85rem;font-weight:500}
+  nav.top .gh:hover{border-color:var(--accent);text-decoration:none}
+  @media(max-width:760px){nav.top ul{display:none}}
+
+  /* Hero */
+  section{position:relative;z-index:1;padding:96px 0}
+  section.hero{padding:96px 0 64px}
+  .pill{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:6px 12px;border-radius:999px;
+    border:1px solid var(--border);background:var(--card);
+    font-size:.78rem;color:var(--muted);font-weight:500;letter-spacing:.02em;
+    margin-bottom:24px;
+  }
+  .pill .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+  .hero h1{margin-bottom:18px}
+  .hero h1 .grad{
+    background:linear-gradient(120deg,var(--accent) 0%,var(--accent-2) 60%,var(--warn) 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .hero .lede{font-size:clamp(1.05rem,1.6vw,1.25rem);color:var(--muted);max-width:720px;margin-bottom:36px}
+  .cta-row{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:48px}
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:13px 22px;border-radius:10px;
+    font-weight:600;font-size:.95rem;cursor:pointer;
+    transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
+  }
+  .btn.primary{background:var(--accent);color:#001b18;border:1px solid var(--accent)}
+  .btn.primary:hover{transform:translateY(-1px);box-shadow:var(--glow);text-decoration:none}
+  .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+  .btn.ghost:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
+
+  .stat-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+  .stat{padding:22px 20px;background:var(--card)}
+  .stat .n{font-size:1.8rem;font-weight:700;color:var(--accent);font-family:'JetBrains Mono',monospace;letter-spacing:-.02em}
+  .stat .l{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
+  @media(max-width:680px){.stat-strip{grid-template-columns:repeat(2,1fr)}}
+
+  /* Sections */
+  .section-head{margin-bottom:48px;max-width:720px}
+  .section-head .eyebrow{color:var(--accent);font-size:.78rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;margin-bottom:14px}
+  .section-head p{color:var(--muted);font-size:1.05rem}
+
+  /* Premise / blockquote */
+  .premise{
+    border-left:3px solid var(--accent);
+    padding:8px 0 8px 28px;
+    margin:0 0 24px;
+    font-size:1.15rem;color:var(--text);
+    max-width:780px;
+  }
+  .premise em{color:var(--muted);font-style:italic}
+
+  /* Feature grid */
+  .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  @media(max-width:900px){.feat-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:600px){.feat-grid{grid-template-columns:1fr}}
+  .feat{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:26px 24px;
+    transition:border-color .2s ease, transform .2s ease;
+  }
+  .feat:hover{border-color:var(--border-hi);transform:translateY(-2px)}
+  .feat .icon{
+    width:42px;height:42px;border-radius:10px;
+    display:grid;place-items:center;margin-bottom:16px;
+    background:rgba(0,245,212,.1);color:var(--accent);
+    font-size:1.4rem;
+  }
+  .feat h3{margin-bottom:8px;color:var(--text)}
+  .feat p{margin:0;color:var(--muted);font-size:.93rem;line-height:1.6}
+
+  /* Gallery */
+  .gallery{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px}
+  .gallery-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .shot{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    overflow:hidden;
+    position:relative;
+    transition:border-color .2s ease;
+  }
+  .shot:hover{border-color:var(--accent)}
+  .shot img{display:block;width:100%;height:100%;object-fit:cover}
+  .shot .cap{position:absolute;bottom:0;left:0;right:0;padding:10px 14px;background:linear-gradient(transparent,rgba(0,0,0,.85));font-size:.78rem;color:var(--text);font-weight:500;letter-spacing:.02em}
+  @media(max-width:760px){.gallery{grid-template-columns:1fr}.gallery-row{grid-template-columns:repeat(2,1fr)}}
+
+  /* Cast */
+  .cast-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+  @media(max-width:980px){.cast-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:540px){.cast-grid{grid-template-columns:1fr}}
+  .char{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    padding:18px 16px;
+    transition:transform .2s ease, border-color .2s ease;
+  }
+  .char:hover{transform:translateY(-3px);border-color:var(--border-hi)}
+  .char .avatar{
+    width:46px;height:46px;border-radius:50%;
+    display:grid;place-items:center;font-weight:700;font-size:1.05rem;
+    color:#0a0c10;margin-bottom:12px;
+  }
+  .char .name{font-weight:700;font-size:1.02rem;margin-bottom:2px}
+  .char .role{color:var(--muted);font-size:.78rem;margin-bottom:8px}
+  .char .blurb{color:var(--muted);font-size:.82rem;line-height:1.5}
+
+  /* Architecture diagrams */
+  .diagram{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:24px;
+    margin-bottom:24px;
+    overflow:auto;
+  }
+  .diagram h3{display:flex;align-items:center;gap:10px;margin-bottom:18px;color:var(--text)}
+  .diagram h3 .tag{font-size:.7rem;background:rgba(0,245,212,.12);color:var(--accent);padding:3px 8px;border-radius:4px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;font-family:'JetBrains Mono',monospace}
+  .mermaid{background:transparent !important;text-align:center}
+
+  /* Tech stack badges */
+  .stack{display:flex;flex-wrap:wrap;gap:10px}
+  .badge{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:8px 14px;border-radius:8px;
+    background:var(--card);border:1px solid var(--border);
+    font-size:.85rem;color:var(--text);font-weight:500;
+  }
+  .badge .b-dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+
+  /* Two-column */
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+  @media(max-width:860px){.two-col{grid-template-columns:1fr}}
+
+  /* Code block */
+  pre.code{
+    background:#0d1117;
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    padding:18px 20px;
+    overflow-x:auto;
+    font-size:.86rem;
+    line-height:1.6;
+    margin:0 0 16px;
+  }
+  pre.code .c{color:var(--muted)}
+  pre.code .k{color:var(--accent-2)}
+  pre.code .s{color:var(--gold)}
+  pre.code .v{color:var(--accent)}
+  code.inline{background:var(--card);padding:2px 7px;border-radius:4px;font-size:.85em;color:var(--accent);border:1px solid var(--border)}
+
+  /* Layout cards */
+  .layout-card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:24px;
+  }
+  .layout-card h3{margin-bottom:16px;display:flex;align-items:center;gap:10px}
+  .layout-card h3::before{content:"";width:4px;height:18px;background:var(--accent);border-radius:2px}
+  .layout-card ul{list-style:none;padding:0;margin:0}
+  .layout-card li{padding:8px 0;border-bottom:1px dashed var(--border);font-size:.92rem;display:flex;justify-content:space-between;gap:16px}
+  .layout-card li:last-child{border-bottom:none}
+  .layout-card li .path{color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:.84rem;flex-shrink:0}
+  .layout-card li .desc{color:var(--muted);text-align:right;font-size:.86rem}
+
+  /* Tasks */
+  .task{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    padding:20px 22px;
+    margin-bottom:12px;
+  }
+  .task h4{margin:0 0 6px;font-size:1rem;color:var(--text);display:flex;align-items:center;gap:10px}
+  .task h4 .num{font-family:'JetBrains Mono',monospace;color:var(--accent);font-size:.85rem}
+  .task p{margin:0;color:var(--muted);font-size:.9rem}
+  .task code{font-size:.84em}
+
+  /* Roadmap */
+  .roadmap{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+  @media(max-width:760px){.roadmap{grid-template-columns:1fr}}
+  .epic{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    padding:18px 20px;
+    position:relative;
+    overflow:hidden;
+  }
+  .epic::before{
+    content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);
+  }
+  .epic .ep-num{font-family:'JetBrains Mono',monospace;color:var(--accent);font-size:.78rem;font-weight:600;letter-spacing:.08em;margin-bottom:4px}
+  .epic h4{margin:0 0 6px;font-size:1rem;color:var(--text)}
+  .epic p{margin:0;color:var(--muted);font-size:.86rem;line-height:1.5}
+  .epic.done::before{background:var(--accent)}
+
+  /* Footer */
+  footer{
+    border-top:1px solid var(--border);
+    padding:48px 0;
+    margin-top:48px;
+    text-align:center;
+    color:var(--muted);
+    font-size:.88rem;
+  }
+  footer a{color:var(--muted)}
+  footer a:hover{color:var(--accent)}
+
+  /* Helpers */
+  .divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:0}
+</style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div class="grid-bg"></div>
+
+<nav class="top">
+  <div class="inner">
+    <a href="#" class="brand" style="color:var(--text)"><span class="dot"></span> Gurgaon Town Life</a>
+    <ul>
+      <li><a href="#premise">Premise</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#screenshots">Screens</a></li>
+      <li><a href="#cast">Cast</a></li>
+      <li><a href="#architecture">Architecture</a></li>
+      <li><a href="#start">Onboarding</a></li>
+      <li><a href="#roadmap">Roadmap</a></li>
+    </ul>
+    <a class="gh" href="https://github.com/sid8491/agentic-town" target="_blank" rel="noopener">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8a8 8 0 0 0 5.47 7.59c.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.05-.49.05-.49.8.06 1.22.82 1.22.82.71 1.22 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.35-1.02.08-2.13 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.43 1.11.16 1.93.08 2.13.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+      GitHub
+    </a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="pill"><span class="dot"></span> Autonomous · Multi-Agent · LLM-Powered</div>
+    <h1>Ten AI characters living their own lives in <span class="grad">modern Gurgaon</span>.</h1>
+    <p class="lede">
+      No player control. No scripts. Just personalities, needs, and an LLM deciding what to do every fifteen game-minutes —
+      writing diaries, forming friendships, falling out, missing meals, and arguing about money.
+      Watch the drama unfold in a desktop window or your browser.
+    </p>
+    <div class="cta-row">
+      <a class="btn primary" href="#start">Get Running ↓</a>
+      <a class="btn ghost" href="#architecture">See the Architecture</a>
+      <a class="btn ghost" href="https://github.com/sid8491/agentic-town" target="_blank" rel="noopener">View on GitHub →</a>
+    </div>
+    <div class="stat-strip">
+      <div class="stat"><div class="n">10</div><div class="l">AI Agents</div></div>
+      <div class="stat"><div class="n">24</div><div class="l">World Tools</div></div>
+      <div class="stat"><div class="n">8</div><div class="l">Locations</div></div>
+      <div class="stat"><div class="n">2</div><div class="l">LLM Backends</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- PREMISE -->
+<section id="premise" style="padding-top:32px">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">The Premise</div>
+      <h2>A town where the residents write their own story.</h2>
+    </div>
+    <blockquote class="premise">
+      Each agent reads their own <code class="inline">soul.md</code>, checks their hunger and mood,
+      looks at who's nearby, asks the LLM <em>"what would I do right now?"</em> — and acts.
+      Memory persists. Diaries grow. Relationships form. The simulation runs forever.
+    </blockquote>
+    <p class="muted" style="max-width:780px">
+      Arjun is anxious about his startup runway. Suresh has heard every secret from his back-seat passengers.
+      Rohan is broke and proud. Neha gossips. Vikram judges. Deepa quietly anchors the building.
+      They've never met you. They never will. You're just watching.
+    </p>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">What Makes It Tick</div>
+      <h2>Six pillars that turn ten file folders into a living town.</h2>
+    </div>
+    <div class="feat-grid">
+      <div class="feat">
+        <div class="icon">◈</div>
+        <h3>Autonomous Decision Loop</h3>
+        <p>Each agent runs a LangGraph cycle every tick — gather context, ask the LLM, execute one tool, reflect, repeat. No two agents share state mid-tick.</p>
+      </div>
+      <div class="feat">
+        <div class="icon">⟳</div>
+        <h3>Persistent Memory</h3>
+        <p>Soul, memory, diary, and goals live as Markdown files in each agent's folder. The LLM reads and rewrites them. <code class="inline">tail -f</code> works.</p>
+      </div>
+      <div class="feat">
+        <div class="icon">⌬</div>
+        <h3>Emergent Drama</h3>
+        <p>Refuse, disagree, propose plans, gossip, bills, rent, scheduled monsoons. Story threads emerge from rules — no writer-room required.</p>
+      </div>
+      <div class="feat">
+        <div class="icon">⌖</div>
+        <h3>Director Mode</h3>
+        <p>A drama-score picks the protagonist each moment, an LLM narrator writes one-line commentary, and the camera frames the action like a TV show.</p>
+      </div>
+      <div class="feat">
+        <div class="icon">⌥</div>
+        <h3>Pluggable LLM</h3>
+        <p>Ollama for local-first (<code class="inline">gemma4:e4b</code>) or Gemini 2.5 Flash via API. Toggle backends with the <code class="inline">L</code> key. One <code class="inline">litellm</code> interface.</p>
+      </div>
+      <div class="feat">
+        <div class="icon">◐</div>
+        <h3>Two Frontends, One Truth</h3>
+        <p>Arcade desktop window and vanilla-JS web viewer both read the same <code class="inline">WorldState</code>. Rendering is always a consumer, never a producer.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SCREENSHOTS -->
+<section id="screenshots">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">Screenshots</div>
+      <h2>The web viewer, mid-day.</h2>
+      <p>Browser-based HTML5 Canvas viewer — works over LAN, no install. Click any agent to read their diary.</p>
+    </div>
+    <div class="gallery">
+      <div class="shot" style="aspect-ratio:16/10"><img src="smoke/smoke-02-day1-evening.png" alt="Day 1 evening view" loading="lazy"><div class="cap">Day 1, evening — agents converging on Sector 29 for dinner</div></div>
+      <div class="shot" style="aspect-ratio:4/5"><img src="smoke/smoke-03-inspector-arjun.png" alt="Inspector panel" loading="lazy"><div class="cap">Inspector panel — Arjun's diary &amp; needs</div></div>
+    </div>
+    <div class="gallery-row">
+      <div class="shot" style="aspect-ratio:4/3"><img src="smoke/smoke-04-overview-mode.png" alt="Overview" loading="lazy"><div class="cap">Overview mode</div></div>
+      <div class="shot" style="aspect-ratio:4/3"><img src="smoke/smoke-07-day2-active.png" alt="Day 2 active" loading="lazy"><div class="cap">Day 2 — plot threads</div></div>
+      <div class="shot" style="aspect-ratio:4/3"><img src="smoke/smoke-05-audio-popover.png" alt="Audio controls" loading="lazy"><div class="cap">Audio &amp; LLM controls</div></div>
+      <div class="shot" style="aspect-ratio:4/3"><img src="smoke/smoke-06-day2-progress.png" alt="Day 2 progress" loading="lazy"><div class="cap">Conversation history</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CAST -->
+<section id="cast">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">The Cast</div>
+      <h2>Ten residents. Ten <code class="inline">soul.md</code> files.</h2>
+      <p>Each agent's personality is one read-only Markdown file. Memory, diary, and goals are written by the agent itself, every day.</p>
+    </div>
+    <div class="cast-grid">
+      <div class="char"><div class="avatar" style="background:#5eead4">AR</div><div class="name">Arjun</div><div class="role">Software engineer · 28</div><div class="blurb">Series-A startup. Skips meals in flow state. Quietly calculating burn rate.</div></div>
+      <div class="char"><div class="avatar" style="background:#f9a8d4">PR</div><div class="name">Priya</div><div class="role">Product manager · 32</div><div class="blurb">MNC. Organized. Networks like a politician, listens like a therapist.</div></div>
+      <div class="char"><div class="avatar" style="background:#fbbf24">RA</div><div class="name">Rahul</div><div class="role">Delivery boy · 22</div><div class="blurb">Zomato rider. Street-smart, observant, has opinions about every gate guard.</div></div>
+      <div class="char"><div class="avatar" style="background:#c4b5fd">KA</div><div class="name">Kavya</div><div class="role">Freelance designer · 26</div><div class="blurb">Works odd hours. Waves at Arjun in the corridor. Never talks first.</div></div>
+      <div class="char"><div class="avatar" style="background:#fb923c">SU</div><div class="name">Suresh</div><div class="role">Cab driver · 45</div><div class="blurb">Forty-five and wise. Knows everyone's secrets. Volunteers none.</div></div>
+      <div class="char"><div class="avatar" style="background:#fda4af">NE</div><div class="name">Neha</div><div class="role">HR professional · 30</div><div class="blurb">Cheerful and dangerous. The gossip pipeline runs through her.</div></div>
+      <div class="char"><div class="avatar" style="background:#86efac">VI</div><div class="name">Vikram</div><div class="role">Retired colonel · 62</div><div class="blurb">Up at 5am. Has opinions about youth, traffic, and the price of tomatoes.</div></div>
+      <div class="char"><div class="avatar" style="background:#fcd34d">DE</div><div class="name">Deepa</div><div class="role">Homemaker · 38</div><div class="blurb">Resourceful, calm, the building's emotional anchor. Misses nothing.</div></div>
+      <div class="char"><div class="avatar" style="background:#7dd3fc">RO</div><div class="name">Rohan</div><div class="role">MDI student · 24</div><div class="blurb">Idealistic, broke, between dreams. Will pitch you on an idea.</div></div>
+      <div class="char"><div class="avatar" style="background:#f0abfc">AN</div><div class="name">Anita</div><div class="role">Boutique owner · 41</div><div class="blurb">Entrepreneurial. Proud. Watches the foot traffic like a hawk.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ARCHITECTURE -->
+<section id="architecture">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">High-Level Design</div>
+      <h2>Three strictly separated layers around one source of truth.</h2>
+      <p>The engine never knows about pixels. The renderers never write state. Everything else falls out of that.</p>
+    </div>
+
+    <div class="diagram">
+      <h3><span class="tag">HLD</span> System layers</h3>
+      <pre class="mermaid">
+graph TB
+    subgraph ENGINE["🧠  ENGINE LAYER (engine/)"]
+      W["WorldState<br/><i>state.json + asyncio.Lock</i>"]
+      A["AgentRunner ×10<br/><i>LangGraph per agent</i>"]
+      T["Tools<br/><i>pure Python, mutate state</i>"]
+      L["LLM Abstraction<br/><i>Ollama · Gemini</i>"]
+      N["Needs · Relationships<br/>Plots · Narrator · Headlines"]
+    end
+
+    subgraph RENDER["🖼️  RENDERER (main.py)"]
+      AR["Arcade Window<br/><i>read-only consumer</i>"]
+    end
+
+    subgraph SERVER["🌐  WEB SERVER (server.py)"]
+      F["FastAPI<br/><i>background thread</i>"]
+      V["viewer.html<br/><i>vanilla JS + Canvas</i>"]
+    end
+
+    A --&gt; T
+    A --&gt; L
+    T --&gt; W
+    N --&gt; W
+    AR -. polls .-&gt; W
+    F -. polls .-&gt; W
+    V -. fetch /api/state .-&gt; F
+
+    classDef engine fill:#0f1f1c,stroke:#00f5d4,color:#e8ecf3;
+    classDef render fill:#1a1428,stroke:#b388ff,color:#e8ecf3;
+    classDef server fill:#231220,stroke:#ff5470,color:#e8ecf3;
+    class W,A,T,L,N engine;
+    class AR render;
+    class F,V server;
+      </pre>
+    </div>
+
+    <div class="diagram">
+      <h3><span class="tag">FLOW</span> One tick of the simulation</h3>
+      <pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant Loop as SimulationLoop
+    participant World as WorldState
+    participant Needs as needs.py
+    participant Agents as 10× AgentRunner
+    participant LLM as LLM (Ollama/Gemini)
+
+    Loop-&gt;&gt;World: advance sim_time (+15 min)
+    Loop-&gt;&gt;Needs: decay hunger/energy for all
+    Loop-&gt;&gt;Agents: asyncio.gather(run_all)
+    par Per agent (concurrent)
+      Agents-&gt;&gt;World: gather_context (pos, nearby, time)
+      Agents-&gt;&gt;LLM: llm_decide(prompt + schedule + tools)
+      LLM--&gt;&gt;Agents: tool call
+      Agents-&gt;&gt;World: execute_tool (move/talk/eat/work…)
+      Agents-&gt;&gt;Agents: reflect → append diary
+    end
+    Loop-&gt;&gt;World: save state.json
+    Loop-&gt;&gt;Loop: sleep 3 s (or 0.75 s at 4× night speed)
+      </pre>
+    </div>
+
+    <div class="diagram">
+      <h3><span class="tag">AGENT</span> Inside a single agent's decision graph</h3>
+      <pre class="mermaid">
+flowchart LR
+    S(["tick"]) --&gt; G[gather_context]
+    G --&gt; D[llm_decide]
+    D --&gt; E[execute_tool]
+    E --&gt; R[reflect]
+    R --&gt; END(["done"])
+
+    G -. reads .-&gt; G1[soul.md]
+    G -. reads .-&gt; G2[memory.md]
+    G -. reads .-&gt; G3[goals.md]
+    G -. reads .-&gt; G4[needs · nearby · time]
+
+    E -. mutates .-&gt; W1[(WorldState)]
+    R -. appends .-&gt; R1[diary.md]
+    R -. maybe rewrites .-&gt; R2[memory.md / goals.md]
+
+    classDef node fill:#161b25,stroke:#00f5d4,color:#e8ecf3;
+    classDef file fill:#1c2230,stroke:#324054,color:#8a94a6,font-style:italic;
+    class G,D,E,R node;
+    class G1,G2,G3,G4,R1,R2 file;
+      </pre>
+    </div>
+
+    <div class="diagram">
+      <h3><span class="tag">FILES</span> What lives where, per agent</h3>
+      <pre class="mermaid">
+graph LR
+    DEV([Developer]) --writes--&gt; SOUL["soul.md<br/><i>personality · never changes</i>"]
+    DEV --drops--&gt; PNG["{name}.png<br/><i>portrait</i>"]
+
+    SOUL -.read-only context.-&gt; AGENT{{LLM Agent}}
+    MEM["memory.md<br/><i>beliefs · relationships</i>"] &lt;--rewrites--&gt; AGENT
+    GOAL["goals.md<br/><i>daily priorities</i>"] &lt;--rewrites--&gt; AGENT
+    DIARY["diary.md<br/><i>append-only journal</i>"] &lt;--appends--&gt; AGENT
+
+    classDef writable fill:#0f1f1c,stroke:#00f5d4,color:#e8ecf3;
+    classDef readonly fill:#231220,stroke:#ff5470,color:#e8ecf3;
+    class SOUL,PNG readonly;
+    class MEM,GOAL,DIARY writable;
+      </pre>
+    </div>
+  </div>
+</section>
+
+<!-- TECH STACK -->
+<section id="stack" style="padding-top:48px">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">Tech Stack</div>
+      <h2>Boring choices where boring works.</h2>
+    </div>
+    <div class="stack">
+      <span class="badge"><span class="b-dot"></span> Python 3.12</span>
+      <span class="badge"><span class="b-dot"></span> LangGraph</span>
+      <span class="badge"><span class="b-dot"></span> litellm</span>
+      <span class="badge"><span class="b-dot"></span> Ollama (gemma4:e4b)</span>
+      <span class="badge"><span class="b-dot"></span> Gemini 2.5 Flash</span>
+      <span class="badge"><span class="b-dot"></span> FastAPI</span>
+      <span class="badge"><span class="b-dot"></span> Arcade 3.x</span>
+      <span class="badge"><span class="b-dot"></span> asyncio</span>
+      <span class="badge"><span class="b-dot"></span> HTML5 Canvas</span>
+      <span class="badge"><span class="b-dot"></span> Vanilla JS (no build)</span>
+    </div>
+  </div>
+</section>
+
+<!-- GETTING STARTED -->
+<section id="start">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">Onboarding · Five Minutes</div>
+      <h2>Get the town running locally.</h2>
+      <p>Default backend is Ollama (local, free). Gemini works too — drop a key in <code class="inline">.env</code>.</p>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <h3 style="color:var(--accent);font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">1 · Install</h3>
+<pre class="code"><span class="c"># clone</span>
+git clone https://github.com/sid8491/agentic-town.git
+<span class="k">cd</span> agentic-town
+
+<span class="c"># venv (Python 3.12)</span>
+C:/Python312/python.exe -m venv .venv
+<span class="k">source</span> .venv/Scripts/activate
+
+<span class="c"># deps</span>
+pip install -r requirements.txt
+
+<span class="c"># config</span>
+cp .env.example .env</pre>
+
+        <h3 style="color:var(--accent);font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">2 · LLM Backend</h3>
+<pre class="code"><span class="c"># option a — local with Ollama</span>
+ollama pull gemma4:e4b
+
+<span class="c"># option b — Gemini (add to .env)</span>
+LLM_PRIMARY=<span class="s">gemini</span>
+GEMINI_API_KEY=<span class="s">your_key_here</span></pre>
+      </div>
+
+      <div>
+        <h3 style="color:var(--accent);font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">3 · Run</h3>
+<pre class="code"><span class="c"># full sim — arcade window + web viewer</span>
+python main.py
+
+<span class="c"># web-only (no desktop window)</span>
+python server.py
+
+<span class="c"># reset world, keep personalities</span>
+python main.py --reset
+
+<span class="c"># open in browser</span>
+<span class="v">http://localhost:8000</span></pre>
+
+        <h3 style="color:var(--accent);font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">4 · Watch</h3>
+<pre class="code"><span class="c"># follow an agent's diary live</span>
+tail -f agents/arjun/diary.md
+
+<span class="c"># read current goals</span>
+cat agents/neha/goals.md
+
+<span class="c"># inspect the world state</span>
+cat world/state.json | jq .</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROJECT LAYOUT -->
+<section id="layout" style="padding-top:48px">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">Code Map</div>
+      <h2>Where everything lives.</h2>
+    </div>
+
+    <div class="two-col">
+      <div class="layout-card">
+        <h3>Engine (simulation core)</h3>
+        <ul>
+          <li><span class="path">engine/world.py</span><span class="desc">WorldState singleton · state.json</span></li>
+          <li><span class="path">engine/agent.py</span><span class="desc">AgentRunner · LangGraph cycle</span></li>
+          <li><span class="path">engine/tools.py</span><span class="desc">24 tools agents can call</span></li>
+          <li><span class="path">engine/llm.py</span><span class="desc">Ollama + Gemini behind litellm</span></li>
+          <li><span class="path">engine/needs.py</span><span class="desc">Hunger / energy / mood decay</span></li>
+          <li><span class="path">engine/relationships.py</span><span class="desc">Edge inference from memory.md</span></li>
+          <li><span class="path">engine/protagonist.py</span><span class="desc">Director-mode drama score</span></li>
+          <li><span class="path">engine/narrator.py</span><span class="desc">LLM live commentary</span></li>
+          <li><span class="path">engine/plots.py</span><span class="desc">Plot-thread detection</span></li>
+          <li><span class="path">engine/cliffhanger.py</span><span class="desc">End-of-day narrator</span></li>
+          <li><span class="path">engine/headlines.py</span><span class="desc">Daily gossip column</span></li>
+        </ul>
+      </div>
+
+      <div class="layout-card">
+        <h3>Frontends &amp; data</h3>
+        <ul>
+          <li><span class="path">main.py</span><span class="desc">Arcade desktop window + loop</span></li>
+          <li><span class="path">server.py</span><span class="desc">FastAPI · /api/* · serves viewer</span></li>
+          <li><span class="path">viewer.html</span><span class="desc">Browser viewer — no build step</span></li>
+          <li><span class="path">agents/&lt;name&gt;/</span><span class="desc">soul · memory · diary · goals</span></li>
+          <li><span class="path">agents/&lt;name&gt;.png</span><span class="desc">Portrait (drop-in, hot-served)</span></li>
+          <li><span class="path">world/map.json</span><span class="desc">8 locations + connectivity graph</span></li>
+          <li><span class="path">world/state.json</span><span class="desc">Live state (regenerated)</span></li>
+          <li><span class="path">tests/</span><span class="desc">smoke + per-module checks</span></li>
+          <li><span class="path">docs/tech_document.md</span><span class="desc">Full technical spec</span></li>
+          <li><span class="path">docs/tech_stories.md</span><span class="desc">Phase-by-phase build stories</span></li>
+          <li><span class="path">.env</span><span class="desc">LLM_PRIMARY · GEMINI_API_KEY</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMMON TASKS -->
+<section id="tasks" style="padding-top:48px">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">Common Changes</div>
+      <h2>I want to… → look here.</h2>
+    </div>
+
+    <div class="task">
+      <h4><span class="num">01</span> Add an 11th agent</h4>
+      <p>Create <code class="inline">agents/&lt;name&gt;/soul.md</code>, drop a portrait at <code class="inline">agents/&lt;name&gt;.png</code>, add the name to the agent roster in <code class="inline">engine/world.py</code>, then choose an archetype in <code class="inline">engine/agent.py</code>'s schedule injector. Restart.</p>
+    </div>
+
+    <div class="task">
+      <h4><span class="num">02</span> Add a new tool agents can call</h4>
+      <p>Write a pure-Python <code class="inline">def my_tool(agent_name, **kwargs) -&gt; str</code> in <code class="inline">engine/tools.py</code>. Register it in the <code class="inline">TOOLS</code> dict at the bottom of the file. The LLM sees the new tool automatically next tick. No LLM calls inside the tool itself.</p>
+    </div>
+
+    <div class="task">
+      <h4><span class="num">03</span> Add a new location</h4>
+      <p>Add an entry to <code class="inline">world/map.json</code> with <code class="inline">name</code>, <code class="inline">tiles</code>, <code class="inline">color</code>, and <code class="inline">connections</code>. The BFS pathfinder in <code class="inline">move_to</code> picks it up automatically. Update the viewer's color legend if you want it named in the UI.</p>
+    </div>
+
+    <div class="task">
+      <h4><span class="num">04</span> Swap the LLM model</h4>
+      <p>Edit <code class="inline">.env</code> — <code class="inline">LLM_PRIMARY=ollama|gemini</code> and the model name. Or hit <code class="inline">L</code> in the Arcade window, or <code class="inline">POST /api/llm/&lt;provider&gt;</code>. All routing lives in <code class="inline">engine/llm.py</code>.</p>
+    </div>
+
+    <div class="task">
+      <h4><span class="num">05</span> Tune drama / pacing</h4>
+      <p>Drama score for director mode → <code class="inline">engine/protagonist.py</code>. Night auto-speed thresholds → <code class="inline">SimulationLoop._tick</code> in <code class="inline">main.py</code>. Per-archetype schedules → <code class="inline">engine/agent.py</code>.</p>
+    </div>
+
+    <div class="task">
+      <h4><span class="num">06</span> Reset the world</h4>
+      <p><code class="inline">python main.py --reset</code> clears <code class="inline">world/state.json</code>, diaries, and memory while keeping <code class="inline">soul.md</code>. To replace souls themselves, <code class="inline">git checkout agents/</code>.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ROADMAP -->
+<section id="roadmap">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">Build History</div>
+      <h2>Ten epics, shipped.</h2>
+      <p>Every milestone is documented in <a href="https://github.com/sid8491/agentic-town/blob/master/docs/tech_stories.md" target="_blank">docs/tech_stories.md</a>.</p>
+    </div>
+    <div class="roadmap">
+      <div class="epic done"><div class="ep-num">EPIC 1</div><h4>Foundation</h4><p>Project scaffold, world map, agent folders, soul files, WorldState manager.</p></div>
+      <div class="epic done"><div class="ep-num">EPIC 2</div><h4>LLM &amp; Tools</h4><p>Ollama/Gemini abstraction, runtime toggle, tool engine, single-agent loop.</p></div>
+      <div class="epic done"><div class="ep-num">EPIC 3</div><h4>Agent Engine</h4><p>Needs decay, multi-agent async loop, message + gossip system.</p></div>
+      <div class="epic done"><div class="ep-num">EPIC 4</div><h4>Arcade Rendering</h4><p>Map, sprites, thought bubbles, name tags, HUD, click-to-inspect.</p></div>
+      <div class="epic done"><div class="ep-num">EPIC 5</div><h4>Persistence</h4><p>Auto-save, reset command, time-aware schedules, night auto-speed.</p></div>
+      <div class="epic done"><div class="ep-num">EPIC 6</div><h4>Web Viewer</h4><p>FastAPI state endpoint, vanilla-JS HTML5 Canvas viewer.</p></div>
+      <div class="epic done"><div class="ep-num">EPIC 7</div><h4>Polish</h4><p>Relationships, daily summary, configurable speed.</p></div>
+      <div class="epic done"><div class="ep-num">EPIC 8</div><h4>Spectator Experience</h4><p>Floating labels, alerts, narrative feed, speech bubbles, spotlight strip, Hinglish.</p></div>
+      <div class="epic done"><div class="ep-num">EPIC 9</div><h4>Emergent Behavior</h4><p>Conversation memory, reflection, refuse/disagree, rent + bills, shared plans, scheduled events.</p></div>
+      <div class="epic done"><div class="ep-num">EPIC 10</div><h4>Show, Not Simulator</h4><p>Director mode, LLM narrator, scene staging, plot threads, highlight reel, daily headlines.</p></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <p>Built by <a href="https://github.com/sid8491" target="_blank">Sid</a> · Source on <a href="https://github.com/sid8491/agentic-town" target="_blank">GitHub</a> · LLM-powered agents written with LangGraph + litellm</p>
+    <p style="margin-top:8px;color:var(--muted-2);font-size:.8rem">No frameworks were harmed in the making of this viewer.</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+      darkMode: true,
+      background: 'transparent',
+      primaryColor: '#161b25',
+      primaryTextColor: '#e8ecf3',
+      primaryBorderColor: '#00f5d4',
+      lineColor: '#8a94a6',
+      secondaryColor: '#1c2230',
+      tertiaryColor: '#11151c',
+      fontFamily: 'Inter, sans-serif',
+      fontSize: '14px',
+      mainBkg: '#161b25',
+      nodeBorder: '#00f5d4',
+      clusterBkg: '#0f141c',
+      clusterBorder: '#324054',
+      edgeLabelBackground: '#0a0c10',
+      noteBkgColor: '#1c2230',
+      noteTextColor: '#e8ecf3',
+      noteBorderColor: '#324054',
+      actorBkg: '#161b25',
+      actorBorder: '#00f5d4',
+      actorTextColor: '#e8ecf3',
+      actorLineColor: '#324054',
+      signalColor: '#e8ecf3',
+      signalTextColor: '#e8ecf3',
+      labelBoxBkgColor: '#1c2230',
+      labelBoxBorderColor: '#324054',
+      labelTextColor: '#e8ecf3',
+      loopTextColor: '#e8ecf3',
+      activationBkgColor: '#0f1f1c',
+      activationBorderColor: '#00f5d4',
+      sequenceNumberColor: '#0a0c10'
+    },
+    flowchart: { htmlLabels: true, curve: 'basis' },
+    sequence: { actorMargin: 60, boxMargin: 12 }
+  });
+</script>
+</body>
+</html>
