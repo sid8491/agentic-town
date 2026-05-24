@@ -11,3 +11,14 @@ agents/*/diary.md
 agents/*/memory.md
 .playwright-mcp/
 docs/gurgaon_town_life_explained.pptx
+
+# graphify artifacts
+.graphify_*
+graphify-out/
+
+# walkthrough deck output
+showcase.html
+showcase.pdf
+
+# windows/cygwin crash dumps
+*.stackdump
